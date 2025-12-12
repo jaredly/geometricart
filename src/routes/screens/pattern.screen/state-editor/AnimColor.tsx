@@ -4,6 +4,7 @@ import {AnimatableColor, Color} from '../export-types';
 import {BlurInput} from './BlurInput';
 import {parseAnimatable} from './createLayerTemplate';
 import {ColorInput} from './ColorInput';
+import {ApplyTiming} from '../../../../json-diff/helper2';
 
 // const ModsEditor = ({
 //     value,
@@ -84,7 +85,7 @@ export const AnimColor = ({
 }: {
     label: string;
     value?: AnimatableColor;
-    onChange: (next?: AnimatableColor) => void;
+    onChange: (next?: AnimatableColor, when?: ApplyTiming) => void;
     palette: Color[];
 }) => {
     const colorV =
@@ -100,7 +101,11 @@ export const AnimColor = ({
             <div className="label">
                 <span className="label-text text-sm font-semibold">{label}</span>
                 {colorV ? (
-                    <ColorInput value={colorV} onChange={(color) => onChange(color)} />
+                    <ColorInput
+                        value={colorV}
+                        onChange={(color) => onChange(color)}
+                        onPreview={(color) => onChange(color, 'preview')}
+                    />
                 ) : null}
             </div>
             <BlurInput

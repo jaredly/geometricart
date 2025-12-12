@@ -1,19 +1,21 @@
 // const TAG_KEY = 'kind' as const; // or "type" or make it a generic param
 
+export type ApplyTiming = 'immediate' | 'preview' | undefined;
+
 export type PathSegment =
     | {type: 'key'; key: string | number}
     | {type: 'tag'; key: string; value: string}
     | {type: 'single'; isSingle: boolean};
 
 type ReplaceAndTestMethodsA<Value, R> = {
-    replace(value: Value): R;
+    replace(value: Value, when?: ApplyTiming): R;
 };
 
 // Only if P is an AddPath<Root, C>
-type AddMethodsA<Value, R> = {add(value: Value): R};
+type AddMethodsA<Value, R> = {add(value: Value, when?: ApplyTiming): R};
 
 // Only if P is a RemovablePath<Root, C>
-type RemoveMethodsA<R> = {remove(): R};
+type RemoveMethodsA<R> = {remove(when?: ApplyTiming | React.MouseEvent): R};
 
 export type Updater<Current, Tag extends PropertyKey = 'type'> = DiffNodeA<
     unknown,
@@ -29,6 +31,7 @@ type OpMaker<Value, Tag extends PropertyKey> = (
 
 type UpdateFunction<Value, Tag extends PropertyKey, R> = (
     opMaker: Value | OpMaker<Value, Tag>,
+    when?: ApplyTiming,
 ) => R;
 
 export type DiffNodeA<Root, Current, Tag extends PropertyKey, R> = AddMethodsA<Current, R> & // operations at this path (unchanged)
@@ -61,8 +64,8 @@ export type DiffNodeA<Root, Current, Tag extends PropertyKey, R> = AddMethodsA<C
           ? {
                 [K in number]: DiffNodeA<Root, Elem, Tag, R>;
             } & {
-                push(value: Elem): R;
-                move(from: string | number, to: string | number): R;
+                push(value: Elem, when?: ApplyTiming): R;
+                move(from: string | number, to: string | number, when?: ApplyTiming): R;
                 reorder(indices: number[]): R;
             }
           : // 🔹 plain objects (including unions that are NOT tagged on Tag)
@@ -75,7 +78,7 @@ export type DiffNodeA<Root, Current, Tag extends PropertyKey, R> = AddMethodsA<C
                       R
                   >;
               } & {
-                  move(from: string | number, to: string | number): R;
+                  move(from: string | number, to: string | number, when?: ApplyTiming): R;
               } & (string extends keyof NonNullish<Current> // optional: index signatures (Record<string, V>)
                       ? {
                             [key: string]: DiffNodeA<Root, NonNullish<Current>[string], Tag, R>;
@@ -90,7 +93,7 @@ export function diffBuilder<T, Tag extends string = 'type'>(tag: Tag) {
 }
 
 export function diffBuilderApply<T, Tag extends string = 'type', R = void>(
-    apply: (v: PendingJsonPatchOp<T>) => R,
+    apply: (v: PendingJsonPatchOp<T>, when?: ApplyTiming) => R,
     tag: Tag,
 ): DiffBuilderA<T, Tag, R> {
     const cache: Record<string, (v: any, b: any) => R> = {};
@@ -120,7 +123,8 @@ export function diffBuilderApply<T, Tag extends string = 'type', R = void>(
                 if (prop === 'replace') {
                     const k = pathString + '/replace';
                     if (!cache[k])
-                        cache[k] = (value) => apply({op: 'replace', path, value, ...ghost});
+                        cache[k] = (value, when?: ApplyTiming) =>
+                            apply({op: 'replace', path, value, ...ghost}, when);
                     return cache[k];
                 }
 
@@ -138,37 +142,53 @@ export function diffBuilderApply<T, Tag extends string = 'type', R = void>(
 
                 if (prop === 'add') {
                     const k = pathString + '/add';
-                    if (!cache[k]) cache[k] = (value) => apply({op: 'add', path, value, ...ghost});
+                    if (!cache[k])
+                        cache[k] = (value, when?: ApplyTiming) =>
+                            apply({op: 'add', path, value, ...ghost}, when);
                     return cache[k];
                 }
 
                 if (prop === 'move') {
                     const k = pathString + '/move';
                     if (!cache[k])
-                        cache[k] = (from: string | number, to: string | number) => {
+                        cache[k] = (
+                            from: string | number,
+                            to: string | number,
+                            when?: ApplyTiming,
+                        ) => {
                             const normalize = (v: string | number) =>
                                 typeof v === 'string' && /^\d+$/.test(v) ? Number(v) : v;
                             const fromKey = normalize(from);
                             const toKey = normalize(to);
-                            return apply({
-                                op: 'move',
-                                from: [...path, {type: 'key', key: fromKey}],
-                                path: [...path, {type: 'key', key: toKey}],
-                                ...ghost,
-                            } as any);
+                            return apply(
+                                {
+                                    op: 'move',
+                                    from: [...path, {type: 'key', key: fromKey}],
+                                    path: [...path, {type: 'key', key: toKey}],
+                                    ...ghost,
+                                } as any,
+                                when,
+                            );
                         };
                     return cache[k];
                 }
 
                 if (prop === 'push') {
                     const k = pathString + '/push';
-                    if (!cache[k]) cache[k] = (value) => apply({op: 'push', path, value, ...ghost});
+                    if (!cache[k])
+                        cache[k] = (value, when?: ApplyTiming) =>
+                            apply({op: 'push', path, value, ...ghost}, when);
                     return cache[k];
                 }
 
                 if (prop === 'remove') {
                     const k = pathString + '/remove';
-                    if (!cache[k]) cache[k] = () => apply({op: 'remove', path, ...ghost});
+                    if (!cache[k])
+                        cache[k] = (when?: ApplyTiming | React.MouseEvent) =>
+                            apply(
+                                {op: 'remove', path, ...ghost},
+                                typeof when === 'string' ? when : undefined,
+                            );
                     return cache[k];
                 }
 
@@ -187,11 +207,11 @@ export function diffBuilderApply<T, Tag extends string = 'type', R = void>(
             },
         };
 
-        return new Proxy((value: T | OpMaker<T, Tag>) => {
+        return new Proxy((value: T | OpMaker<T, Tag>, when?: ApplyTiming) => {
             if (typeof value !== 'function') {
-                return apply({op: 'replace', path, value, ...ghost});
+                return apply({op: 'replace', path, value, ...ghost}, when);
             }
-            return apply({op: 'nested', make: value as any, path, ...ghost});
+            return apply({op: 'nested', make: value as any, path, ...ghost}, when);
         }, handler);
     }
     return makeProxy([]) as DiffBuilderA<T, Tag, R>;
@@ -217,11 +237,21 @@ export type CopyOp<T> = {op: 'copy'; from: Path; path: Path; _t: T};
 
 export type JsonPatchOp<T> = AddOp<T> | ReplaceOp<T> | RemoveOp<T> | MoveOp<T> | CopyOp<T>;
 
-export type PendingReplaceOp<T> = {op: 'replace'; path: Path; value: unknown; _t: T};
+export type PendingReplaceOp<T> = {
+    op: 'replace';
+    path: Path;
+    value: unknown;
+    _t: T;
+};
 
 export type PendingRemoveOp<T> = {op: 'remove'; path: Path; _t: T};
 
-export type PendingPushOp<T> = {op: 'push'; path: Path; value: unknown; _t: T};
+export type PendingPushOp<T> = {
+    op: 'push';
+    path: Path;
+    value: unknown;
+    _t: T;
+};
 
 export type NestedPendingOp<T, Inner, Tag extends PropertyKey> = {
     op: 'nested';

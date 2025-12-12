@@ -49,7 +49,7 @@ export const FillEditor = ({
                 <AnimColor
                     label="Color"
                     value={value.color}
-                    onChange={(color) => update.color(color as AnimatableColor)}
+                    onChange={(color, when) => update.color(color as AnimatableColor, when)}
                     palette={palette}
                 />
                 <AnimInput

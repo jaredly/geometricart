@@ -1,6 +1,6 @@
 import equal from 'fast-deep-equal';
 import {createContext, useContext, useEffect, useMemo, useRef, useState} from 'react';
-import {diffBuilderApply, PendingJsonPatchOp} from './helper2';
+import {ApplyTiming, diffBuilderApply, PendingJsonPatchOp} from './helper2';
 import {dispatch, History} from './history';
 import {MaybeNested, resolveAndApply} from './make2';
 import {useLatest} from '../routes/screens/pattern.screen/editState';
@@ -17,6 +17,7 @@ type CH<T> = {
     listeners: (() => void)[];
     historyListeners: (() => void)[];
     historyUp: (() => void)[];
+    previewState: null | T;
 };
 
 export const makeHistoryContext = <T, An, Tag extends string = 'type'>(tag: Tag) => {
@@ -39,6 +40,7 @@ export const makeHistoryContext = <T, An, Tag extends string = 'type'>(tag: Tag)
                 historyListeners: [],
                 listeners: [],
                 historyUp: [],
+                previewState: null,
             });
             useEffect(() => {
                 if (initial !== value.current.state) {
@@ -53,30 +55,49 @@ export const makeHistoryContext = <T, An, Tag extends string = 'type'>(tag: Tag)
             const ctx = useContext(Ctx);
 
             return useMemo(() => {
-                const go = (v: {op: 'undo' | 'redo'} | MaybeNested<PendingJsonPatchOp<T>>) => {
-                    const next = dispatch(ctx.state, v);
-                    if (next === ctx.state) return;
-                    const hChanged = next.nodes !== ctx.state.nodes;
-                    ctx.state = next;
-                    ctx.save(next);
-                    ctx.listeners.forEach((f) => f());
-                    if (hChanged) {
-                        ctx.historyListeners.forEach((f) => f());
+                const go = (
+                    v: {op: 'undo' | 'redo'} | MaybeNested<PendingJsonPatchOp<T>>,
+                    when?: ApplyTiming,
+                ) => {
+                    let hChanged = false;
+                    if (when === 'preview') {
+                        const next = dispatch(ctx.previewState ?? ctx.state, v);
+                        if (next === ctx.state) return;
+                        ctx.previewState = next;
+                    } else {
+                        ctx.previewState = null;
+
+                        const next = dispatch(ctx.state, v);
+                        if (next === ctx.state) return;
+                        hChanged = next.nodes !== ctx.state.nodes;
+                        ctx.state = next;
+                        ctx.save(ctx.state);
                     }
-                    ctx.historyUp.forEach((f) => f());
+
+                    ctx.listeners.forEach((f) => f());
+                    if (when !== 'preview') {
+                        if (hChanged) {
+                            ctx.historyListeners.forEach((f) => f());
+                        }
+                        ctx.historyUp.forEach((f) => f());
+                    }
                 };
                 return {
                     use<B>(sel: (t: T) => B, exact = true): B {
                         const lsel = useRef(sel);
                         lsel.current = sel;
 
-                        const [value, setValue] = useState(() => sel(ctx.state.current));
+                        const [value, setValue] = useState(() =>
+                            sel(ctx.previewState?.current ?? ctx.state.current),
+                        );
                         const lvalue = useRef(value);
                         lvalue.current = value;
 
                         useEffect(() => {
                             const fn = () => {
-                                const nv = lsel.current(ctx.state.current);
+                                const nv = lsel.current(
+                                    ctx.previewState?.current ?? ctx.state.current,
+                                );
                                 if (exact ? nv !== lvalue.current : !equal(nv, lvalue.current)) {
                                     setValue(nv);
                                 }

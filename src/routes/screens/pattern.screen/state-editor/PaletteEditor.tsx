@@ -20,7 +20,11 @@ export const PaletteEditor = ({palette, update}: {palette: Color[]; update: Upda
             <div className="space-y-2">
                 {palette.map((color, i) => (
                     <div key={i} className="flex items-center gap-3">
-                        <ColorInput value={color} onChange={update[i]} />
+                        <ColorInput
+                            value={color}
+                            onChange={update[i]}
+                            onPreview={(v) => update[i](v, 'preview')}
+                        />
                         <BlurInput
                             value={colorToString(color)}
                             onChange={(v) => {
