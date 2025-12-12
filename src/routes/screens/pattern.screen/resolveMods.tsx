@@ -124,7 +124,8 @@ export const modsToShapes = (
 
         const crop = cropCache.get(mod.id)!;
         if (!crop) {
-            throw new Error(`No crop? ${mod.id} : ${[...cropCache.keys()]}`);
+            return shapes;
+            // throw new Error(`No crop? ${mod.id} : ${[...cropCache.keys()]}`);
         }
         return shapes.flatMap((shape) => {
             return clipShape(shape.shape, mod, crop.path).map((coords) => ({

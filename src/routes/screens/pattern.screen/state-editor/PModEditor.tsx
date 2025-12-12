@@ -4,6 +4,7 @@ import {AnimInput} from './AnimInput';
 import {AnimCoordInput} from './AnimCoordInput';
 import {AnimCoordOrNumberInput} from './AnimCoordOrNumberInput';
 import {Updater} from '../../../../json-diff/helper2';
+import {useExportState} from '../pattern-export';
 
 export const PModEditor = ({
     palette,
@@ -14,6 +15,9 @@ export const PModEditor = ({
     value: PMods;
     update: Updater<PMods>;
 }) => {
+    const ctx = useExportState();
+    const cropIds = ctx.use((v) => Object.keys(v.crops), false);
+
     switch (value.type) {
         case 'inset':
             return (
@@ -41,7 +45,7 @@ export const PModEditor = ({
                     >
                         &times;
                     </button>
-                    {value.type}
+                    translate
                     <AnimCoordInput
                         label="v"
                         value={value.v}
@@ -59,6 +63,19 @@ export const PModEditor = ({
                         &times;
                     </button>
                     {value.type}:{value.id}
+                    <select
+                        value={value.id}
+                        onChange={(evt) => update.variant('crop').id(evt.target.value)}
+                    >
+                        <option disabled value="">
+                            Select an id
+                        </option>
+                        {cropIds.map((id) => (
+                            <option key={id} value={id}>
+                                {id}
+                            </option>
+                        ))}
+                    </select>
                     <input
                         type="checkbox"
                         className="checkbox"

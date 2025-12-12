@@ -75,11 +75,9 @@ export const makeHistoryContext = <T, An, Tag extends string = 'type'>(tag: Tag)
                         if (!Array.isArray(v) && (v.op === 'undo' || v.op === 'redo')) {
                             return; // not previewing those
                         }
-                        // console.log('queue a change');
                         ctx.queuedChanges.push(...(asFlat(v) as PendingJsonPatchOp<T>[]));
                         if (ctx.raf == null) {
                             ctx.raf = requestAnimationFrame(() => {
-                                // console.log('hit a thing');
                                 ctx.raf = undefined;
                                 const queue = ctx.queuedChanges;
                                 ctx.queuedChanges = [];
@@ -91,8 +89,12 @@ export const makeHistoryContext = <T, An, Tag extends string = 'type'>(tag: Tag)
                         }
                         return;
                     }
-                    // console.log('normal one');
+
                     ctx.previewState = null;
+                    if (ctx.raf != null) {
+                        cancelAnimationFrame(ctx.raf);
+                        ctx.raf = undefined;
+                    }
 
                     const next = dispatch(ctx.state, v);
                     if (next === ctx.state) return;

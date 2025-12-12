@@ -75,7 +75,7 @@ export const ModsEditor = ({
 }: {
     palette: Color[];
     mods: PMods[];
-    update: Updater<PMods[]>;
+    update: Updater<PMods[]> | Updater<PMods[] | undefined>;
 }) => (
     <div>
         <div className="font-semibold text-sm flex flex-row gap-4 items-center">

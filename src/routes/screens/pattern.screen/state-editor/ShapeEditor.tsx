@@ -9,11 +9,13 @@ export const ShapeEditor = ({
     onChange,
     onHover,
     onDup,
+    onCrop,
 }: {
     shape: BarePath;
     id: string;
     onHover: (v: {type: 'shape'; id: string} | null) => void;
     onChange: (v: BarePath | null) => void;
+    onCrop(): void;
     onDup: (p: Coord) => void;
 }) => {
     const es = usePendingState();
@@ -37,6 +39,9 @@ export const ShapeEditor = ({
                 }
             >
                 Dup
+            </button>
+            <button onClick={onCrop} className="btn">
+                Crop
             </button>
             <button className="btn btn-sm" onClick={() => onChange(null)}>
                 &times;

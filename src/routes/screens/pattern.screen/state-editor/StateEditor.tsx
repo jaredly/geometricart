@@ -114,6 +114,10 @@ export const StateEditor = ({value, update}: StateEditorProps) => {
                                     update.shapes[id](shape);
                                 }
                             }}
+                            onCrop={() => {
+                                const cid = genid();
+                                update.crops[cid].add({id: cid, shape: id});
+                            }}
                             onDup={(pt) => {
                                 const id = genid();
                                 update.shapes[id].add(
@@ -179,19 +183,24 @@ export const StateEditor = ({value, update}: StateEditorProps) => {
 
             <Section
                 title="Crops"
-                actions={
-                    <button
-                        className="btn btn-outline btn-sm"
-                        onClick={() => {
-                            const nextKey = `crop-${crops.length + 1}`;
-                            const next = {...value.crops};
-                            // next[nextKey] = {id: nextKey, shape: defaultCropShape()};
-                            // onChange({...value, crops: next});
-                        }}
-                    >
-                        Add Crop
-                    </button>
-                }
+                // actions={
+                //     <button
+                //         className="btn btn-outline btn-sm"
+                //         onClick={() => {
+                //             const id = genid()
+                //             update.crops[id].add({
+                //                 id,
+                //                 shape:
+                //             })
+                //             // const nextKey = `crop-${crops.length + 1}`;
+                //             // const next = {...value.crops};
+                //             // next[nextKey] = {id: nextKey, shape: defaultCropShape()};
+                //             // onChange({...value, crops: next});
+                //         }}
+                //     >
+                //         Add Crop
+                //     </button>
+                // }
             >
                 <div className="space-y-3">
                     {crops.length === 0 ? (
@@ -215,16 +224,16 @@ export const StateEditor = ({value, update}: StateEditorProps) => {
                                         Remove
                                     </button>
                                 </div>
-                                <JsonEditor
+                                {/* <JsonEditor
                                     label="Segments"
                                     value={crop.shape}
                                     onChange={update.crops[key].shape}
-                                />
-                                {/* <ModsEditor
+                                /> */}
+                                <ModsEditor
                                     palette={value.styleConfig.palette}
                                     mods={crop.mods ?? []}
                                     update={update.crops[key].mods}
-                                /> */}
+                                />
                             </div>
                         </div>
                     ))}

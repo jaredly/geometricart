@@ -4,6 +4,14 @@ so then we can play with it.
 
 Ok next up, we want `preview` type updates.
 
+yay! loving it.
+
+Now I need export.
+
+
+- [x] mod crop edit working
+- [ ] all mods should be disableable.
+
 
 #
 
