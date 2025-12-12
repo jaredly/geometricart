@@ -35,6 +35,34 @@ describe('helper2 single()', () => {
         ]);
     });
 
+    it('wraps a single value when accessing the array branch', () => {
+        const op = builder.single(false).push({name: 'two'});
+
+        const result = resolveAndApply<OneOrMany>({name: 'one'}, op);
+        expect(result.current).toEqual([
+            {name: 'one'},
+            {name: 'two'},
+        ]);
+        expect(result.changes[0].path).toEqual([
+            {type: 'single', isSingle: false},
+            {type: 'key', key: 1},
+        ]);
+    });
+
+    it('treats array access via single(true) as the first element', () => {
+        const op = builder.single(true).name.replace('two');
+
+        const result = resolveAndApply<OneOrMany>([{name: 'one'}, {name: 'three'}], op);
+        expect(result.current).toEqual([
+            {name: 'two'},
+            {name: 'three'},
+        ]);
+        expect(result.changes[0].path).toEqual([
+            {type: 'single', isSingle: true},
+            {type: 'key', key: 'name'},
+        ]);
+    });
+
     it('updates an existing element inside the array branch', () => {
         const op = builder.single(false)[0].name.replace('two');
 
@@ -45,12 +73,5 @@ describe('helper2 single()', () => {
             {type: 'key', key: 0},
             {type: 'key', key: 'name'},
         ]);
-    });
-
-    it('throws when the refinement does not match the actual shape', () => {
-        const op = builder.single(true).name.replace('two');
-        expect(() => resolveAndApply<OneOrMany>([{name: 'one'}], op)).toThrow(
-            'Expected a single value',
-        );
     });
 });
