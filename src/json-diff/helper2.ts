@@ -4,35 +4,38 @@ export type PathSegment =
     | {type: 'key'; key: string | number}
     | {type: 'tag'; key: string; value: string};
 
-type ReplaceAndTestMethodsA<Value> = {
-    replace(value: Value): void;
+type ReplaceAndTestMethodsA<Value, R> = {
+    replace(value: Value): R;
 };
 
 // Only if P is an AddPath<Root, C>
-type AddMethodsA<Value> = {add(value: Value): void};
+type AddMethodsA<Value, R> = {add(value: Value): R};
 
 // Only if P is a RemovablePath<Root, C>
-type RemoveMethodsA = {remove(): void};
+type RemoveMethodsA<R> = {remove(): R};
 
-export type DiffNodeA<Root, Current, Tag extends PropertyKey> = ReplaceAndTestMethodsA<Current> & // operations at this path (unchanged)
-    AddMethodsA<Current> &
-    RemoveMethodsA &
+export type DiffNodeA<Root, Current, Tag extends PropertyKey, R> = ReplaceAndTestMethodsA<
+    Current,
+    R
+> & // operations at this path (unchanged)
+    AddMethodsA<Current, R> &
+    RemoveMethodsA<R> &
     // navigation
     // 🔹 tagged union → must choose an arm via variant()
     (IsTaggedUnion<Current, Tag> extends true
         ? {
               variant<V extends VariantTags<NonNullish<Current>, Tag> & (string | number | symbol)>(
                   tag: V,
-              ): DiffNodeA<Root, VariantOf<NonNullish<Current>, Tag, V>, Tag>;
+              ): DiffNodeA<Root, VariantOf<NonNullish<Current>, Tag, V>, Tag, R>;
           }
         : // 🔹 arrays → index navigation
           NonNullish<Current> extends (infer Elem)[]
           ? {
-                [K in number]: DiffNodeA<Root, Elem, Tag>;
+                [K in number]: DiffNodeA<Root, Elem, Tag, R>;
             } & {
-                push(value: Elem): void;
-                move(from: number, to: number): void;
-                reorder(indices: number[]): void;
+                push(value: Elem): R;
+                move(from: number, to: number): R;
+                reorder(indices: number[]): R;
             }
           : // 🔹 plain objects (including unions that are NOT tagged on Tag)
             NonNullish<Current> extends object
@@ -40,22 +43,27 @@ export type DiffNodeA<Root, Current, Tag extends PropertyKey> = ReplaceAndTestMe
                   [K in KeysOfUnion<NonNullish<Current>> & (string | number)]: DiffNodeA<
                       Root,
                       ValueOfUnion<NonNullish<Current>, K>,
-                      Tag
+                      Tag,
+                      R
                   >;
               } & (string extends keyof NonNullish<Current> // optional: index signatures (Record<string, V>)
                   ? {
-                        [key: string]: DiffNodeA<Root, NonNullish<Current>[string], Tag>;
+                        [key: string]: DiffNodeA<Root, NonNullish<Current>[string], Tag, R>;
                     }
                   : {})
             : {});
 
-export type DiffBuilderA<T, Tag extends PropertyKey = 'type'> = DiffNodeA<T, T, Tag>;
+export type DiffBuilderA<T, Tag extends PropertyKey = 'type', R = void> = DiffNodeA<T, T, Tag, R>;
 
-export function diffBuilderApply<T, Tag extends string = 'type'>(
-    apply: (v: PendingJsonPatchOp<T>) => void,
+export function diffBuilder<T, Tag extends string = 'type'>(tag: Tag) {
+    return diffBuilderApply<T, Tag, PendingJsonPatchOp<T>>((x) => x, tag);
+}
+
+export function diffBuilderApply<T, Tag extends string = 'type', R = void>(
+    apply: (v: PendingJsonPatchOp<T>) => R,
     tag: Tag,
-): DiffBuilderA<T, Tag> {
-    const cache: Record<string, Function> = {};
+): DiffBuilderA<T, Tag, R> {
+    const cache: Record<string, (v: any) => R> = {};
     function makeProxy(path: Array<PathSegment>): any {
         const pathString = JSON.stringify(path);
 
@@ -73,19 +81,19 @@ export function diffBuilderApply<T, Tag extends string = 'type'>(
                 // 🔹 operations
                 if (prop === 'replace') {
                     const k = pathString + '/replace';
-                    if (!cache[k]) cache[k] = (value: any) => apply({op: 'replace', path, value});
+                    if (!cache[k]) cache[k] = (value) => apply({op: 'replace', path, value});
                     return cache[k];
                 }
 
                 if (prop === 'add') {
                     const k = pathString + '/add';
-                    if (!cache[k]) cache[k] = (value: any) => apply({op: 'add', path, value});
+                    if (!cache[k]) cache[k] = (value) => apply({op: 'add', path, value});
                     return cache[k];
                 }
 
                 if (prop === 'push') {
                     const k = pathString + '/push';
-                    if (!cache[k]) cache[k] = (value: any) => apply({op: 'push', path, value});
+                    if (!cache[k]) cache[k] = (value) => apply({op: 'push', path, value});
                     return cache[k];
                 }
 
@@ -110,7 +118,7 @@ export function diffBuilderApply<T, Tag extends string = 'type'>(
 
         return new Proxy({}, handler);
     }
-    return makeProxy([]) as DiffBuilderA<T, Tag>;
+    return makeProxy([]) as DiffBuilderA<T, Tag, R>;
 }
 
 type Path = PathSegment[];

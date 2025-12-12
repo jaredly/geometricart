@@ -66,9 +66,9 @@ export function splitPathToDestination<T, An>(
     {
         let cur = tipId;
         for (let i = 0; i < stepsUp; i++) {
+            up.push(cur);
             const p = parentOf(cur);
             if (!p) throw new Error(`Expected parent while walking up from ${cur}`);
-            up.push(p); // the parent id to move to next
             cur = p;
         }
     }
