@@ -21,6 +21,7 @@ export function VideoExport({
     cropCache: Ctx['cropCache'];
 }) {
     const [video, setVideo] = useState(null as null | number | string);
+    const [exSize, setExSize] = useState(size);
     return (
         <>
             <div className="flex gap-2 items-center">
@@ -29,7 +30,7 @@ export function VideoExport({
                     onClick={() =>
                         recordVideo(
                             state,
-                            size,
+                            exSize,
                             box,
                             patterns,
                             duration,
@@ -41,6 +42,15 @@ export function VideoExport({
                     Record Video
                 </button>
                 <div ref={statusRef} className="w-20 text-right" />
+                <label>
+                    Export size
+                    <input
+                        value={exSize}
+                        onChange={(evt) => setExSize(+evt.target.value)}
+                        type="number"
+                        className="input"
+                    />
+                </label>
                 {/* {typeof video === 'number' ? (
             <input type="range" value={video} onChange={() => {}} min={0} max={1} />
         ) : null} */}

@@ -277,7 +277,7 @@ const PatternExport = ({
     return (
         <ProvideEditState>
             <div className="flex">
-                <RenderExport state={state} patterns={patternCache} />
+                <RenderExport state={state} patterns={patternCache} onChange={setState} />
                 {/* <RenderDebug state={state} patterns={patternCache} /> */}
                 <div className="max-h-250 overflow-auto flex-1">
                     <StateEditor value={state} onChange={setState} />

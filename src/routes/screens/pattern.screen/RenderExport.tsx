@@ -8,7 +8,7 @@ import {sizeBox, useElementZoom} from './useSVGZoom';
 import {VideoExport} from './VideoExport';
 import {useAnimate} from './useAnimate';
 import {useCropCache} from './useCropCache';
-import {BaselineFilterCenterFocus, BaselineZoomInMap} from '../../../icons/Icon';
+import {AddIcon, BaselineFilterCenterFocus, BaselineZoomInMap} from '../../../icons/Icon';
 import {Hover} from './resolveMods';
 import {EditStateUpdate, useEditState} from './editState';
 import {make} from '../../../json-diff/make';
@@ -59,7 +59,15 @@ const renderShapes = (
     ]);
 };
 
-export const RenderExport = ({state, patterns}: {state: State; patterns: Patterns}) => {
+export const RenderExport = ({
+    state,
+    patterns,
+    onChange,
+}: {
+    state: State;
+    patterns: Patterns;
+    onChange: (v: State) => void;
+}) => {
     const [t, setT] = useState(0); // animateeeee
     const animCache = useMemo<AnimCtx['cache']>(() => new Map(), []);
 
@@ -118,6 +126,15 @@ export const RenderExport = ({state, patterns}: {state: State; patterns: Pattern
                             onClick={() => resetZoom()}
                         >
                             <BaselineZoomInMap />
+                        </button>
+                        <button
+                            className="btn btn-square px-2 py-1 bg-base-100"
+                            onClick={() => {
+                                // onChange
+                                onChange({...state, view: {...state.view, box}});
+                            }}
+                        >
+                            <AddIcon />
                         </button>
                         {!(
                             closeEnough(box.y, -box.height / 2) &&
