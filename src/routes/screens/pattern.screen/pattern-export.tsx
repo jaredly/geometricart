@@ -16,6 +16,7 @@ import {unique} from '../../shapesFromSegments';
 import {notNull} from './resolveMods';
 import {RenderDebug} from './RenderDebug';
 import {blankHistory, History} from '../../../json-diff/history';
+import {makeContext} from '../../../json-diff/react';
 // import {example3} from './example3';
 
 const usePromise = <T,>(f: (abort: AbortSignal) => Promise<T>, deps: any[] = []) => {
@@ -277,6 +278,11 @@ const initialEditState: EditState = {
 };
 const initialEditStateHistory = blankHistory(initialEditState);
 
+export const [ProvideExportState, useExportState] = makeContext<
+    State,
+    {type: 'img'; url: string} | {type: 'video'; url: string}
+>('type');
+
 const PatternExport = ({
     initial,
     onSave,
@@ -286,31 +292,54 @@ const PatternExport = ({
     onSave: (s: State) => void;
     initialPatterns: Patterns;
 }) => {
-    const [state, setState] = useState<State>(initial);
-
-    useEffect(() => {
-        if (state !== initial) {
-            console.log('saving', state);
-            onSave(state);
-        }
-    }, [state, initial, onSave]);
-
-    const patternCache = useMemo<Patterns>(() => initialPatterns, [initialPatterns]);
+    const inhi = useMemo(() => blankHistory(initial), [initial]);
 
     return (
-        <ProvideEditState
-            initial={initialEditStateHistory}
+        <ProvideExportState
+            initial={inhi}
             save={(v) => {
-                console.log('want to save', v);
+                console.log('saving a history', v.tip, v.undoTrail);
+                onSave(v.current);
             }}
         >
-            <div className="flex">
-                <RenderExport state={state} patterns={patternCache} onChange={setState} />
-                {/* <RenderDebug state={state} patterns={patternCache} /> */}
-                <div className="max-h-250 overflow-auto flex-1">
-                    <StateEditor value={state} onChange={setState} />
-                </div>
+            <ProvideEditState
+                initial={initialEditStateHistory}
+                save={(v) => {
+                    console.log('want to save', v);
+                }}
+            >
+                <Inner initialPatterns={initialPatterns} />
+            </ProvideEditState>
+        </ProvideExportState>
+    );
+};
+
+const Inner = ({initialPatterns}: {initialPatterns: Patterns}) => {
+    const sctx = useExportState();
+    const state = sctx.use((v) => v);
+    const patternCache = useMemo<Patterns>(() => initialPatterns, [initialPatterns]);
+
+    useEffect(() => {
+        const fn = (evt: KeyboardEvent) => {
+            if (evt.metaKey && evt.key === 'z') {
+                if (evt.shiftKey) {
+                    sctx.redo();
+                } else {
+                    sctx.undo();
+                }
+            }
+        };
+        document.addEventListener('keydown', fn);
+        return () => document.removeEventListener('keydown', fn);
+    }, [sctx]);
+
+    return (
+        <div className="flex">
+            <RenderExport state={state} patterns={patternCache} onChange={sctx.update.replace} />
+            {/* <RenderDebug state={state} patterns={patternCache} /> */}
+            <div className="max-h-250 overflow-auto flex-1">
+                <StateEditor value={state} onChange={sctx.update.replace} />
             </div>
-        </ProvideEditState>
+        </div>
     );
 };

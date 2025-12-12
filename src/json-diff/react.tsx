@@ -49,6 +49,7 @@ export const makeContext = <T, An, Tag extends string = 'type'>(tag: Tag) => {
             return useMemo(() => {
                 const go = (v: {op: 'undo' | 'redo'} | MaybeNested<PendingJsonPatchOp<T>>) => {
                     const next = dispatch(ctx.state, v);
+                    if (next === ctx.state) return;
                     ctx.state = next;
                     ctx.save(next);
                     ctx.listeners.forEach((f) => f());

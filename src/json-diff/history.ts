@@ -60,6 +60,7 @@ type MaybeNested<T> = T | MaybeNested<T>[];
 const randId = () => Math.random().toString(36).slice(2);
 
 function undo<T, An>(state: History<T, An>) {
+    if (state.tip === state.root) return state;
     const node = state.nodes[state.tip];
     return {
         ...state,
