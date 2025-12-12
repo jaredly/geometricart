@@ -9,50 +9,36 @@ import {ChunkEditor} from './ShapeStyleCard';
 import {cmp} from './cmp';
 import {AnimInput} from './AnimInput';
 import {BlurInput} from './BlurInput';
+import {Updater} from '../../../../json-diff/helper2';
 
 export const PatternEditor = ({
     value,
-    onChange,
+    update,
     palette,
 }: {
     palette: Color[];
     value: Pattern;
-    onChange: (next: Pattern) => void;
+    update: Updater<Pattern>;
 }) => {
     return (
         <div className="space-y-3">
             {typeof value.psize === 'number' ? (
-                <NumberField
-                    label="Size"
-                    value={value.psize}
-                    onChange={(v) => onChange({...value, psize: v})}
-                />
+                <NumberField label="Size" value={value.psize} onChange={update.psize} />
             ) : (
-                <CoordField
-                    label="Pattern size"
-                    value={value.psize}
-                    onChange={(psize) => onChange({...value, psize})}
-                />
+                <CoordField label="Pattern size" value={value.psize} onChange={update.psize} />
             )}
-            <ModsEditor
-                mods={value.mods}
-                palette={palette}
-                onChange={(mods) => (mods ? onChange({...value, mods}) : undefined)}
-            />
+            <ModsEditor mods={value.mods} palette={palette} onChange={update.mods} />
             <AdjustmentsEditor
                 adjustments={value.adjustments}
-                onChange={(adjustments) => onChange({...value, adjustments})}
+                onChange={update.adjustments}
                 palette={palette}
             />
             <PatternContentsEditor
                 palette={palette}
                 value={value.contents}
-                onChange={(contents) => onChange({...value, contents})}
+                update={update.contents}
             />
-            <SharedEditor
-                shared={value.shared}
-                onChange={(shared) => onChange({...value, shared})}
-            />
+            <SharedEditor shared={value.shared} onChange={update.shared} />
         </div>
     );
 };

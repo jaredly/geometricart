@@ -4,17 +4,16 @@ import {JsonEditor} from './JsonEditor';
 import {PatternEditor} from './PatternEditor';
 import {GroupEditor} from './GroupEditor';
 import {ExternalLinkIcon} from '../../../../icons/Icon';
+import {Updater} from '../../../../json-diff/helper2';
 
 export const EntityEditor = ({
     palette,
     value,
-    onChange,
-    onRemove,
+    update,
 }: {
     palette: Color[];
     value: Entity;
-    onChange: (next: Entity, nextKey?: string) => void;
-    onRemove: () => void;
+    update: Updater<Entity>;
 }) => {
     const [type, setType] = useState<Entity['type']>(value.type);
 
@@ -38,21 +37,17 @@ export const EntityEditor = ({
                         </a>
                     )}
 
-                    <button className="btn btn-ghost btn-xs text-error" onClick={onRemove}>
+                    <button className="btn btn-ghost btn-xs text-error" onClick={update.remove}>
                         Remove
                     </button>
                 </div>
             </summary>
 
             {value.type === 'Group' ? (
-                <GroupEditor value={value} onChange={(next) => onChange(next)} />
+                <GroupEditor value={value} onChange={update.variant('Group')} />
             ) : null}
             {value.type === 'Pattern' ? (
-                <PatternEditor
-                    palette={palette}
-                    value={value}
-                    onChange={(next) => onChange(next)}
-                />
+                <PatternEditor palette={palette} value={value} update={update.variant('Pattern')} />
             ) : null}
             {value.type === 'Object' ? (
                 <div className="space-y-2">
@@ -77,7 +72,7 @@ export const EntityEditor = ({
                     <JsonEditor
                         label="Style"
                         value={value.style}
-                        onChange={(style) => onChange({...value, style})}
+                        onChange={update.variant('Object').style}
                     />
                 </div>
             ) : null}

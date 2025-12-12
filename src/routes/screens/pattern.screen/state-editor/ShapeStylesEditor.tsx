@@ -3,15 +3,16 @@ import {Color, ShapeStyle} from '../export-types';
 import {ShapeStyleCard} from './ShapeStyleCard';
 import {createShapeStyle} from './createLayerTemplate';
 import {DragToReorderList} from './DragToReorderList';
+import {Updater} from '../../../../json-diff/helper2';
 
 export const ShapeStylesEditor = ({
     styles,
-    onChange,
+    update,
     palette,
 }: {
     palette: Color[];
     styles: Record<string, ShapeStyle>;
-    onChange: (next: Record<string, ShapeStyle>) => void;
+    update: Updater<Record<string, ShapeStyle>>;
 }) => {
     const entries = useMemo(
         () => Object.entries(styles).sort(([, a], [, b]) => a.order - b.order),
@@ -27,15 +28,7 @@ export const ShapeStylesEditor = ({
                     onClick={() => {
                         const id = `style-${entries.length + 1}`;
                         const style = createShapeStyle(id);
-                        // Object.values(styles).forEach((s) => {
-                        //     Object.keys(s.fills).forEach((k) => {
-                        //         style.fills[k] = {id: k, mods: []};
-                        //     });
-                        //     Object.keys(s.lines).forEach((k) => {
-                        //         style.lines[k] = {id: k, mods: []};
-                        //     });
-                        // });
-                        onChange({...styles, [id]: style});
+                        update[id].add(style);
                     }}
                 >
                     Add style
@@ -52,21 +45,14 @@ export const ShapeStylesEditor = ({
                                 key={key + ':' + i}
                                 palette={palette}
                                 value={style}
-                                onChange={(next) => onChange({...styles, [key]: next})}
-                                onRemove={() => {
-                                    const record = {...styles};
-                                    delete record[key];
-                                    onChange(record);
-                                }}
+                                update={update[key]}
+                                onRemove={update[key].remove}
                             />
                         ),
                     }))}
                     onReorder={(prev, next) => {
                         const id = entries[prev][0];
-                        onChange({
-                            ...styles,
-                            [id]: {...styles[id], order: nextOrder(prev, next, entries)},
-                        });
+                        update[id].order(nextOrder(prev, next, entries));
                     }}
                 />
             </div>

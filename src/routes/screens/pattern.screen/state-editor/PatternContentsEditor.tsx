@@ -4,15 +4,16 @@ import {AnimCoordInput} from './AnimCoordInput';
 import {JsonEditor} from './JsonEditor';
 import {NumberField} from './NumberField';
 import {ShapeStylesEditor} from './ShapeStylesEditor';
+import {Updater} from '../../../../json-diff/helper2';
 
 export const PatternContentsEditor = ({
     value,
     palette,
-    onChange,
+    update,
 }: {
     palette: Color[];
     value: PatternContents;
-    onChange: (next: PatternContents) => void;
+    update: Updater<PatternContents>;
 }) => {
     const [type, setType] = useState<PatternContents['type']>(value.type);
 
@@ -25,16 +26,16 @@ export const PatternContentsEditor = ({
         if (nextType === value.type) return;
         switch (nextType) {
             case 'shapes':
-                onChange({type: 'shapes', styles: {}});
+                update({type: 'shapes', styles: {}});
                 break;
             case 'weave':
-                onChange({type: 'weave', orderings: {}, styles: {}});
+                update({type: 'weave', orderings: {}, styles: {}});
                 break;
             case 'lines':
-                onChange({type: 'lines', styles: {}});
+                update({type: 'lines', styles: {}});
                 break;
             case 'layers':
-                onChange({type: 'layers', origin: {x: 0, y: 0}, reverse: false, styles: {}});
+                update({type: 'layers', origin: {x: 0, y: 0}, reverse: false, styles: {}});
                 break;
         }
     };
@@ -60,7 +61,7 @@ export const PatternContentsEditor = ({
                         label="Origin"
                         value={value.origin}
                         onChange={(origin: AnimatableCoord | undefined | null) =>
-                            origin != null ? onChange({...value, origin}) : undefined
+                            origin != null ? update.variant('layers').origin(origin) : undefined
                         }
                     />
                     <label className="label cursor-pointer gap-2">
@@ -69,7 +70,7 @@ export const PatternContentsEditor = ({
                             className="checkbox"
                             type="checkbox"
                             checked={!!value.reverse}
-                            onChange={(evt) => onChange({...value, reverse: evt.target.checked})}
+                            onChange={(evt) => update.variant('layers').reverse(evt.target.checked)}
                         />
                     </label>
                     {/* <JsonEditor
@@ -89,21 +90,17 @@ export const PatternContentsEditor = ({
                     <NumberField
                         label="Flip"
                         value={value.flip ?? 0}
-                        onChange={(flip) => onChange({...value, flip})}
+                        onChange={update.variant('weave').flip}
                     />
                     <JsonEditor
                         label="Orderings"
                         value={value.orderings}
-                        onChange={(orderings) =>
-                            onChange({...value, orderings: orderings as Record<string, number[]>})
-                        }
+                        onChange={update.variant('weave').orderings}
                     />
                     <JsonEditor
                         label="Styles"
                         value={value.styles}
-                        onChange={(styles) =>
-                            onChange({...value, styles: styles as typeof value.styles})
-                        }
+                        onChange={update.variant('weave').styles}
                     />
                 </div>
             ) : null}
@@ -111,24 +108,14 @@ export const PatternContentsEditor = ({
                 <ShapeStylesEditor
                     palette={palette}
                     styles={value.styles}
-                    onChange={(styles) =>
-                        onChange({
-                            ...value,
-                            styles,
-                        })
-                    }
+                    update={update.variant('shapes').styles}
                 />
             ) : null}
             {value.type === 'lines' ? (
                 <JsonEditor
                     label="Styles"
                     value={value.styles}
-                    onChange={(styles) =>
-                        onChange({
-                            ...value,
-                            styles: styles as typeof value.styles,
-                        })
-                    }
+                    onChange={update.variant('lines').styles}
                 />
             ) : null}
         </div>

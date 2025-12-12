@@ -15,13 +15,15 @@ import {BoxField} from './BoxField';
 import {PaletteEditor} from './PaletteEditor';
 import {LayerEditor} from './LayerEditor';
 import {createLayerTemplate, parseAnimatable} from './createLayerTemplate';
+import {Updater} from '../../../../json-diff/helper2';
+import {ModsEditor} from './FillEditor';
 
 type StateEditorProps = {
     value: State;
-    onChange: (next: State) => void;
+    update: Updater<State>;
 };
 
-export const StateEditor = ({value, onChange}: StateEditorProps) => {
+export const StateEditor = ({value, update}: StateEditorProps) => {
     const layers = useMemo(
         () => Object.entries(value.layers).sort(([, a], [, b]) => a.order - b.order),
         [value.layers],
@@ -48,11 +50,7 @@ export const StateEditor = ({value, onChange}: StateEditorProps) => {
                         className="btn btn-outline btn-sm"
                         onClick={() => {
                             const nextId = `layer-${layers.length + 1}`;
-                            const nextLayers = {
-                                ...value.layers,
-                                [nextId]: createLayerTemplate(nextId),
-                            };
-                            onChange({...value, layers: nextLayers});
+                            update.layers[nextId].add(createLayerTemplate(nextId));
                         }}
                     >
                         Add Layer
@@ -68,17 +66,7 @@ export const StateEditor = ({value, onChange}: StateEditorProps) => {
                             palette={value.styleConfig.palette}
                             key={key}
                             layer={layer}
-                            onChange={(nextLayer) => {
-                                const nextLayers = {...value.layers};
-                                delete nextLayers[key];
-                                nextLayers[key] = nextLayer;
-                                onChange({...value, layers: nextLayers});
-                            }}
-                            onRemove={() => {
-                                const nextLayers = {...value.layers};
-                                delete nextLayers[key];
-                                onChange({...value, layers: nextLayers});
-                            }}
+                            update={update.layers[key]}
                         />
                     ))}
                 </div>
@@ -97,18 +85,10 @@ export const StateEditor = ({value, onChange}: StateEditorProps) => {
                                 type: 'shape',
                                 onDone(points, open) {
                                     const nextId = genid();
-                                    onChange({
-                                        ...value,
-                                        shapes: {
-                                            ...value.shapes,
-                                            [nextId]: {
-                                                origin: points[0],
-                                                segments: points
-                                                    .slice(1)
-                                                    .map((to) => ({type: 'Line', to})),
-                                                open,
-                                            },
-                                        },
+                                    update.shapes[nextId].add({
+                                        origin: points[0],
+                                        segments: points.slice(1).map((to) => ({type: 'Line', to})),
+                                        open,
                                     });
                                 },
                                 points: [],
@@ -127,22 +107,21 @@ export const StateEditor = ({value, onChange}: StateEditorProps) => {
                             onChange={(shape) => {
                                 const shapes = {...value.shapes};
                                 if (shape == null) {
-                                    delete shapes[id];
+                                    update.shapes[id].remove();
                                 } else {
-                                    shapes[id] = shape;
+                                    update.shapes[id](shape);
                                 }
-                                onChange({...value, shapes});
                             }}
                             onDup={(pt) => {
-                                const shapes = {...latest.current.shapes};
                                 const id = genid();
-                                shapes[id] = transformBarePath(shape, [
-                                    translationMatrix({
-                                        x: pt.x - shape.origin.x,
-                                        y: pt.y - shape.origin.y,
-                                    }),
-                                ]);
-                                onChange({...latest.current, shapes});
+                                update.shapes[id].add(
+                                    transformBarePath(shape, [
+                                        translationMatrix({
+                                            x: pt.x - shape.origin.x,
+                                            y: pt.y - shape.origin.y,
+                                        }),
+                                    ]),
+                                );
                             }}
                             onHover={onHover}
                         />
@@ -161,25 +140,16 @@ export const StateEditor = ({value, onChange}: StateEditorProps) => {
                         <NumberField
                             label="PPI"
                             value={value.view.ppi}
-                            onChange={(ppi) => onChange({...value, view: {...value.view, ppi}})}
+                            onChange={update.view.ppi}
                         />
                         <AnimColor
                             label="Background"
                             value={value.view.background}
                             palette={value.styleConfig.palette}
-                            onChange={(background) =>
-                                onChange({
-                                    ...value,
-                                    view: {...value.view, background: background || undefined},
-                                })
-                            }
+                            onChange={update.view.background}
                         />
                     </div>
-                    <BoxField
-                        label="View Box"
-                        value={value.view.box}
-                        onChange={(box) => onChange({...value, view: {...value.view, box}})}
-                    />
+                    <BoxField label="View Box" value={value.view.box} onChange={update.view.box} />
                 </div>
             </Section>
 
@@ -189,21 +159,11 @@ export const StateEditor = ({value, onChange}: StateEditorProps) => {
                         <TextField
                             label="Seed"
                             value={String(value.styleConfig.seed)}
-                            onChange={(seed) =>
-                                onChange({
-                                    ...value,
-                                    styleConfig: {
-                                        ...value.styleConfig,
-                                        seed: parseAnimatable(seed),
-                                    },
-                                })
-                            }
+                            onChange={(seed) => update.styleConfig.seed(parseAnimatable(seed))}
                         />
                         <PaletteEditor
                             palette={value.styleConfig.palette}
-                            onChange={(palette) =>
-                                onChange({...value, styleConfig: {...value.styleConfig, palette}})
-                            }
+                            onChange={update.styleConfig.palette}
                         />
                     </div>
                     {/* <ClocksEditor
@@ -242,24 +202,12 @@ export const StateEditor = ({value, onChange}: StateEditorProps) => {
                         >
                             <div className="card-body space-y-3">
                                 <div className="flex flex-col gap-2 md:flex-row md:items-center">
-                                    <TextField
-                                        label="Id"
-                                        value={key}
-                                        onChange={(nextKey) => {
-                                            if (!nextKey) return;
-                                            const next = {...value.crops};
-                                            delete next[key];
-                                            next[nextKey] = {...crop};
-                                            onChange({...value, crops: next});
-                                        }}
-                                    />
+                                    <span>{key}</span>
                                     <div className="flex-1" />
                                     <button
                                         className="btn btn-ghost btn-sm text-error"
                                         onClick={() => {
-                                            const next = {...value.crops};
-                                            delete next[key];
-                                            onChange({...value, crops: next});
+                                            update.crops[key].remove();
                                         }}
                                     >
                                         Remove
@@ -268,22 +216,13 @@ export const StateEditor = ({value, onChange}: StateEditorProps) => {
                                 <JsonEditor
                                     label="Segments"
                                     value={crop.shape}
-                                    onChange={(shape) =>
-                                        onChange({
-                                            ...value,
-                                            crops: {...value.crops, [key]: {...crop, shape}},
-                                        })
-                                    }
+                                    onChange={update.crops[key].shape}
                                 />
-                                {/* <ModsEditor
-                                    value={crop.mods}
-                                    onChange={(mods) =>
-                                        onChange({
-                                            ...value,
-                                            crops: {...value.crops, [key]: {...crop, mods}},
-                                        })
-                                    }
-                                /> */}
+                                <ModsEditor
+                                    palette={value.styleConfig.palette}
+                                    mods={crop.mods ?? []}
+                                    onChange={update.crops[key].mods}
+                                />
                             </div>
                         </div>
                     ))}
@@ -292,15 +231,7 @@ export const StateEditor = ({value, onChange}: StateEditorProps) => {
             <Section title="Timelines">
                 <TimelineEditor
                     timeline={value.styleConfig.timeline}
-                    onChange={(timeline) => {
-                        onChange({
-                            ...value,
-                            styleConfig: {
-                                ...value.styleConfig,
-                                timeline,
-                            },
-                        });
-                    }}
+                    onChange={update.styleConfig.timeline}
                 />
             </Section>
         </div>

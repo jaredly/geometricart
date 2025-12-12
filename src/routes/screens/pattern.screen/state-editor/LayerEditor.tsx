@@ -6,17 +6,16 @@ import {parseAnimatable, createGroup, createPattern} from './createLayerTemplate
 import {EntityEditor} from './EntityEditor';
 import {TextField} from './TextField';
 import {SharedEditor} from './PatternEditor';
+import {Updater} from '../../../../json-diff/helper2';
 
 export const LayerEditor = ({
     layer,
-    onChange,
-    onRemove,
+    update,
     palette,
 }: {
     palette: Color[];
     layer: Layer;
-    onChange: (next: Layer, nextKey?: string) => void;
-    onRemove: () => void;
+    update: Updater<Layer>;
 }) => {
     const entries = useMemo(() => Object.entries(layer.entities), [layer.entities]);
 
@@ -24,35 +23,22 @@ export const LayerEditor = ({
         <div className="bg-base-200 border border-base-300 shadow-sm">
             <div className="space-y-3 p-4">
                 <div className="flex flex-col md:flex-row gap-2 md:items-center">
-                    <NumberField
-                        label="Order"
-                        value={layer.order}
-                        onChange={(order) => onChange({...layer, order})}
-                    />
+                    <NumberField label="Order" value={layer.order} onChange={update.order} />
                     <TextField
                         label="Opacity"
                         value={String(layer.opacity)}
-                        onChange={(opacity) =>
-                            onChange({...layer, opacity: parseAnimatable(opacity)})
-                        }
+                        onChange={(opacity) => update.opacity(parseAnimatable(opacity))}
                     />
                     <div className="flex-1" />
-                    <button className="btn btn-ghost btn-sm text-error" onClick={onRemove}>
+                    <button className="btn btn-ghost btn-sm text-error" onClick={update.remove}>
                         Remove
                     </button>
                 </div>
 
-                <SharedEditor
-                    shared={layer.shared}
-                    onChange={(shared) => onChange({...layer, shared})}
-                />
+                <SharedEditor shared={layer.shared} onChange={update.shared} />
 
                 <div className="flex flex-col gap-4">
-                    <JsonEditor
-                        label="Guides"
-                        value={layer.guides}
-                        onChange={(guides) => onChange({...layer, guides})}
-                    />
+                    <JsonEditor label="Guides" value={layer.guides} onChange={update.guides} />
                     <div className="space-y-2">
                         <div className="flex items-center justify-between">
                             <div className="font-semibold text-sm">Entities</div>
@@ -61,13 +47,7 @@ export const LayerEditor = ({
                                     className="btn btn-outline btn-xs"
                                     onClick={() => {
                                         const id = `entity-${entries.length + 1}`;
-                                        onChange({
-                                            ...layer,
-                                            entities: {
-                                                ...layer.entities,
-                                                [id]: createGroup(id),
-                                            },
-                                        });
+                                        update.entities[id].add(createGroup(id));
                                     }}
                                 >
                                     Add group
@@ -76,13 +56,7 @@ export const LayerEditor = ({
                                     className="btn btn-outline btn-xs"
                                     onClick={() => {
                                         const id = `pattern-${entries.length + 1}`;
-                                        onChange({
-                                            ...layer,
-                                            entities: {
-                                                ...layer.entities,
-                                                [id]: createPattern(id),
-                                            },
-                                        });
+                                        update.entities[id].add(createPattern(id));
                                     }}
                                 >
                                     Add pattern
@@ -98,17 +72,7 @@ export const LayerEditor = ({
                                     palette={palette}
                                     key={entityKey}
                                     value={entity}
-                                    onChange={(next, nextKey) => {
-                                        const entities = {...layer.entities};
-                                        delete entities[entityKey];
-                                        entities[nextKey ?? entityKey] = next;
-                                        onChange({...layer, entities});
-                                    }}
-                                    onRemove={() => {
-                                        const entities = {...layer.entities};
-                                        delete entities[entityKey];
-                                        onChange({...layer, entities});
-                                    }}
+                                    update={update.entities[entityKey]}
                                 />
                             ))}
                         </div>

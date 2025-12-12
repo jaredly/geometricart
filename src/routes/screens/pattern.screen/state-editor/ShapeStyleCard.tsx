@@ -19,6 +19,7 @@ import {
 import {HandleProps} from './DragToReorderList';
 import {shapeD} from '../../../shapeD';
 import {Coord} from '../../../../types';
+import {Updater} from '../../../../json-diff/helper2';
 
 const showEase = (ease?: string) => {
     const f = easeFn(ease ?? '');
@@ -139,7 +140,7 @@ export const ChunkEditor = ({
 
 export const ShapeStyleCard = ({
     value,
-    onChange,
+    update,
     onRemove,
     palette,
     handleProps,
@@ -147,7 +148,7 @@ export const ShapeStyleCard = ({
     palette: Color[];
     handleProps: HandleProps;
     value: ShapeStyle;
-    onChange: (next: ShapeStyle) => void;
+    update: Updater<ShapeStyle>;
     onRemove: () => void;
 }) => {
     const [show, setShow] = useState(false);
@@ -173,13 +174,13 @@ export const ShapeStyleCard = ({
                             <DragMove2Fill />
                         </button>
 
-                        <ChunkEditor chunk={value.t} onChange={(t) => onChange({...value, t})} />
+                        <ChunkEditor chunk={value.t} onChange={update.t} />
                         <div className="flex-1" />
                         <button
                             className="btn btn-square btn-sm"
                             onClick={(evt) => {
                                 evt.stopPropagation();
-                                onChange({...value, disabled: !value.disabled});
+                                update.disabled.replace(!value.disabled);
                             }}
                         >
                             {value.disabled ? <EyeInvisibleIcon color="gray" /> : <EyeIcon />}
@@ -194,10 +195,7 @@ export const ShapeStyleCard = ({
                             Remove
                         </button>
                     </div>
-                    <KindOrKinds
-                        value={value.kind}
-                        onChange={(kind) => onChange({...value, kind})}
-                    />
+                    <KindOrKinds value={value.kind} update={update.kind} />
                 </div>
                 <button className="btn w-full btn-xs" onClick={() => setShow(!show)}>
                     {show ? <ChevronUp12 /> : <DotsHorizontalOutline />}
@@ -217,7 +215,7 @@ export const ShapeStyleCard = ({
                                     palette={palette}
                                 />
                             )}
-                            onChange={(fills) => onChange({...value, fills})}
+                            onChange={update.fills}
                         />
                         <SubStyleList
                             label="Lines"
@@ -232,7 +230,7 @@ export const ShapeStyleCard = ({
                                     onRemove={remove}
                                 />
                             )}
-                            onChange={(lines) => onChange({...value, lines})}
+                            onChange={update.lines}
                         />
                     </div>
                 )}
@@ -244,10 +242,11 @@ export const ShapeStyleCard = ({
 
 const KindOrKinds = ({
     value,
-    onChange,
+    update,
 }: {
     value: ShapeKind | ShapeKind[];
-    onChange: (next: ShapeKind | ShapeKind[]) => void;
+    // onChange: (next: ShapeKind | ShapeKind[]) => void;
+    update: Updater<ShapeKind | ShapeKind[]>;
 }) => {
     const kinds = Array.isArray(value) ? value : [value];
     return (
@@ -258,25 +257,14 @@ const KindOrKinds = ({
                     onClick={() => {
                         const res = kinds.slice();
                         res.push({type: 'everything'});
-                        onChange(res);
+                        update.single(false).push({type: 'everything'});
                     }}
                     className="btn btn-square"
                 >
                     <AddIcon />
                 </button>
                 {kinds.length >= 1 ? (
-                    <BaseKindEditor
-                        value={kinds[0]}
-                        onChange={(kind) => {
-                            if (kinds.length === 1) {
-                                onChange(kind);
-                            } else {
-                                const res = kinds.slice();
-                                res[0] = kind;
-                                onChange(res);
-                            }
-                        }}
-                    />
+                    <BaseKindEditor value={kinds[0]} update={update.single(true)} />
                 ) : null}
             </div>
             {kinds.slice(1).map((kind, i) => {
@@ -284,22 +272,13 @@ const KindOrKinds = ({
                     <div key={i}>
                         <button
                             onClick={() => {
-                                const res = kinds.slice();
-                                res.splice(i + 1, 1);
-                                onChange(res);
+                                update.single(false)[i + 1].remove();
                             }}
                             className="btn btn-square text-red-400"
                         >
                             &times;
                         </button>
-                        <BaseKindEditor
-                            value={kind}
-                            onChange={(kind) => {
-                                const res = kinds.slice();
-                                res[i + 1] = kind;
-                                onChange(res);
-                            }}
-                        />
+                        <BaseKindEditor value={kind} update={update.single(false)[i + 1]} />
                     </div>
                 );
             })}

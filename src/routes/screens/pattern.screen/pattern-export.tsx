@@ -304,7 +304,7 @@ const PatternExport = ({
         <ProvideExportState
             initial={inhi}
             save={(v) => {
-                console.log('saving a history', v.tip, v.undoTrail);
+                console.log('saving a history', v);
                 onSave(v.current);
             }}
         >
@@ -356,7 +356,7 @@ const Inner = ({initialPatterns}: {initialPatterns: Patterns}) => {
             <RenderExport state={state} patterns={patternCache} onChange={sctx.update.replace} />
             {/* <RenderDebug state={state} patterns={patternCache} /> */}
             <div className="max-h-250 overflow-auto flex-1">
-                <StateEditor value={state} onChange={sctx.update.replace} />
+                <StateEditor value={state} update={sctx.update} />
             </div>
         </div>
     );
