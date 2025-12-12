@@ -6,6 +6,7 @@ type Item = {name: string};
 type OneOrMany = Item | Item[];
 
 const builder = diffBuilder<OneOrMany>('type');
+const moveBuilder = diffBuilder<{items: string[]; map: Record<string, number>}>('type');
 
 describe('helper2 single()', () => {
     it('refines to the single branch and updates nested keys', () => {
@@ -25,10 +26,7 @@ describe('helper2 single()', () => {
         const op = builder.single(false).push({name: 'two'});
 
         const result = resolveAndApply<OneOrMany>([{name: 'one'}], op);
-        expect(result.current).toEqual([
-            {name: 'one'},
-            {name: 'two'},
-        ]);
+        expect(result.current).toEqual([{name: 'one'}, {name: 'two'}]);
         expect(result.changes[0].path).toEqual([
             {type: 'single', isSingle: false},
             {type: 'key', key: 1},
@@ -39,10 +37,7 @@ describe('helper2 single()', () => {
         const op = builder.single(false).push({name: 'two'});
 
         const result = resolveAndApply<OneOrMany>({name: 'one'}, op);
-        expect(result.current).toEqual([
-            {name: 'one'},
-            {name: 'two'},
-        ]);
+        expect(result.current).toEqual([{name: 'one'}, {name: 'two'}]);
         expect(result.changes[0].path).toEqual([
             {type: 'single', isSingle: false},
             {type: 'key', key: 1},
@@ -53,10 +48,7 @@ describe('helper2 single()', () => {
         const op = builder.single(true).name.replace('two');
 
         const result = resolveAndApply<OneOrMany>([{name: 'one'}, {name: 'three'}], op);
-        expect(result.current).toEqual([
-            {name: 'two'},
-            {name: 'three'},
-        ]);
+        expect(result.current).toEqual([{name: 'two'}, {name: 'three'}]);
         expect(result.changes[0].path).toEqual([
             {type: 'single', isSingle: true},
             {type: 'key', key: 'name'},
@@ -73,5 +65,49 @@ describe('helper2 single()', () => {
             {type: 'key', key: 0},
             {type: 'key', key: 'name'},
         ]);
+    });
+});
+
+describe('helper2 move()', () => {
+    it('reorders array items', () => {
+        const op = moveBuilder.items.move(0, 2);
+
+        expect(op).toMatchObject({
+            from: [
+                {type: 'key', key: 'items'},
+                {type: 'key', key: 0},
+            ],
+        });
+        expect(op.path).toEqual([
+            {type: 'key', key: 'items'},
+            {type: 'key', key: 2},
+        ]);
+
+        const result = resolveAndApply<{items: string[]; map: Record<string, number>}>(
+            {items: ['a', 'b', 'c'], map: {a: 1, b: 2}},
+            op,
+        );
+        expect(result.current.items).toEqual(['b', 'c', 'a']);
+    });
+
+    it('moves object keys', () => {
+        const op = moveBuilder.map.move('a', 'c');
+
+        const result = resolveAndApply<{items: string[]; map: Record<string, number>}>(
+            {items: [], map: {a: 1, b: 2}},
+            op,
+        );
+        expect(result.current.map).toEqual({b: 2, c: 1});
+        expect(result.changes[0]).toMatchObject({
+            op: 'move',
+            from: [
+                {type: 'key', key: 'map'},
+                {type: 'key', key: 'a'},
+            ],
+            path: [
+                {type: 'key', key: 'map'},
+                {type: 'key', key: 'c'},
+            ],
+        });
     });
 });

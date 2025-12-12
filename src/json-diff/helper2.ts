@@ -62,7 +62,7 @@ export type DiffNodeA<Root, Current, Tag extends PropertyKey, R> = AddMethodsA<C
                 [K in number]: DiffNodeA<Root, Elem, Tag, R>;
             } & {
                 push(value: Elem): R;
-                move(from: number, to: number): R;
+                move(from: string | number, to: string | number): R;
                 reorder(indices: number[]): R;
             }
           : // 🔹 plain objects (including unions that are NOT tagged on Tag)
@@ -74,11 +74,13 @@ export type DiffNodeA<Root, Current, Tag extends PropertyKey, R> = AddMethodsA<C
                       Tag,
                       R
                   >;
+              } & {
+                  move(from: string | number, to: string | number): R;
               } & (string extends keyof NonNullish<Current> // optional: index signatures (Record<string, V>)
-                  ? {
-                        [key: string]: DiffNodeA<Root, NonNullish<Current>[string], Tag, R>;
-                    }
-                  : {})
+                      ? {
+                            [key: string]: DiffNodeA<Root, NonNullish<Current>[string], Tag, R>;
+                        }
+                      : {})
             : {});
 
 export type DiffBuilderA<T, Tag extends PropertyKey = 'type', R = void> = DiffNodeA<T, T, Tag, R>;
@@ -91,7 +93,7 @@ export function diffBuilderApply<T, Tag extends string = 'type', R = void>(
     apply: (v: PendingJsonPatchOp<T>) => R,
     tag: Tag,
 ): DiffBuilderA<T, Tag, R> {
-    const cache: Record<string, (v: any) => R> = {};
+    const cache: Record<string, (v: any, b: any) => R> = {};
     const proxyCache: Record<string, any> = {};
     const ghost = {} as {_t: T}; // a phantom type kinda thing
     function makeProxy(path: Array<PathSegment>): any {
@@ -137,6 +139,24 @@ export function diffBuilderApply<T, Tag extends string = 'type', R = void>(
                 if (prop === 'add') {
                     const k = pathString + '/add';
                     if (!cache[k]) cache[k] = (value) => apply({op: 'add', path, value, ...ghost});
+                    return cache[k];
+                }
+
+                if (prop === 'move') {
+                    const k = pathString + '/move';
+                    if (!cache[k])
+                        cache[k] = (from: string | number, to: string | number) => {
+                            const normalize = (v: string | number) =>
+                                typeof v === 'string' && /^\d+$/.test(v) ? Number(v) : v;
+                            const fromKey = normalize(from);
+                            const toKey = normalize(to);
+                            return apply({
+                                op: 'move',
+                                from: [...path, {type: 'key', key: fromKey}],
+                                path: [...path, {type: 'key', key: toKey}],
+                                ...ghost,
+                            } as any);
+                        };
                     return cache[k];
                 }
 

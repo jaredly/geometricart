@@ -44,8 +44,7 @@ export const SubStyleList = <T extends {id: string}>({
                 {entries.map(([key, value]) => (
                     <div key={key} className="rounded border border-base-300 p-2">
                         {render(key, value, update[key], (newKey) => {
-                            // update.move(key, newKey),
-                            throw new Error('nopes');
+                            update.move(key, newKey);
                         })}
                     </div>
                 ))}
