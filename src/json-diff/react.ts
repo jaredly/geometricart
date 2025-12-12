@@ -1,6 +1,6 @@
 import {useCallback, useState} from 'react';
 import {redo, State, undo, update} from './state';
-import {JsonPatchOp} from './types';
+import {JsonPatchOp} from './helper2';
 
 type MaybeNested<T> = T | MaybeNested<T>[];
 

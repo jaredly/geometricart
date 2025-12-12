@@ -1,21 +1,17 @@
 import {useMemo, useRef, useState} from 'react';
+import {AddIcon, BaselineFilterCenterFocus, BaselineZoomInMap} from '../../../icons/Icon';
+import {closeEnough} from '../../../rendering/epsilonToZero';
 import {Coord} from '../../../types';
-import {a, AnimCtx, Patterns, RenderItem} from './evaluate';
-import {Color, colorToRgb, State} from './export-types';
-import {svgItems} from './resolveMods';
-import {Canvas, SVGCanvas} from './SVGCanvas';
-import {sizeBox, useElementZoom} from './useSVGZoom';
-import {VideoExport} from './VideoExport';
+import {parseColor} from './colors';
+import {EditStateUpdate, useEditState} from './editState';
+import {AnimCtx, Patterns, RenderItem} from './evaluate';
+import {colorToRgb, State} from './export-types';
+import {Hover, svgItems} from './resolveMods';
+import {SVGCanvas} from './SVGCanvas';
 import {useAnimate} from './useAnimate';
 import {useCropCache} from './useCropCache';
-import {AddIcon, BaselineFilterCenterFocus, BaselineZoomInMap} from '../../../icons/Icon';
-import {Hover} from './resolveMods';
-import {EditStateUpdate, useEditState} from './editState';
-import {make} from '../../../json-diff/make';
-import {coordsFromBarePath} from '../../getPatternData';
-import {parseColor} from './colors';
-import {closeEnough} from '../../../rendering/epsilonToZero';
-import {BlurInt} from '../../../editor/Forms';
+import {useElementZoom} from './useSVGZoom';
+import {VideoExport} from './VideoExport';
 
 const renderShapes = (
     shapes: State['shapes'],

@@ -300,7 +300,7 @@ export const matchKind = (
         case 'everything':
             return {x: 0, y: 0};
         case 'alternating':
-            return color === k.index ? {x: 0, y: 0} : null;
+            return color === k.index ? {x: 0, y: 0} : false;
         case 'explicit':
             return k.ids[i];
         case 'shape':

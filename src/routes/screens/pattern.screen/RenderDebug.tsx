@@ -1,26 +1,19 @@
 import {useMemo, useRef, useState} from 'react';
-import {BarePath, Coord} from '../../../types';
-import {a, AnimCtx, Patterns, RenderItem} from './evaluate';
-import {Color, colorToRgb, State} from './export-types';
-import {barePathFromCoords, LogItem, RenderLog, svgItems} from './resolveMods';
-import {Canvas, SVGCanvas} from './SVGCanvas';
-import {sizeBox, useElementZoom} from './useSVGZoom';
-import {VideoExport} from './VideoExport';
-import {useAnimate} from './useAnimate';
-import {useCropCache} from './useCropCache';
 import {
     BaselineFilterCenterFocus,
     BaselineZoomInMap,
     CheckboxChecked,
     CheckboxUnchecked,
 } from '../../../icons/Icon';
-import {Hover} from './resolveMods';
-import {EditStateUpdate, useEditState} from './editState';
-import {make} from '../../../json-diff/make';
-import {coordsFromBarePath} from '../../getPatternData';
-import {parseColor} from './colors';
 import {closeEnough} from '../../../rendering/epsilonToZero';
 import {push} from '../../../rendering/getMirrorTransforms';
+import {BarePath, Coord} from '../../../types';
+import {AnimCtx, Patterns, RenderItem} from './evaluate';
+import {State} from './export-types';
+import {LogItem, RenderLog, svgItems} from './resolveMods';
+import {SVGCanvas} from './SVGCanvas';
+import {useCropCache} from './useCropCache';
+import {useElementZoom} from './useSVGZoom';
 
 const allItems = (log: RenderLog): LogItem[] => {
     if (log.type === 'items') return log.items.flatMap((l) => l.item);

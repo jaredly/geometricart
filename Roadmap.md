@@ -1,4 +1,38 @@
 
+soooooanyway
+shall we do some undo/redo?
+
+something to think about:
+- IF editState has history, I want undo/redo to go there.
+- when main state gets a new history item, I want to clear editState history.
+- if you undo all the way through editState and then undo the main state ... I guess we don't need to clear editState necessarily.
+
+ANOTHER CONSIDERATION
+
+The nature of incremental exploration is such that I would want to "checkpoint" various states,
+with thumbnails. These should be loadable .... and like ... represent forks of history? maybe?
+
+Let's talk about a history tree.
+because I do think that's what I want.
+And I want to be able to visualize it, really well.
+
+"If you pause for more than ... 1 minute ... we automatically take a thumbnail."
+-> if animations make any difference, we'll take 5 thumbnails
+  -> lol ok so mp4 it is I guess. yeah we'll save a li'l video for ya
+
+Yeah I think I'll want a state-level checkbox that's like "enable animation"
+which is how I'll decide to even show the "animation" slider, or the "video export" thing.
+
+BTW I still need an image export (png / svg) as well.
+anddd I want to be able to handle 3d as well.
+
+ok but one thing at a time.
+
+I need a history format that works for trees.
+
+
+
+
 Make a shape style that is "within [these shapes]"
 with a shared variable called `shapeCenter`
 
