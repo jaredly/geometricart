@@ -81,6 +81,9 @@ export const makeContext = <T, An, Tag extends string = 'type'>(tag: Tag) => {
                     latest() {
                         return ctx.state.current;
                     },
+                    clearHistory() {
+                        ctx.state = clearHistory(ctx.state);
+                    },
                     undo() {
                         go({op: 'undo'});
                     },
@@ -94,3 +97,10 @@ export const makeContext = <T, An, Tag extends string = 'type'>(tag: Tag) => {
         },
     ] as const;
 };
+
+const clearHistory = <T, An>(h: History<T, An>): History<T, An> => ({
+    ...h,
+    initial: h.current,
+    tip: h.root,
+    nodes: {[h.root]: h.nodes[h.root]},
+});

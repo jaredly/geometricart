@@ -275,7 +275,7 @@ const initialEditState: EditState = {
     pending: null,
     showShapes: false,
 };
-// const initialEditStateHistory: History<EditState, never> = ;
+const initialEditStateHistory = blankHistory(initialEditState);
 
 const PatternExport = ({
     initial,
@@ -296,12 +296,6 @@ const PatternExport = ({
     }, [state, initial, onSave]);
 
     const patternCache = useMemo<Patterns>(() => initialPatterns, [initialPatterns]);
-
-    const initialEditStateHistory = useMemo(
-        // no-op usage to appease biome
-        () => state && blankHistory(initialEditState),
-        [state],
-    );
 
     return (
         <ProvideEditState
