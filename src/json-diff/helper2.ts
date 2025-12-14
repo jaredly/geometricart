@@ -17,31 +17,37 @@ type AddMethodsA<Value, R> = {add(value: Value, when?: ApplyTiming): R};
 // Only if P is a RemovablePath<Root, C>
 type RemoveMethodsA<R> = {remove(when?: ApplyTiming | React.MouseEvent): R};
 
-export type Updater<Current, Tag extends PropertyKey = 'type'> = DiffNodeA<
+export type Updater<Current, Tag extends PropertyKey = 'type', Extra = unknown> = DiffNodeA<
     unknown,
     Current,
     Tag,
-    void
+    void,
+    Extra
 >;
 
-type OpMaker<Value, Tag extends PropertyKey> = (
+type OpMaker<Value, Tag extends PropertyKey, Extra> = (
     v: Value,
-    update: DiffNodeA<Value, Value, Tag, PendingJsonPatchOp<Value>>,
-) => PendingJsonPatchOp<Value> | PendingJsonPatchOp<Value>[];
+    update: DiffNodeA<Value, Value, Tag, PendingJsonPatchOp<Value, Tag, Extra>, Extra>,
+) => PendingJsonPatchOp<Value, Tag, Extra> | PendingJsonPatchOp<Value, Tag, Extra>[];
 
-type UpdateFunction<Value, Tag extends PropertyKey, R> = (
-    opMaker: Value | OpMaker<Value, Tag>,
+type UpdateFunction<Value, Tag extends PropertyKey, R, Extra> = (
+    opMaker: Value | OpMaker<Value, Tag, Extra>,
     when?: ApplyTiming,
 ) => R;
 
-const getPathSymbol = Symbol('hi');
+const getPathSymbol = Symbol('get path');
+const getExtraSymbol = Symbol('get extra');
 
-export type DiffNodeA<Root, Current, Tag extends PropertyKey, R> = AddMethodsA<Current, R> & {
+export type DiffNodeA<Root, Current, Tag extends PropertyKey, R, Extra = unknown> = AddMethodsA<
+    Current,
+    R
+> & {
     // operations at this path (unchanged)
     [getPathSymbol]: Path;
+    [getExtraSymbol]: Extra;
 } & ReplaceAndTestMethodsA<Current, R> &
     RemoveMethodsA<R> &
-    UpdateFunction<Current, Tag, R> &
+    UpdateFunction<Current, Tag, R, Extra> &
     // navigation
     // 🔹 "one or many" → refine T | T[] via single()
     (IsSingleOrArray<Current> extends true
@@ -52,7 +58,8 @@ export type DiffNodeA<Root, Current, Tag extends PropertyKey, R> = AddMethodsA<C
                   Root,
                   V extends true ? SingleElement<Current> : SingleElement<Current>[],
                   Tag,
-                  R
+                  R,
+                  Extra
               >;
           }
         : {}) &
@@ -61,12 +68,12 @@ export type DiffNodeA<Root, Current, Tag extends PropertyKey, R> = AddMethodsA<C
         ? {
               variant<V extends VariantTags<NonNullish<Current>, Tag> & (string | number | symbol)>(
                   tag: V,
-              ): DiffNodeA<Root, VariantOf<NonNullish<Current>, Tag, V>, Tag, R>;
+              ): DiffNodeA<Root, VariantOf<NonNullish<Current>, Tag, V>, Tag, R, Extra>;
           }
         : // 🔹 arrays → index navigation
           NonNullish<Current> extends (infer Elem)[]
           ? {
-                [K in number]: DiffNodeA<Root, Elem, Tag, R>;
+                [K in number]: DiffNodeA<Root, Elem, Tag, R, Extra>;
             } & {
                 push(value: Elem, when?: ApplyTiming): R;
                 move(from: string | number, to: string | number, when?: ApplyTiming): R;
@@ -79,30 +86,46 @@ export type DiffNodeA<Root, Current, Tag extends PropertyKey, R> = AddMethodsA<C
                       Root,
                       ValueOfUnion<NonNullish<Current>, K>,
                       Tag,
-                      R
+                      R,
+                      Extra
                   >;
               } & {
                   move(from: string | number, to: string | number, when?: ApplyTiming): R;
               } & (string extends keyof NonNullish<Current> // optional: index signatures (Record<string, V>)
                       ? {
-                            [key: string]: DiffNodeA<Root, NonNullish<Current>[string], Tag, R>;
+                            [key: string]: DiffNodeA<
+                                Root,
+                                NonNullish<Current>[string],
+                                Tag,
+                                R,
+                                Extra
+                            >;
                         }
                       : {})
             : {});
 
-export type DiffBuilderA<T, Tag extends PropertyKey = 'type', R = void> = DiffNodeA<T, T, Tag, R>;
+export type DiffBuilderA<
+    T,
+    Tag extends PropertyKey = 'type',
+    R = void,
+    Extra = unknown,
+> = DiffNodeA<T, T, Tag, R, Extra>;
 
-export function diffBuilder<T, Tag extends string = 'type'>(tag: Tag) {
-    return diffBuilderApply<T, Tag, PendingJsonPatchOp<T>>((x) => x, tag);
+export function diffBuilder<T, Extra, Tag extends string = 'type'>(tag: Tag, extra: Extra) {
+    return diffBuilderApply<T, Extra, Tag, PendingJsonPatchOp<T, Tag, Extra>>((x) => x, extra, tag);
 }
 
-export const getPath = <A, B, T extends PropertyKey, C>(builder: DiffNodeA<A, B, T, C>) =>
+export const getPath = <A, B, T extends PropertyKey, C, E>(builder: DiffNodeA<A, B, T, C, E>) =>
     builder[getPathSymbol];
 
-export function diffBuilderApply<T, Tag extends string = 'type', R = void>(
-    apply: (v: PendingJsonPatchOp<T>, when?: ApplyTiming) => R,
+export const getExtra = <A, B, T extends PropertyKey, C, E>(builder: DiffNodeA<A, B, T, C, E>): E =>
+    builder[getExtraSymbol];
+
+export function diffBuilderApply<T, Extra, Tag extends string = 'type', R = void>(
+    apply: (v: PendingJsonPatchOp<T, Tag, Extra>, when?: ApplyTiming) => R,
+    extra: Extra,
     tag: Tag,
-): DiffBuilderA<T, Tag, R> {
+): DiffBuilderA<T, Tag, R, Extra> {
     const cache: Record<string, (v: any, b: any) => R> = {};
     const proxyCache: Record<string, any> = {};
     const ghost = {} as {_t: T}; // a phantom type kinda thing
@@ -202,6 +225,9 @@ export function diffBuilderApply<T, Tag extends string = 'type', R = void>(
                 if (prop === getPathSymbol) {
                     return path;
                 }
+                if (prop === getExtraSymbol) {
+                    return extra;
+                }
 
                 // ignore symbols
                 if (typeof prop === 'symbol') return undefined;
@@ -218,14 +244,14 @@ export function diffBuilderApply<T, Tag extends string = 'type', R = void>(
             },
         };
 
-        return new Proxy((value: T | OpMaker<T, Tag>, when?: ApplyTiming) => {
+        return new Proxy((value: T | OpMaker<T, Tag, Extra>, when?: ApplyTiming) => {
             if (typeof value !== 'function') {
                 return apply({op: 'replace', path, value, ...ghost}, when);
             }
             return apply({op: 'nested', make: value as any, path, ...ghost}, when);
         }, handler);
     }
-    return makeProxy([]) as DiffBuilderA<T, Tag, R>;
+    return makeProxy([]) as DiffBuilderA<T, Tag, R, Extra>;
 }
 
 export type Path = PathSegment[];
@@ -264,22 +290,22 @@ export type PendingPushOp<T> = {
     _t: T;
 };
 
-export type NestedPendingOp<T, Inner, Tag extends PropertyKey> = {
+export type NestedPendingOp<T, Inner, Tag extends PropertyKey, Extra = unknown> = {
     op: 'nested';
     path: Path;
     make: (
         v: Inner,
-        update: DiffNodeA<Inner, Inner, Tag, PendingJsonPatchOp<Inner>>,
-    ) => PendingJsonPatchOp<Inner> | PendingJsonPatchOp<Inner>[];
+        update: DiffNodeA<Inner, Inner, Tag, PendingJsonPatchOp<Inner, Tag, Extra>, Extra>,
+    ) => PendingJsonPatchOp<Inner, Tag, Extra> | PendingJsonPatchOp<Inner, Tag, Extra>[];
     _t: T;
 };
 
-export type PendingJsonPatchOp<T, Tag extends PropertyKey = 'type'> =
+export type PendingJsonPatchOp<T, Tag extends PropertyKey = 'type', Extra = unknown> =
     | AddOp<T>
     | PendingReplaceOp<T>
     | PendingPushOp<T>
     | PendingRemoveOp<T>
-    | NestedPendingOp<T, unknown, Tag>
+    | NestedPendingOp<T, unknown, Tag, Extra>
     | MoveOp<T>
     | CopyOp<T>;
 

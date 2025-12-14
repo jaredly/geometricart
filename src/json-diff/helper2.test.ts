@@ -1,12 +1,15 @@
 import {describe, expect, it} from 'bun:test';
-import {diffBuilder, getPath} from './helper2';
+import {diffBuilder, getExtra, getPath} from './helper2';
 import {resolveAndApply} from './make2';
 
 type Item = {name: string};
 type OneOrMany = Item | Item[];
 
-const builder = diffBuilder<OneOrMany>('type');
-const moveBuilder = diffBuilder<{items: string[]; map: Record<string, number>}>('type');
+const builder = diffBuilder<OneOrMany, null>('type', null);
+const moveBuilder = diffBuilder<{items: string[]; map: Record<string, number>}, string>(
+    'type',
+    'hello',
+);
 
 describe('helper2 path', () => {
     it('gets the path out', () => {
@@ -14,6 +17,12 @@ describe('helper2 path', () => {
             {type: 'key', key: 'items'},
             {type: 'key', key: 2},
         ]);
+    });
+});
+
+describe('helper2 extr', () => {
+    it('gets the extra', () => {
+        expect(getExtra(moveBuilder.items[2])).toEqual('hello');
     });
 });
 
