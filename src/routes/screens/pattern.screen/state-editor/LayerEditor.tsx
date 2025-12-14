@@ -7,6 +7,8 @@ import {EntityEditor} from './EntityEditor';
 import {TextField} from './TextField';
 import {SharedEditor} from './PatternEditor';
 import {Updater} from '../../../../json-diff/helper2';
+import {genid} from '../genid';
+import {usePendingState} from '../editState';
 
 export const LayerEditor = ({
     layer,
@@ -18,6 +20,7 @@ export const LayerEditor = ({
     update: Updater<Layer>;
 }) => {
     const entries = useMemo(() => Object.entries(layer.entities), [layer.entities]);
+    const pend = usePendingState();
 
     return (
         <div className="bg-base-200 border border-base-300 shadow-sm">
@@ -43,6 +46,39 @@ export const LayerEditor = ({
                         <div className="flex items-center justify-between">
                             <div className="font-semibold text-sm">Entities</div>
                             <div className="flex gap-2">
+                                <button
+                                    className="btn btn-outline btn-xs"
+                                    onClick={() => {
+                                        pend.update.pending.replace({
+                                            type: 'select-shape',
+                                            onDone(shape) {
+                                                const id = genid();
+                                                update.entities[id].add({
+                                                    type: 'Object',
+                                                    id,
+                                                    shape,
+                                                    style: {
+                                                        fills: {},
+                                                        lines: {
+                                                            l1: {
+                                                                id: 'l1',
+                                                                mods: [],
+                                                                color: 'red',
+                                                                width: 2,
+                                                            },
+                                                        },
+                                                        mods: [],
+                                                    },
+                                                });
+                                                update.entities[layer.rootGroup]
+                                                    .variant('Group')
+                                                    .entities[id].add(1);
+                                            },
+                                        });
+                                    }}
+                                >
+                                    Add Object
+                                </button>
                                 <button
                                     className="btn btn-outline btn-xs"
                                     onClick={() => {

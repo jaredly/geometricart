@@ -24,6 +24,7 @@ export type PendingState = {
         | {type: 'shape'; points: Coord[]; onDone(points: Coord[], open: boolean): void}
         | {type: 'dup-shape'; id: string; onDone(point: Coord): void}
         | {type: 'select-shapes'; key: string; shapes: string[]; onDone(shapes: string[]): void}
+        | {type: 'select-shape'; onDone(shape: string): void}
         | null;
 };
 

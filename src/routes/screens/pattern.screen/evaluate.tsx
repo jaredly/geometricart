@@ -30,6 +30,7 @@ export type RenderItem = {
     onClick?: (evt: React.MouseEvent<SVGElement>) => void;
     shadow?: {blur: Coord; offset: Coord; color: Rgb};
     color: {r: number; g: number; b: number};
+    sharp?: boolean;
     strokeWidth?: number;
     zIndex?: number | null;
     shapes: BarePath[];

@@ -21,6 +21,7 @@ export const chunk = (
     config: (number | [number, number] | [number, number, string])[],
     t: number,
 ) => {
+    if (t == null) return 0;
     const v = t * config.length;
     const t0 = Math.floor(v);
     const current = config[Math.min(t0, config.length - 1)];

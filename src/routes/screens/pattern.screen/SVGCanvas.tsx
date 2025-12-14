@@ -157,7 +157,7 @@ export const SVGCanvas = ({
                     ))}
                 </defs>
             ) : null}
-            {items.map(({key, shapes, pk, color, strokeWidth, zIndex, shadow, ...item}) =>
+            {items.map(({key, shapes, pk, color, strokeWidth, zIndex, shadow, sharp, ...item}) =>
                 shapes.map((shape, m) => (
                     <path
                         {...item}
@@ -168,8 +168,8 @@ export const SVGCanvas = ({
                                   ? 'none'
                                   : colorToString(shadow?.color ?? color)
                         }
-                        strokeLinejoin="round"
-                        strokeLinecap="round"
+                        strokeLinejoin={sharp ? 'miter' : 'round'}
+                        strokeLinecap={sharp ? 'butt' : 'round'}
                         stroke={strokeWidth ? colorToString(shadow?.color ?? color) : undefined}
                         strokeWidth={strokeWidth}
                         filter={shadow ? `url(#${shadowKey(shadow)})` : undefined}
@@ -197,7 +197,7 @@ export const SVGCanvas = ({
                                 pending.onDone(pt);
                                 return;
                             }
-                            if (pending.type === 'select-shapes') return;
+                            if (pending.type !== 'shape') return;
                             if (pending.points.length && coordsEqual(pending.points[0], pt)) {
                                 editContext.update.pending.replace(null);
                                 pending.onDone(pending.points, false);

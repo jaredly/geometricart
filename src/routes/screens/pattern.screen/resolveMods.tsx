@@ -25,13 +25,26 @@ import {
     PMods,
     State,
 } from './export-types';
-import {renderPattern, resolveShadow} from './renderPattern';
+import {
+    dropNully,
+    renderLine,
+    renderPattern,
+    resolveFill,
+    resolveLine,
+    resolveShadow,
+} from './renderPattern';
 
 type CCrop = {type: 'crop'; id: string; mode?: CropMode; hole?: boolean};
 type CInset = {type: 'inset'; v: number};
 export type CropsAndMatrices = (CCrop | Matrix[] | CInset)[];
 
+const enabledMods = (mods: PMods[]) => mods.filter((mod) => !mod.disabled);
+
+export const resolveEnabledPMods = (ctx: AnimCtx, mods: PMods[] = []): CropsAndMatrices =>
+    enabledMods(mods).map((mod) => resolvePMod(ctx, mod));
+
 export const resolvePMod = (ctx: AnimCtx, mod: PMods): CropsAndMatrices[0] => {
+    if (mod.disabled) return [];
     switch (mod.type) {
         case 'inset':
             return {...mod, v: a.number(ctx, mod.v)};
@@ -187,56 +200,60 @@ const renderObject = (ctx: Ctx, crops: CropsAndMatrices, object: EObject) => {
 
     if (object.style.disabled) return;
 
-    Object.values(object.style.fills).map((f) => {
+    const local: Record<string, any> = {};
+    if (object.style.t) {
+        const got = resolveT(object.style.t, anim.values.t);
+        if (got == null) return; // out of range
+        local.t = got;
+    }
+
+    const localAnim = {...anim, values: {...anim.values, ...local}};
+
+    Object.values(object.style.fills).map((fr) => {
+        const f = dropNully(resolveFill(localAnim, fr));
         if (f.color == null) return;
-        const fmods = f.mods.map((m) => resolvePMod(anim, m));
+
         const thisPath = path.copy();
         let remove = false;
-        fmods.forEach((mod) => {
+        f.mods.forEach((mod) => {
             remove = remove || pathMod(ctx.cropCache, mod, thisPath);
         });
-
-        const color = a.color(anim, f.color);
-        const rgb = colorToRgb(color);
-        const zIndex = f.zIndex ? a.number(anim, f.zIndex) : null;
-        const opacity = f.opacity ? a.number(anim, f.opacity) : undefined;
+        if (remove) return;
 
         ctx.items.push({
             type: 'path',
             pk: thisPath,
             key: '',
-            color: rgb,
-            opacity,
+            color: colorToRgb(f.color),
+            opacity: f.opacity,
             shadow: resolveShadow(anim, f.shadow),
             shapes: cmdsToSegments([...thisPath.toCmds()]),
-            zIndex,
+            zIndex: f.zIndex,
         });
     });
 
-    Object.values(object.style.lines).map((f) => {
+    Object.values(object.style.lines).map((fr, fi) => {
+        const f = dropNully(resolveLine(localAnim, fr));
         if (f.color == null) return;
-        const fmods = f.mods.map((m) => resolvePMod(anim, m));
+
         const thisPath = path.copy();
         let remove = false;
-        fmods.forEach((mod) => {
+        f.mods.forEach((mod) => {
             remove = remove || pathMod(ctx.cropCache, mod, thisPath);
         });
-
-        const color = a.color(anim, f.color);
-        const rgb = colorToRgb(color);
-        const zIndex = f.zIndex ? a.number(anim, f.zIndex) : null;
-        const opacity = f.opacity ? a.number(anim, f.opacity) : undefined;
+        if (remove) return;
 
         ctx.items.push({
             type: 'path',
             pk: thisPath,
-            key: '',
-            color: rgb,
+            key: fi + '',
+            color: colorToRgb(f.color),
             strokeWidth: a.number(anim, f.width ?? 0) / 100,
-            opacity,
+            opacity: f.opacity,
             shadow: resolveShadow(anim, f.shadow),
             shapes: cmdsToSegments([...thisPath.toCmds()]),
-            zIndex,
+            sharp: f.sharp,
+            zIndex: f.zIndex,
         });
     });
 

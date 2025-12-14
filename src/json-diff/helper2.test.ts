@@ -1,5 +1,5 @@
 import {describe, expect, it} from 'bun:test';
-import {diffBuilder} from './helper2';
+import {diffBuilder, getPath} from './helper2';
 import {resolveAndApply} from './make2';
 
 type Item = {name: string};
@@ -7,6 +7,15 @@ type OneOrMany = Item | Item[];
 
 const builder = diffBuilder<OneOrMany>('type');
 const moveBuilder = diffBuilder<{items: string[]; map: Record<string, number>}>('type');
+
+describe('helper2 path', () => {
+    it('gets the path out', () => {
+        expect(getPath(moveBuilder.items[2])).toEqual([
+            {type: 'key', key: 'items'},
+            {type: 'key', key: 2},
+        ]);
+    });
+});
 
 describe('helper2 single()', () => {
     it('refines to the single branch and updates nested keys', () => {

@@ -5,6 +5,33 @@ import {AnimCoordInput} from './AnimCoordInput';
 import {AnimCoordOrNumberInput} from './AnimCoordOrNumberInput';
 import {Updater} from '../../../../json-diff/helper2';
 import {useExportState} from '../pattern-export';
+import {EyeIcon, EyeInvisibleIcon} from '../../../../icons/Eyes';
+
+const Disableable = ({
+    children,
+    remove,
+    toggle,
+    disabled,
+}: {
+    children: React.ReactNode;
+    toggle(): void;
+    remove(): void;
+    disabled?: boolean;
+}) => (
+    <div className="flex flex-row gap-2 items-center" style={disabled ? {opacity: 0.6} : undefined}>
+        <button
+            onClick={toggle}
+            className="cursor-pointer p-3 text-gray-600 hover:text-gray-900"
+            aria-label={disabled ? 'Enable mod' : 'Disable mod'}
+        >
+            {disabled ? <EyeInvisibleIcon color="gray" /> : <EyeIcon />}
+        </button>
+        <button onClick={remove} className="cursor-pointer p-3 text-gray-600 hover:text-red-500">
+            &times;
+        </button>
+        {children}
+    </div>
+);
 
 export const PModEditor = ({
     palette,
@@ -16,52 +43,46 @@ export const PModEditor = ({
     update: Updater<PMods>;
 }) => {
     const ctx = useExportState();
-    const cropIds = ctx.use((v) => Object.keys(v.crops), false);
+    const cropIds = ctx.use((v) => Object.keys(v?.crops ?? {}), false);
 
     switch (value.type) {
         case 'inset':
             return (
-                <div>
-                    <button
-                        onClick={update.remove}
-                        className="cursor-pointer p-3 text-gray-600 hover:text-red-500"
-                    >
-                        &times;
-                    </button>
+                <Disableable
+                    disabled={value.disabled}
+                    toggle={() => update.variant(value.type).disabled((v, u) => u(!v))}
+                    remove={update.remove}
+                >
                     <span className="mr-2">{value.type}</span>
                     <AnimInput
                         label="v"
                         value={value.v}
-                        onChange={update.variant('inset').v as Updater<any>}
+                        onChange={update.variant(value.type).v as Updater<any>}
                     />
-                </div>
+                </Disableable>
             );
         case 'translate':
             return (
-                <div>
-                    <button
-                        onClick={update.remove}
-                        className="cursor-pointer p-3 text-gray-600 hover:text-red-500"
-                    >
-                        &times;
-                    </button>
+                <Disableable
+                    disabled={value.disabled}
+                    toggle={() => update.variant(value.type).disabled((v, u) => u(!v))}
+                    remove={update.remove}
+                >
                     translate
                     <AnimCoordInput
                         label="v"
                         value={value.v}
                         onChange={update.variant('translate').v as Updater<any>}
                     />
-                </div>
+                </Disableable>
             );
         case 'crop':
             return (
-                <div>
-                    <button
-                        onClick={update.remove}
-                        className="cursor-pointer p-3 text-gray-600 hover:text-red-500"
-                    >
-                        &times;
-                    </button>
+                <Disableable
+                    disabled={value.disabled}
+                    toggle={() => update.variant(value.type).disabled((v, u) => u(!v))}
+                    remove={update.remove}
+                >
                     {value.type}:{value.id}
                     <select
                         value={value.id}
@@ -82,17 +103,15 @@ export const PModEditor = ({
                         checked={value.hole}
                         onChange={(evt) => update.variant('crop').hole(evt.target.checked)}
                     />
-                </div>
+                </Disableable>
             );
         case 'scale':
             return (
-                <div className="flex flex-row gap-2 items-center">
-                    <button
-                        onClick={update.remove}
-                        className="cursor-pointer p-3 text-gray-600 hover:text-red-500"
-                    >
-                        &times;
-                    </button>
+                <Disableable
+                    disabled={value.disabled}
+                    toggle={() => update.variant(value.type).disabled((v, u) => u(!v))}
+                    remove={update.remove}
+                >
                     {value.type}
                     <AnimCoordOrNumberInput
                         label="v"
@@ -104,17 +123,15 @@ export const PModEditor = ({
                         value={value.origin}
                         onChange={update.variant('scale').origin}
                     />
-                </div>
+                </Disableable>
             );
         case 'rotate':
             return (
-                <div className="flex flex-row gap-2 items-center">
-                    <button
-                        onClick={update.remove}
-                        className="cursor-pointer p-3 text-gray-600 hover:text-red-500"
-                    >
-                        &times;
-                    </button>
+                <Disableable
+                    disabled={value.disabled}
+                    toggle={() => update.variant(value.type).disabled((v, u) => u(!v))}
+                    remove={update.remove}
+                >
                     {value.type}
                     <AnimInput
                         label="v"
@@ -126,7 +143,7 @@ export const PModEditor = ({
                         value={value.origin}
                         onChange={update.variant('rotate').origin}
                     />
-                </div>
+                </Disableable>
             );
     }
 };

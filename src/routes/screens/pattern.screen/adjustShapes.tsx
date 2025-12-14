@@ -11,7 +11,7 @@ import {PMods, TChunk, AnimatableValue} from './export-types';
 import {
     resolveT,
     withShared,
-    resolvePMod,
+    resolveEnabledPMods,
     modsToShapes,
     RenderLog,
     barePathFromCoords,
@@ -45,8 +45,9 @@ export const adjustShapes = (
             const debug: RenderLog[] = [];
             const shapeCoords = coordsFromBarePath(shape);
             const center = centroid(shapeCoords);
-            const resolved = mods.map((mod) =>
-                resolvePMod({...aanim, values: {...aanim.values, ...local, center}}, mod),
+            const resolved = resolveEnabledPMods(
+                {...aanim, values: {...aanim.values, ...local, center}},
+                mods,
             );
             const shapeLines = coordLines(shapeCoords);
             const moved = modsToShapes(cropCache, resolved, [{shape: shapeCoords, i: 0}]);

@@ -5,6 +5,10 @@ import {PatternEditor} from './PatternEditor';
 import {GroupEditor} from './GroupEditor';
 import {ExternalLinkIcon} from '../../../../icons/Icon';
 import {Updater} from '../../../../json-diff/helper2';
+import {SubStyleList} from './SubStyleList';
+import {FillEditor, ModsEditor} from './FillEditor';
+import {createFill, createLine} from './createLayerTemplate';
+import {LineEditor} from './LineEditor';
 
 export const EntityEditor = ({
     palette,
@@ -69,10 +73,42 @@ export const EntityEditor = ({
                             onChange({...value, segments: segments as Segment[]})
                         }
                     /> */}
-                    <JsonEditor
-                        label="Style"
-                        value={value.style}
-                        onChange={update.variant('Object').style}
+                    <SubStyleList
+                        label="Fills"
+                        emptyLabel="No fills"
+                        items={value.style.fills}
+                        createItem={createFill}
+                        render={(key, fill, update, reId) => (
+                            <FillEditor
+                                key={key}
+                                value={fill}
+                                update={update}
+                                reId={reId}
+                                palette={palette}
+                            />
+                        )}
+                        update={update.variant('Object').style.fills}
+                    />
+                    <SubStyleList
+                        label="Lines"
+                        emptyLabel="No lines"
+                        items={value.style.lines}
+                        createItem={createLine}
+                        render={(key, line, update, reId) => (
+                            <LineEditor
+                                key={key}
+                                reId={reId}
+                                palette={palette}
+                                value={line}
+                                update={update}
+                            />
+                        )}
+                        update={update.variant('Object').style.lines}
+                    />
+                    <ModsEditor
+                        palette={palette}
+                        mods={value.style.mods}
+                        update={update.variant('Object').style.mods}
                     />
                 </div>
             ) : null}

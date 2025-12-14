@@ -34,8 +34,12 @@ type UpdateFunction<Value, Tag extends PropertyKey, R> = (
     when?: ApplyTiming,
 ) => R;
 
-export type DiffNodeA<Root, Current, Tag extends PropertyKey, R> = AddMethodsA<Current, R> & // operations at this path (unchanged)
-    ReplaceAndTestMethodsA<Current, R> &
+const getPathSymbol = Symbol('hi');
+
+export type DiffNodeA<Root, Current, Tag extends PropertyKey, R> = AddMethodsA<Current, R> & {
+    // operations at this path (unchanged)
+    [getPathSymbol]: Path;
+} & ReplaceAndTestMethodsA<Current, R> &
     RemoveMethodsA<R> &
     UpdateFunction<Current, Tag, R> &
     // navigation
@@ -91,6 +95,9 @@ export type DiffBuilderA<T, Tag extends PropertyKey = 'type', R = void> = DiffNo
 export function diffBuilder<T, Tag extends string = 'type'>(tag: Tag) {
     return diffBuilderApply<T, Tag, PendingJsonPatchOp<T>>((x) => x, tag);
 }
+
+export const getPath = <A, B, T extends PropertyKey, C>(builder: DiffNodeA<A, B, T, C>) =>
+    builder[getPathSymbol];
 
 export function diffBuilderApply<T, Tag extends string = 'type', R = void>(
     apply: (v: PendingJsonPatchOp<T>, when?: ApplyTiming) => R,
@@ -190,6 +197,10 @@ export function diffBuilderApply<T, Tag extends string = 'type', R = void>(
                                 typeof when === 'string' ? when : undefined,
                             );
                     return cache[k];
+                }
+
+                if (prop === getPathSymbol) {
+                    return path;
                 }
 
                 // ignore symbols

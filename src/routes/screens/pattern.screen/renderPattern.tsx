@@ -6,7 +6,7 @@ import {getSimplePatternData, getShapeColors} from '../../getPatternData';
 import {EndPointMap} from '../../shapesFromSegments';
 import {adjustShapes} from './adjustShapes';
 import {parseColor} from './colors';
-import {Ctx, RenderItem, a, isColor, isCoord} from './evaluate';
+import {AnimCtx, Ctx, RenderItem, a, isColor, isCoord} from './evaluate';
 import {
     Pattern,
     colorToRgb,
@@ -19,7 +19,7 @@ import {
 } from './export-types';
 import {
     CropsAndMatrices,
-    resolvePMod,
+    resolveEnabledPMods,
     withShared,
     modsToShapes,
     resolveT,
@@ -35,7 +35,7 @@ export const renderPattern = (ctx: Ctx, outer: CropsAndMatrices, pattern: Patter
     if (!tiling) {
         throw new Error(`Pattern not found ${pattern.tiling}`);
     }
-    const patternmods = pattern.mods.map((m) => resolvePMod(ctx.anim, m));
+    const enabledPatternMods = resolveEnabledPMods(ctx.anim, pattern.mods);
 
     const panim = withShared(ctx.anim, pattern.shared);
 
@@ -75,7 +75,7 @@ export const renderPattern = (ctx: Ctx, outer: CropsAndMatrices, pattern: Patter
 
     const midShapes = modsToShapes(
         ctx.cropCache,
-        patternmods,
+        enabledPatternMods,
         baseShapes.map((shape, i) => ({shape, i})),
     );
 
@@ -125,24 +125,24 @@ export const renderPattern = (ctx: Ctx, outer: CropsAndMatrices, pattern: Patter
                     local.t = got;
                 }
 
-                stuff.push(`style id: ${s.id}`);
+                // stuff.push(`style id: ${s.id}`);
                 if (typeof match === 'object') {
                     local.styleCenter = match;
                 }
                 const localAnim = {...anim, values: {...anim.values, ...local}};
 
-                const smod = s.mods.map((m) => resolvePMod(anim, m));
+                const smod = resolveEnabledPMods(anim, s.mods);
 
                 // hmmm need to align the ... style that it came from ... with animvalues
                 // like `styleCenter`
                 Object.values(s.fills).forEach((fill) => {
                     const cfill = dropNully(resolveFill(localAnim, fill));
                     if (cfill.enabled === false) {
-                        stuff.push(`disabled fill: ${fill.id}`);
+                        // stuff.push(`disabled fill: ${fill.id}`);
                         return;
                     }
                     cfill.mods.push(...smod);
-                    stuff.push(`fill: ${fill.id}`);
+                    // stuff.push(`fill: ${fill.id}`);
                     if (!fills[fill.id]) {
                         fills[fill.id] = cfill;
                         return;
@@ -168,58 +168,11 @@ export const renderPattern = (ctx: Ctx, outer: CropsAndMatrices, pattern: Patter
 
             const res: (RenderItem | undefined)[] = [
                 ...Object.values(fills).flatMap((f, fi): RenderItem[] | RenderItem | undefined => {
-                    if (f.color == null) return;
-                    const color = a.color(anim, f.color);
-                    if (!color) console.log('waht', color, f.color);
-                    const rgb = colorToRgb(color);
-                    const zIndex = f.zIndex;
-                    const opacity = f.opacity ? a.number(anim, f.opacity) : undefined;
-                    const shadow = resolveShadow(anim, f.shadow);
-                    const key = `fill-${i}-${fi}`;
-                    ctx.byKey[key] = stuff;
-
-                    return {
-                        type: 'path',
-                        key,
-                        color: rgb,
-                        opacity,
-                        shapes: f.mods.length
-                            ? modsToShapes(ctx.cropCache, f.mods, [{shape, i: 0}]).map((s) =>
-                                  barePathFromCoords(s.shape),
-                              )
-                            : [barePathFromCoords(shape)],
-                        shadow,
-                        zIndex,
-                    };
+                    return renderFill(f, anim, ctx, shape, `fill-${i}-${fi}`);
                 }),
 
                 ...Object.values(lines).flatMap((f, fi): RenderItem[] | RenderItem | undefined => {
-                    if (f.color == null) return;
-                    if (!f.width) return;
-                    const color = a.color(anim, f.color);
-                    if (!color) console.log('waht', color, f.color);
-                    const rgb = colorToRgb(color);
-                    const width = a.number(anim, f.width) / 100;
-                    const opacity = f.opacity ? a.number(anim, f.opacity) : undefined;
-                    const shadow = resolveShadow(anim, f.shadow);
-                    const zIndex = f.zIndex;
-                    const key = `stroke-${i}-${fi}`;
-                    ctx.byKey[key] = stuff;
-
-                    return {
-                        type: 'path',
-                        key,
-                        color: rgb,
-                        strokeWidth: width,
-                        shapes: f.mods.length
-                            ? modsToShapes(ctx.cropCache, f.mods, [{shape, i: 0}]).map((s) =>
-                                  barePathFromCoords(s.shape),
-                              )
-                            : [barePathFromCoords(shape)],
-                        shadow,
-                        opacity,
-                        zIndex,
-                    };
+                    return renderLine(f, anim, ctx, shape, `stroke-${i}-${fi}`);
                 }),
             ];
 
@@ -227,10 +180,78 @@ export const renderPattern = (ctx: Ctx, outer: CropsAndMatrices, pattern: Patter
         }),
     );
 };
+
+export const renderFill = (
+    f: ConcreteFill,
+    anim: AnimCtx,
+    ctx: Ctx,
+    shape: Coord[],
+    key: string,
+): undefined | RenderItem => {
+    if (f.color == null) return;
+    const color = a.color(anim, f.color);
+    if (!color) console.log('waht', color, f.color);
+    const rgb = colorToRgb(color);
+    const zIndex = f.zIndex;
+    const opacity = f.opacity ? a.number(anim, f.opacity) : undefined;
+    const shadow = resolveShadow(anim, f.shadow);
+    // ctx.byKey[key] = stuff;
+
+    return {
+        type: 'path',
+        key,
+        color: rgb,
+        opacity,
+        shapes: f.mods.length
+            ? modsToShapes(ctx.cropCache, f.mods, [{shape, i: 0}]).map((s) =>
+                  barePathFromCoords(s.shape),
+              )
+            : [barePathFromCoords(shape)],
+        shadow,
+        zIndex,
+    };
+};
+
+export const renderLine = (
+    f: ConcreteLine,
+    anim: AnimCtx,
+    ctx: Ctx,
+    shape: Coord[],
+    key: string,
+): undefined | RenderItem => {
+    if (f.color == null) return;
+    if (!f.width) return;
+    const color = a.color(anim, f.color);
+    if (!color) console.log('waht', color, f.color);
+    const rgb = colorToRgb(color);
+    const width = a.number(anim, f.width) / 100;
+    const opacity = f.opacity ? a.number(anim, f.opacity) : undefined;
+    const shadow = resolveShadow(anim, f.shadow);
+    const zIndex = f.zIndex;
+    // const key = `stroke-${i}-${fi}`;
+    // ctx.byKey[key] = stuff;
+
+    return {
+        type: 'path',
+        key,
+        color: rgb,
+        strokeWidth: width,
+        shapes: f.mods.length
+            ? modsToShapes(ctx.cropCache, f.mods, [{shape, i: 0}]).map((s) =>
+                  barePathFromCoords(s.shape),
+              )
+            : [barePathFromCoords(shape)],
+        shadow,
+        sharp: f.sharp,
+        opacity,
+        zIndex,
+    };
+};
+
 export const resolveFill = (anim: Ctx['anim'], f: Fill): ConcreteFill => {
     return {
         id: f.id,
-        mods: f.mods.map((m) => resolvePMod(anim, m)),
+        mods: resolveEnabledPMods(anim, f.mods),
         color: f.color != null ? a.color(anim, f.color) : undefined,
         opacity: f.opacity != null ? a.number(anim, f.opacity) : undefined,
         rounded: f.rounded != null ? a.number(anim, f.rounded) : undefined,
@@ -245,7 +266,7 @@ export const resolveFill = (anim: Ctx['anim'], f: Fill): ConcreteFill => {
 export const resolveLine = (anim: Ctx['anim'], f: Line): ConcreteLine => {
     return {
         id: f.id,
-        mods: f.mods.map((m) => resolvePMod(anim, m)),
+        mods: resolveEnabledPMods(anim, f.mods),
         color: f.color != null ? a.color(anim, f.color) : undefined,
         opacity: f.opacity != null ? a.number(anim, f.opacity) : undefined,
         shadow: resolveShadow(anim, f.shadow),

@@ -3,7 +3,7 @@ import {useMemo} from 'react';
 import {pkPathWithCmds} from '../animator.screen/cropPath';
 import {AnimCtx} from './evaluate';
 import {State, Crop} from './export-types';
-import {resolvePMod, pathMod} from './resolveMods';
+import {resolveEnabledPMods, pathMod} from './resolveMods';
 
 export function useCropCache(
     state: State,
@@ -30,7 +30,7 @@ export function useCropCache(
                     palette: [],
                     warn: (v) => console.warn(v),
                 };
-                const cropmods = crop.mods.map((m) => resolvePMod(actx, m));
+                const cropmods = resolveEnabledPMods(actx, crop.mods ?? []);
 
                 const path = pkPathWithCmds(shape.origin, shape.segments);
 

@@ -130,18 +130,23 @@ export type Group = {
 export type CropMode = 'rough' | 'half';
 
 export type PMods =
-    | {type: 'inset'; v: AnimatableNumber}
-    | {type: 'crop'; id: string; hole?: boolean; mode?: CropMode}
-    | {type: 'scale'; v: AnimatableCoord | AnimatableNumber; origin?: AnimatableCoord}
-    | {type: 'rotate'; v: AnimatableNumber; origin?: AnimatableCoord}
-    | {type: 'translate'; v: AnimatableCoord};
+    | {type: 'inset'; v: AnimatableNumber; disabled?: boolean}
+    | {type: 'crop'; id: string; hole?: boolean; mode?: CropMode; disabled?: boolean}
+    | {
+          type: 'scale';
+          v: AnimatableCoord | AnimatableNumber;
+          origin?: AnimatableCoord;
+          disabled?: boolean;
+      }
+    | {type: 'rotate'; v: AnimatableNumber; origin?: AnimatableCoord; disabled?: boolean}
+    | {type: 'translate'; v: AnimatableCoord; disabled?: boolean};
 
 export type ConcretePMod =
-    | {type: 'inset'; v: number}
-    | {type: 'crop'; id: string; hole?: boolean; mode?: CropMode}
-    | {type: 'scale'; v: Coord | number; origin?: Coord}
-    | {type: 'rotate'; v: number; origin?: Coord}
-    | {type: 'translate'; v: Coord};
+    | {type: 'inset'; v: number; disabled?: boolean}
+    | {type: 'crop'; id: string; hole?: boolean; mode?: CropMode; disabled?: boolean}
+    | {type: 'scale'; v: Coord | number; origin?: Coord; disabled?: boolean}
+    | {type: 'rotate'; v: number; origin?: Coord; disabled?: boolean}
+    | {type: 'translate'; v: Coord; disabled?: boolean};
 
 export type SMods = PMods;
 
@@ -170,7 +175,7 @@ export type NPMods = {
 export const insetPkPath = (path: PKPath, inset: number) => {
     if (Math.abs(inset) < 0.00001) return;
     const stroke = path.copy().stroke({
-        width: Math.abs(inset),
+        width: Math.abs(inset) * 2,
     })!;
     if (!stroke) return;
     path.op(stroke, inset < 0 ? pk.PathOp.Union : pk.PathOp.Difference);
@@ -406,7 +411,13 @@ export type EObject = {
     type: 'Object';
     id: string;
     shape: string;
-    style: ShapeStyle;
+    style: {
+        disabled?: boolean;
+        fills: Record<string, Fill>;
+        lines: Record<string, Line>;
+        t?: TChunk;
+        mods: PMods[];
+    };
 };
 
 export type Entity = Group | Pattern | EObject;

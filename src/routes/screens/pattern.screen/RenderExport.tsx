@@ -3,11 +3,17 @@ import {AddIcon, BaselineFilterCenterFocus, BaselineZoomInMap} from '../../../ic
 import {closeEnough} from '../../../rendering/epsilonToZero';
 import {Coord} from '../../../types';
 import {parseColor} from './colors';
-import {EditStateUpdate, PendingStateUpdate, useEditState, usePendingState} from './editState';
+import {
+    EditStateUpdate,
+    PendingState,
+    PendingStateUpdate,
+    useEditState,
+    usePendingState,
+} from './editState';
 import {AnimCtx, Patterns, RenderItem} from './evaluate';
 import {colorToRgb, State} from './export-types';
 import {Hover, svgItems} from './resolveMods';
-import {SVGCanvas} from './SVGCanvas';
+import {Canvas, SVGCanvas} from './SVGCanvas';
 import {useAnimate} from './useAnimate';
 import {useCropCache} from './useCropCache';
 import {useElementZoom} from './useSVGZoom';
@@ -18,6 +24,7 @@ const renderShapes = (
     hover: Hover | null,
     selectedShapes: string[],
     update: PendingStateUpdate,
+    pending: PendingState['pending'],
 ): RenderItem[] => {
     return Object.entries(shapes).flatMap(([key, shape]) => [
         {
@@ -41,6 +48,12 @@ const renderShapes = (
                     : {r: 255, g: 255, b: 255},
             key,
             onClick() {
+                if (pending?.type === 'select-shape') {
+                    update.pending.replace(null);
+                    pending.onDone(key);
+                    return;
+                }
+                if (pending?.type !== 'select-shapes') return;
                 if (!selectedShapes.includes(key)) {
                     update.pending.variant('select-shapes').shapes.push(key);
                 } else {
@@ -88,13 +101,14 @@ export const RenderExport = ({
     const pending = pendingState.use((v) => v.pending);
     const selectedShapes = pending?.type === 'select-shapes' ? pending.shapes : [];
 
-    const showShapes = eShowShapes || pending?.type === 'select-shapes';
+    const showShapes =
+        eShowShapes || pending?.type === 'select-shapes' || pending?.type === 'select-shape';
     const shapesItems = useMemo(
         (): RenderItem[] =>
             showShapes
-                ? renderShapes(state.shapes, hover, selectedShapes, pendingState.update)
+                ? renderShapes(state.shapes, hover, selectedShapes, pendingState.update, pending)
                 : [],
-        [showShapes, state.shapes, hover, selectedShapes, pendingState.update],
+        [showShapes, state.shapes, hover, selectedShapes, pendingState.update, pending],
     );
 
     const both = useMemo(() => [...items, ...shapesItems], [items, shapesItems]);
@@ -108,11 +122,11 @@ export const RenderExport = ({
     return (
         <div className="flex">
             <div className="relative overflow-hidden">
-                <SVGCanvas
+                <Canvas
                     {...zoomProps}
                     state={state}
                     mouse={mouse}
-                    keyPoints={keyPoints}
+                    // keyPoints={keyPoints}
                     setMouse={setMouse}
                     items={both}
                     size={size}
@@ -184,13 +198,13 @@ export const RenderExport = ({
                     statusRef={statusRef}
                     cropCache={cropCache}
                 />
-            </div>
-            <div className="flex flex-col gap-2 p-2">
-                {warnings.map((w, i) => (
-                    <div key={i} className="px-4 py-2 rounded bg-base-100">
-                        {w}
-                    </div>
-                ))}
+                <div className="flex flex-col gap-2 p-2">
+                    {warnings.map((w, i) => (
+                        <div key={i} className="px-4 py-2 rounded bg-base-100">
+                            {w}
+                        </div>
+                    ))}
+                </div>
             </div>
         </div>
     );
