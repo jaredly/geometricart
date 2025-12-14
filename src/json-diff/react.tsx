@@ -7,7 +7,9 @@ import {
     getExtra,
     getPath,
     Path,
+    PathSegment,
     PendingJsonPatchOp,
+    JsonPatchOp,
 } from './helper2';
 import {blankHistory, dispatch, History} from './history';
 import {asFlat, MaybeNested, resolveAndApply} from './make2';
@@ -29,11 +31,116 @@ type CH<T, An, Tag extends string = 'type'> = {
     previewState: null | History<T, An>;
     queuedChanges: PendingJsonPatchOp<T, Tag, Extra>[];
     raf?: number;
+    listenersByPath: PathListenerNode;
 };
 
 export type Extra = {
     getForPath<T>(v: Path): T;
     listenToPath(v: Path, f: () => void): () => void;
+};
+
+type PathListener = () => void;
+
+// Trie-ish structure so we can grab all listeners for a path (and its descendants)
+// with a single lookup; writes pay the cost of updating ancestor aggregates.
+type PathListenerNode = {
+    listeners: Set<PathListener>;
+    subtree: Set<PathListener>;
+    children: Map<string, PathListenerNode>;
+};
+
+const makePathListenerNode = (): PathListenerNode => ({
+    listeners: new Set(),
+    subtree: new Set(),
+    children: new Map(),
+});
+
+const segmentKey = (seg: PathSegment) => {
+    switch (seg.type) {
+        case 'key':
+            return `k:${typeof seg.key === 'number' ? `n:${seg.key}` : `s:${seg.key}`}`;
+        case 'tag':
+            return `t:${seg.key}=${seg.value}`;
+        case 'single':
+            return `s:${seg.isSingle ? '1' : '0'}`;
+    }
+};
+
+const addPathListener = (root: PathListenerNode, path: Path, listener: PathListener) => {
+    root.subtree.add(listener);
+    let node = root;
+    for (const seg of path) {
+        const key = segmentKey(seg);
+        let child = node.children.get(key);
+        if (!child) {
+            child = makePathListenerNode();
+            node.children.set(key, child);
+        }
+        child.subtree.add(listener);
+        node = child;
+    }
+    node.listeners.add(listener);
+};
+
+const removePathListener = (root: PathListenerNode, path: Path, listener: PathListener) => {
+    const stack: Array<{node: PathListenerNode; key?: string}> = [{node: root}];
+    let node = root;
+    for (const seg of path) {
+        const key = segmentKey(seg);
+        const child = node.children.get(key);
+        if (!child) return;
+        stack.push({node: child, key});
+        node = child;
+    }
+    node.listeners.delete(listener);
+    stack.forEach(({node: n}) => n.subtree.delete(listener));
+    for (let i = stack.length - 1; i > 0; i--) {
+        const {node: child, key} = stack[i];
+        const parent = stack[i - 1].node;
+        if (child.subtree.size === 0 && child.children.size === 0 && child.listeners.size === 0) {
+            parent.children.delete(key as string);
+        }
+    }
+};
+
+const collectListenersForPath = (root: PathListenerNode, path: Path, out: Set<PathListener>) => {
+    let node: PathListenerNode = root;
+    for (const seg of path) {
+        const next = node.children.get(segmentKey(seg));
+        if (!next) return;
+        node = next;
+    }
+    node.subtree.forEach((l) => out.add(l));
+};
+
+const notifyPaths = (root: PathListenerNode, paths: Path[]) => {
+    if (!paths.length) return;
+    const listeners = new Set<PathListener>();
+    paths.forEach((p) => collectListenersForPath(root, p, listeners));
+    listeners.forEach((l) => l());
+};
+
+const notifyAllPaths = (root: PathListenerNode) => {
+    root.subtree.forEach((l) => l());
+};
+
+const isUndoOrRedo = (
+    v: {op: 'undo' | 'redo'} | MaybeNested<PendingJsonPatchOp<unknown, any, any>>,
+): v is {op: 'undo' | 'redo'} => !Array.isArray(v) && (v.op === 'undo' || v.op === 'redo');
+
+const changedPaths = <T, Extra, Tag extends string = 'type'>(
+    current: T,
+    pending: MaybeNested<PendingJsonPatchOp<T, Tag, Extra>>,
+    extra: Extra,
+    tag: Tag,
+) => {
+    const {changes} = resolveAndApply(current, pending, extra, tag);
+    const paths: Path[] = [];
+    changes.forEach((op: JsonPatchOp<T>) => {
+        paths.push(op.path);
+        if (op.op === 'move') paths.push(op.from);
+    });
+    return paths;
 };
 
 export const useValue = <Current,>(node: DiffNodeA<unknown, Current, any, unknown, Extra>) => {
@@ -61,6 +168,7 @@ export const makeHistoryContext = <T, An, Tag extends string = 'type'>(tag: Tag)
         historyListeners: [],
         historyUp: [],
         previewState: null,
+        listenersByPath: makePathListenerNode(),
         save(v) {},
         listeners: [],
         queuedChanges: [],
@@ -85,11 +193,13 @@ export const makeHistoryContext = <T, An, Tag extends string = 'type'>(tag: Tag)
                 historyUp: [],
                 previewState: null,
                 queuedChanges: [],
+                listenersByPath: makePathListenerNode(),
             });
             useEffect(() => {
                 if (initial !== value.current.state) {
                     value.current.state = initial;
                     value.current.listeners.forEach((f) => f());
+                    notifyAllPaths(value.current.listenersByPath);
                 }
             }, [initial]);
             return <Ctx.Provider value={value.current} children={children} />;
@@ -104,8 +214,8 @@ export const makeHistoryContext = <T, An, Tag extends string = 'type'>(tag: Tag)
                         return _get(ctx.previewState?.current ?? ctx.state.current, path);
                     },
                     listenToPath(v, f) {
-                        // TODO
-                        return () => {};
+                        addPathListener(ctx.listenersByPath, v, f);
+                        return () => removePathListener(ctx.listenersByPath, v, f);
                     },
                 };
                 const go = (
@@ -123,6 +233,7 @@ export const makeHistoryContext = <T, An, Tag extends string = 'type'>(tag: Tag)
                         if (ctx.raf == null) {
                             ctx.raf = requestAnimationFrame(() => {
                                 ctx.raf = undefined;
+                                const base = ctx.previewState?.current ?? ctx.state.current;
                                 const queue = ctx.queuedChanges;
                                 ctx.queuedChanges = [];
                                 const next = dispatch(
@@ -132,8 +243,10 @@ export const makeHistoryContext = <T, An, Tag extends string = 'type'>(tag: Tag)
                                     tag,
                                 );
                                 if (next === ctx.state) return;
+                                const paths = changedPaths(base, queue, extra, tag);
                                 ctx.previewState = next;
                                 ctx.listeners.forEach((f) => f());
+                                notifyPaths(ctx.listenersByPath, paths);
                             });
                         }
                         return;
@@ -145,6 +258,9 @@ export const makeHistoryContext = <T, An, Tag extends string = 'type'>(tag: Tag)
                         ctx.raf = undefined;
                     }
 
+                    const pathTargets = isUndoOrRedo(v)
+                        ? null
+                        : changedPaths(ctx.state.current, v, extra, tag);
                     const next = dispatch(ctx.state, v, extra, tag);
                     if (next === ctx.state) return;
                     hChanged = next.nodes !== ctx.state.nodes;
@@ -152,6 +268,11 @@ export const makeHistoryContext = <T, An, Tag extends string = 'type'>(tag: Tag)
                     ctx.save(ctx.state);
 
                     ctx.listeners.forEach((f) => f());
+                    if (pathTargets) {
+                        notifyPaths(ctx.listenersByPath, pathTargets);
+                    } else {
+                        notifyAllPaths(ctx.listenersByPath);
+                    }
                     if (hChanged) {
                         ctx.historyListeners.forEach((f) => f());
                     }
