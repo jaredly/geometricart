@@ -101,7 +101,7 @@ export const makeHistoryContext = <T, An, Tag extends string = 'type'>(tag: Tag)
             return useMemo(() => {
                 const extra: Extra = {
                     getForPath(path) {
-                        return _get(ctx.state.current, path);
+                        return _get(ctx.previewState?.current ?? ctx.state.current, path);
                     },
                     listenToPath(v, f) {
                         // TODO
