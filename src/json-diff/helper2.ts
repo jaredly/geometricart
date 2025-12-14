@@ -17,14 +17,6 @@ type AddMethodsA<Value, R> = {add(value: Value, when?: ApplyTiming): R};
 // Only if P is a RemovablePath<Root, C>
 type RemoveMethodsA<R> = {remove(when?: ApplyTiming | React.MouseEvent): R};
 
-export type Updater<Current, Tag extends PropertyKey = 'type', Extra = unknown> = DiffNodeA<
-    unknown,
-    Current,
-    Tag,
-    void,
-    Extra
->;
-
 type OpMaker<Value, Tag extends PropertyKey, Extra> = (
     v: Value,
     update: DiffNodeA<Value, Value, Tag, PendingJsonPatchOp<Value, Tag, Extra>, Extra>,

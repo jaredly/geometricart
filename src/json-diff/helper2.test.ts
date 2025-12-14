@@ -35,7 +35,7 @@ describe('helper2 single()', () => {
             {type: 'key', key: 'name'},
         ]);
 
-        const result = resolveAndApply<OneOrMany>({name: 'one'}, op);
+        const result = resolveAndApply<OneOrMany, null>({name: 'one'}, op, null, 'type');
         expect(result.current).toEqual({name: 'two'});
         expect(result.changes[0].path).toEqual(op.path);
     });
@@ -43,7 +43,7 @@ describe('helper2 single()', () => {
     it('refines to the array branch and pushes a new element', () => {
         const op = builder.single(false).push({name: 'two'});
 
-        const result = resolveAndApply<OneOrMany>([{name: 'one'}], op);
+        const result = resolveAndApply<OneOrMany, null>([{name: 'one'}], op, null, 'type');
         expect(result.current).toEqual([{name: 'one'}, {name: 'two'}]);
         expect(result.changes[0].path).toEqual([
             {type: 'single', isSingle: false},
@@ -54,7 +54,7 @@ describe('helper2 single()', () => {
     it('wraps a single value when accessing the array branch', () => {
         const op = builder.single(false).push({name: 'two'});
 
-        const result = resolveAndApply<OneOrMany>({name: 'one'}, op);
+        const result = resolveAndApply<OneOrMany, null>({name: 'one'}, op, null, 'type');
         expect(result.current).toEqual([{name: 'one'}, {name: 'two'}]);
         expect(result.changes[0].path).toEqual([
             {type: 'single', isSingle: false},
@@ -65,7 +65,12 @@ describe('helper2 single()', () => {
     it('treats array access via single(true) as the first element', () => {
         const op = builder.single(true).name.replace('two');
 
-        const result = resolveAndApply<OneOrMany>([{name: 'one'}, {name: 'three'}], op);
+        const result = resolveAndApply<OneOrMany, null>(
+            [{name: 'one'}, {name: 'three'}],
+            op,
+            null,
+            'type',
+        );
         expect(result.current).toEqual([{name: 'two'}, {name: 'three'}]);
         expect(result.changes[0].path).toEqual([
             {type: 'single', isSingle: true},
@@ -76,7 +81,7 @@ describe('helper2 single()', () => {
     it('updates an existing element inside the array branch', () => {
         const op = builder.single(false)[0].name.replace('two');
 
-        const result = resolveAndApply<OneOrMany>([{name: 'one'}], op);
+        const result = resolveAndApply<OneOrMany, null>([{name: 'one'}], op, null, 'type');
         expect(result.current).toEqual([{name: 'two'}]);
         expect(result.changes[0].path).toEqual([
             {type: 'single', isSingle: false},
@@ -101,9 +106,11 @@ describe('helper2 move()', () => {
             {type: 'key', key: 2},
         ]);
 
-        const result = resolveAndApply<{items: string[]; map: Record<string, number>}>(
+        const result = resolveAndApply<{items: string[]; map: Record<string, number>}, string>(
             {items: ['a', 'b', 'c'], map: {a: 1, b: 2}},
             op,
+            '',
+            'type',
         );
         expect(result.current.items).toEqual(['b', 'c', 'a']);
     });
@@ -111,9 +118,11 @@ describe('helper2 move()', () => {
     it('moves object keys', () => {
         const op = moveBuilder.map.move('a', 'c');
 
-        const result = resolveAndApply<{items: string[]; map: Record<string, number>}>(
+        const result = resolveAndApply<{items: string[]; map: Record<string, number>}, string>(
             {items: [], map: {a: 1, b: 2}},
             op,
+            '',
+            'type',
         );
         expect(result.current.map).toEqual({b: 2, c: 1});
         expect(result.changes[0]).toMatchObject({

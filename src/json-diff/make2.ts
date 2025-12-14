@@ -1,6 +1,7 @@
 import {_get} from './internal2';
 import {diffBuilder, JsonPatchOp, PendingJsonPatchOp} from './helper2';
 import {ops, rebase} from './ops2';
+import {Extra} from './react';
 
 export function fromPending<T, V>(base: T, pending: PendingJsonPatchOp<V>): JsonPatchOp<V> {
     switch (pending.op) {
@@ -50,18 +51,20 @@ export type MaybeNested<T> = T | MaybeNested<T>[];
 
 export const asFlat = <T>(v: MaybeNested<T>): T[] => asArray(v).flat() as T[];
 
-export function resolveAndApply<T>(
+export function resolveAndApply<T, Extra, Tag extends string = 'type'>(
     current: T,
-    pending: MaybeNested<PendingJsonPatchOp<T>>,
-    tag = 'type',
+    pending: MaybeNested<PendingJsonPatchOp<T, Tag, Extra>>,
+    extra: Extra,
+    tag: Tag,
 ): {current: T; changes: JsonPatchOp<T>[]} {
     const changes = asFlat(pending).flatMap((op) => {
         if (op.op === 'nested') {
             const value = _get(current, op.path);
-            const inner = op.make(value, diffBuilder(tag));
-            const next = resolveAndApply<T>(
+            const inner = op.make(value, diffBuilder(tag, extra));
+            const next = resolveAndApply<T, Extra, Tag>(
                 current,
-                asArray(inner).map((i) => rebase(i, op.path) as PendingJsonPatchOp<T>),
+                asArray(inner).map((i) => rebase(i, op.path) as PendingJsonPatchOp<T, Tag, Extra>),
+                extra,
                 tag,
             );
             current = next.current;

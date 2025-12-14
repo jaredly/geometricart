@@ -17,7 +17,10 @@ function move<T>(base: T, op: MoveOp<T>) {
     return _add(removed, op.path, value);
 }
 
-export function rebase<T>(op: PendingJsonPatchOp<T>, path: Path): PendingJsonPatchOp<T> {
+export function rebase<T, A extends PropertyKey, B>(
+    op: PendingJsonPatchOp<T, A, B>,
+    path: Path,
+): PendingJsonPatchOp<T, A, B> {
     switch (op.op) {
         case 'move':
             return {

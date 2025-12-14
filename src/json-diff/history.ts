@@ -97,9 +97,11 @@ export const jump = <T, An>(state: History<T, An>, to: string): History<T, An> =
     return {...state, current, tip: to, undoTrail: []};
 };
 
-export const dispatch = <T, An>(
+export const dispatch = <T, An, Extra, Tag extends string = 'type'>(
     state: History<T, An>,
-    nested: {op: 'undo' | 'redo'} | MaybeNested<PendingJsonPatchOp<T>>,
+    nested: {op: 'undo' | 'redo'} | MaybeNested<PendingJsonPatchOp<T, Tag, Extra>>,
+    extra: Extra,
+    tag: Tag,
     genId = randId,
 ): History<T, An> => {
     if (!Array.isArray(nested)) {
@@ -115,7 +117,9 @@ export const dispatch = <T, An>(
 
     const {current, changes} = resolveAndApply(
         state.current,
-        nested as MaybeNested<PendingJsonPatchOp<T>>,
+        nested as MaybeNested<PendingJsonPatchOp<T, Tag, Extra>>,
+        extra,
+        tag,
     );
 
     return {

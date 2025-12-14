@@ -1,17 +1,26 @@
-import React, {useMemo} from 'react';
-import {Group} from '../export-types';
-import {NumberField} from './NumberField';
-import {TextField} from './TextField';
-import {Updater} from '../../../../json-diff/helper2';
+import React, { useMemo } from "react";
+import { Group } from "../export-types";
+import { NumberField } from "./NumberField";
+import { TextField } from "./TextField";
+import { Updater } from "../../../../json-diff/Updater";
 
-export const GroupEditor = ({value, update}: {value: Group; update: Updater<Group>}) => {
-    const entries = useMemo(() => Object.entries(value.entities), [value.entities]);
+export const GroupEditor = ({
+  value,
+  update,
+}: {
+  value: Group;
+  update: Updater<Group>;
+}) => {
+  const entries = useMemo(
+    () => Object.entries(value.entities),
+    [value.entities]
+  );
 
-    return (
-        <div className="space-y-3">
-            <TextField label="Name" value={value.name ?? ''} onChange={update.name} />
-            <div className="space-y-2">
-                {/* <div className="flex items-center justify-between">
+  return (
+    <div className="space-y-3">
+      <TextField label="Name" value={value.name ?? ""} onChange={update.name} />
+      <div className="space-y-2">
+        {/* <div className="flex items-center justify-between">
                     <div className="font-semibold text-sm">Child order</div>
                     <button
                         className="btn btn-outline btn-xs"
@@ -28,11 +37,11 @@ export const GroupEditor = ({value, update}: {value: Group; update: Updater<Grou
                         Add child ref
                     </button>
                 </div> */}
-                {entries.length === 0 ? (
-                    <div className="text-sm opacity-60">No members linked.</div>
-                ) : null}
-                <div className="space-y-2">
-                    {/* {entries.map(([key, order]) => (
+        {entries.length === 0 ? (
+          <div className="text-sm opacity-60">No members linked.</div>
+        ) : null}
+        <div className="space-y-2">
+          {/* {entries.map(([key, order]) => (
                         <div key={key} className="flex flex-col md:flex-row gap-2">
                             <TextField
                                 label="Id"
@@ -64,10 +73,10 @@ export const GroupEditor = ({value, update}: {value: Group; update: Updater<Grou
                             </button>
                         </div>
                     ))} */}
-                </div>
-            </div>
+        </div>
+      </div>
 
-            {/* <div className="space-y-2">
+      {/* <div className="space-y-2">
                 <div className="flex items-center justify-between">
                     <div className="font-semibold text-sm">Crops</div>
                     <button
@@ -142,6 +151,6 @@ export const GroupEditor = ({value, update}: {value: Group; update: Updater<Grou
                     ))}
                 </div>
             </div> */}
-        </div>
-    );
+    </div>
+  );
 };

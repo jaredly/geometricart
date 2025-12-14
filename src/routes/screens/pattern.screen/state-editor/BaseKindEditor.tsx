@@ -3,7 +3,7 @@ import {ShapeKind} from '../export-types';
 import {DistanceEditor} from './DistanceEditor';
 import {TextField} from './TextField';
 import {NumberField} from './NumberField';
-import {Updater} from '../../../../json-diff/helper2';
+import {Updater} from '../../../../json-diff/Updater';
 
 export const BaseKindEditor = ({value, update}: {value: ShapeKind; update: Updater<ShapeKind>}) => {
     if (Array.isArray(value)) {
