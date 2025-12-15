@@ -43,6 +43,7 @@ export const adjustShapes = (
         const midDebug: RenderLog[] = [];
 
         for (let {path: shape, id} of shapes) {
+            if (!shape) continue;
             const debug: RenderLog[] = [];
             const shapeCoords = coordsFromBarePath(shape);
             const center = centroid(shapeCoords);

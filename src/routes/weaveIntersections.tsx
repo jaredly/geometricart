@@ -203,32 +203,32 @@ export const followPath = (links: SegLink[], segs: [Coord, Coord][], start: Coor
     const int = Object.values(intersections).find((int) => coordsEqual(int.pos, start));
     if (!int) return;
 
-    const points = [int];
+    const points = [{int, seg: int.exits[0]}];
     const used = {[int.key]: true};
     while (points.length < 200) {
         const prev = points[points.length - 1];
-        const next = intersections[prev.key].exits[0];
-        if (!segInts[next]) {
-            console.log('no seg', next, segInts[next]);
+        const next = prev.int.exits.find((seg) => seg !== prev.seg);
+        if (next == null || !segInts[next]) {
+            console.log('no seg', next);
             return;
         }
         const [left, right] = segInts[next]!;
-        const neighbor = left === prev.key ? right : left;
+        const neighbor = left === prev.int.key ? right : left;
         const int = intersections[neighbor];
-        if (int.key === points[0].key) {
+        if (int.key === points[0].int.key) {
             console.log('got to the top', points);
-            return points.map((p) => p.pos);
+            return points.map((p) => p.int.pos);
         }
         if (used[int.key]) {
             console.log('nope');
-            return points.map((p) => p.pos);
+            return points.map((p) => p.int.pos);
         }
         used[int.key] = true;
         // if (coordsEqual(int.pos, points[0].pos)) {
         //     console.log('got to the top', points);
         //     return points.map((p) => p.pos);
         // }
-        points.push(int);
+        points.push({int, seg: next});
     }
     console.log(points);
     console.log('ran out of number');

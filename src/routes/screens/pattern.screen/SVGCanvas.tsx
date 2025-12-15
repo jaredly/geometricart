@@ -215,13 +215,13 @@ export const SVGCanvas = ({
                                 editContext.update.pending.replace(null);
 
                                 if (pending.points.length === 1) {
-                                    const byEndPoint = edgesByEndpoint(keyPoints);
+                                    const byEndPoint = edgesByEndpoint(segs);
                                     const pointNames = Object.fromEntries(
                                         points.map((p, i) => [coordKey(p), i]),
                                     );
-                                    const outer = outerBoundary(keyPoints, byEndPoint, pointNames);
-                                    const paths = pathsFromSegments(keyPoints, byEndPoint, outer);
-                                    const shape = followPath(paths, keyPoints, pt);
+                                    const outer = outerBoundary(segs, byEndPoint, pointNames);
+                                    const paths = pathsFromSegments(segs, byEndPoint, outer);
+                                    const shape = followPath(paths, segs, pt);
                                     if (shape) {
                                         pending.onDone(shape, false);
                                     } else {
