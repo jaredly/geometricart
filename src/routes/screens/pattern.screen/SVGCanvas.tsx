@@ -141,7 +141,7 @@ export const SVGCanvas = ({
         // <div>
         <svg
             xmlns="http://www.w3.org/2000/svg"
-            viewBox={`${box.x.toFixed(4)} ${box.y.toFixed(4)} ${box.width.toFixed(4)} ${box.height.toFixed(4)}`}
+            viewBox={`${box.x.toFixed(7)} ${box.y.toFixed(7)} ${box.width.toFixed(7)} ${box.height.toFixed(7)}`}
             ref={innerRef as React.RefObject<SVGSVGElement>}
             style={{background: colorToString(bg), width: size, height: size}}
             onMouseLeave={() => setMouse(null)}

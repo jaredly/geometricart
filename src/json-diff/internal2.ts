@@ -159,8 +159,8 @@ export function _add(base: any, at: PathSegment[], value: any) {
         base.splice(key.key, 0, value);
     } else if (typeof base !== 'object') {
         throw new Error(`base is not object`);
-    } else if (key.key in base) {
-        throw new Error(`key "${key}" already exists, cannot add, must replace`);
+    } else if (key.key in base && base[key.key] !== undefined) {
+        throw new Error(`key "${key.key}" already exists, cannot add, must replace`);
     } else {
         base[key.key] = value;
     }

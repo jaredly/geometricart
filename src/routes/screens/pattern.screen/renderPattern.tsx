@@ -41,6 +41,16 @@ export const renderPattern = (ctx: Ctx, _outer: CropsAndMatrices, pattern: Patte
 
     const simple = getSimplePatternData(tiling, pattern.psize);
     let baseShapes = simple.uniqueShapes;
+
+    const modsBeforeAdjusts = true;
+    if (modsBeforeAdjusts) {
+        baseShapes = modsToShapes(
+            ctx.cropCache,
+            enabledPatternMods,
+            baseShapes.map((shape, i) => ({shape, i})),
+        ).map((s) => s.shape);
+    }
+
     ctx.keyPoints.push(...baseShapes.flat());
     if (Object.keys(pattern.adjustments).length) {
         const adjusted = adjustShapes(
@@ -75,11 +85,13 @@ export const renderPattern = (ctx: Ctx, _outer: CropsAndMatrices, pattern: Patte
         ? getShapeColors(baseShapes, simple.minSegLength, ctx.log)
         : {colors: []};
 
-    const midShapes = modsToShapes(
-        ctx.cropCache,
-        enabledPatternMods,
-        baseShapes.map((shape, i) => ({shape, i})),
-    );
+    const midShapes = !modsBeforeAdjusts
+        ? modsToShapes(
+              ctx.cropCache,
+              enabledPatternMods,
+              baseShapes.map((shape, i) => ({shape, i})),
+          )
+        : baseShapes.map((shape, i) => ({shape, i}));
 
     ctx.items.push(
         ...midShapes.flatMap(({shape, i}) => {

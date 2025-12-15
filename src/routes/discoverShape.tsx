@@ -57,9 +57,9 @@ export const discoverShape = (
         if (!nexts.length) {
             ranout = true;
             if (log) log[log.length - 1].title += ' - Ranout!';
-            console.log(byEndPoint[coordKey(at.to, prec)]);
-            console.log(pks);
-            console.log(points.map((c) => coordKey(c)));
+            // console.log(byEndPoint[coordKey(at.to, prec)]);
+            // console.log(pks);
+            // console.log(points.map((c) => coordKey(c)));
             break;
         }
         const next = nexts[0];

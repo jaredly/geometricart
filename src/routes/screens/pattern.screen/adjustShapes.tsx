@@ -71,11 +71,14 @@ export const adjustShapes = (
                 });
             }
 
+            const prec = 3;
+            const eps = Math.pow(10, -prec);
+
             // console.log('here we are', shapeLines, movedLines);
             const [left, right] = unzip(uniqueShapes, (coords) => {
                 const got =
-                    coordsIntersectCoords(coords, shapeLines) ||
-                    movedLines.some((moved) => coordsIntersectCoords(coords, moved));
+                    coordsIntersectCoords(coords, shapeLines, eps) ||
+                    movedLines.some((moved) => coordsIntersectCoords(coords, moved, eps));
                 // console.log('did intersect', got);
                 return got;
             });
@@ -105,7 +108,7 @@ export const adjustShapes = (
 
             let [removedSegs, segs] = unzip(
                 unique(right.flatMap(coordPairs), coordPairKey),
-                (pair) => !coordPairOnShape(pair, shapeLines),
+                (pair) => !coordPairOnShape(pair, shapeLines, eps),
             );
 
             if (log) {
@@ -131,8 +134,6 @@ export const adjustShapes = (
             }
 
             // const prec = 5;
-
-            const prec = 5;
 
             segs = cutSegments(segs, prec);
 
@@ -220,9 +221,9 @@ export const coordPairKey = (pair: [Coord, Coord], prec = 3) => {
 export const coordLines = (coords: Coord[]) =>
     coordPairs(coords).map((pair) => lineToSlope(pair[0], pair[1], true));
 
-export const coordPairOnShape = (pair: [Coord, Coord], shape: SlopeIntercept[]) => {
+export const coordPairOnShape = (pair: [Coord, Coord], shape: SlopeIntercept[], eps: number) => {
     const line = lineToSlope(pair[0], pair[1], true);
-    return shape.some((sline) => overlapping(line, sline));
+    return shape.some((sline) => overlapping(line, sline, eps));
 };
 
 export const allSameLines = (one: SlopeIntercept[], two: SlopeIntercept[]) => {
@@ -258,18 +259,18 @@ export const coordPairs = (coords: Coord[]) => {
     return res;
 };
 
-export const overlapping = (one: SlopeIntercept, two: SlopeIntercept) =>
-    closeEnough(one.m, two.m) &&
-    closeEnough(one.b, two.b) &&
-    (withinLimit(one.limit!, two.limit![0]) ||
-        withinLimit(one.limit!, two.limit![1]) ||
-        withinLimit(two.limit!, one.limit![0]) ||
-        withinLimit(two.limit!, one.limit![1]));
+export const overlapping = (one: SlopeIntercept, two: SlopeIntercept, eps: number) =>
+    closeEnough(one.m, two.m, eps) &&
+    closeEnough(one.b, two.b, eps) &&
+    (withinLimit(one.limit!, two.limit![0], eps) ||
+        withinLimit(one.limit!, two.limit![1], eps) ||
+        withinLimit(two.limit!, one.limit![0], eps) ||
+        withinLimit(two.limit!, one.limit![1], eps));
 
-export const coordsIntersectCoords = (one: Coord[], twos: SlopeIntercept[]) => {
-    return coordLines(one).some((one) => twos.some((two) => lineHit(one, two)));
+export const coordsIntersectCoords = (one: Coord[], twos: SlopeIntercept[], eps: number) => {
+    return coordLines(one).some((one) => twos.some((two) => lineHit(one, two, eps)));
 };
 
-export const lineHit = (one: SlopeIntercept, two: SlopeIntercept) => {
-    return overlapping(one, two) || !!lineLine(one, two);
+export const lineHit = (one: SlopeIntercept, two: SlopeIntercept, eps: number) => {
+    return overlapping(one, two, eps) || !!lineLine(one, two);
 };

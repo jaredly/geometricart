@@ -362,7 +362,7 @@ const Inner = ({initialPatterns}: {initialPatterns: Patterns}) => {
 
     return (
         <div className="flex">
-            {/*<RenderExport state={state} patterns={patternCache} onChange={sctx.update.replace} />*/}
+            {/*<RenderExport state={state} patterns={patternCache} onChange={sctx.update} />*/}
             <RenderDebug state={state} update={sctx.update} patterns={patternCache} />
             <div className="max-h-250 overflow-auto flex-1">
                 <StateEditor value={state} update={sctx.update} />

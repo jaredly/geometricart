@@ -29,6 +29,7 @@ const getLogSelection = (logSelection: number[], log: RenderLog): LogItem[] => {
     for (let i = 0; i < logSelection.length - 1; i++) {
         if (log.type !== 'group') return [];
         log = log.children[logSelection[i]];
+        if (!log) return [];
     }
     if (!log) {
         console.log(base, logSelection);
@@ -39,6 +40,7 @@ const getLogSelection = (logSelection: number[], log: RenderLog): LogItem[] => {
     if (log.type === 'items') {
         if (!log.items[last]) {
             console.warn(`BAD NEWS`, log, last);
+            return [];
         }
         const item = log.items[last].item;
         return Array.isArray(item) ? item : [item];
@@ -80,13 +82,13 @@ const renderLogSelection = (
                                   type: 'point' as const,
                                   color: {r: 255, g: 255, b: 255},
                                   coord: item.prev,
-                                  key: 'log-' + i,
+                                  key: 'log2-' + i,
                               },
                               {
                                   type: 'point' as const,
                                   color: {r: 255, g: 255, b: 255},
                                   coord: item.seg.to,
-                                  key: 'log-' + i,
+                                  key: 'log3-' + i,
                               },
                           ]),
                 ];
@@ -120,7 +122,7 @@ const renderLogSelection = (
                                   color: {r: 255, g: 255, b: 255},
                                   strokeWidth: 0.02,
                                   shapes: [item.shape],
-                                  key: 'log-' + i,
+                                  key: 'log-z' + i,
                               },
                           ]),
                 ];
@@ -222,7 +224,8 @@ export const RenderDebug = ({
     const es = useEditState();
     const hover = es.use((es) => es.hover);
     // const t = 0.763;
-    const t = 0.988;
+    const t = 0.592;
+    // const t = 0.992;
     const cropCache = useCropCache(state, t, animCache);
 
     const {items, warnings, keyPoints, byKey, bg, log} = useMemo(
