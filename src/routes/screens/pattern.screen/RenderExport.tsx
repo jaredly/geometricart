@@ -86,11 +86,11 @@ export const RenderExport = ({
     return (
         <div className="flex">
             <div className="relative overflow-hidden">
-                <Canvas
+                <SVGCanvas
                     {...zoomProps}
                     state={state}
                     mouse={mouse}
-                    // keyPoints={keyPoints}
+                    keyPoints={keyPoints}
                     setMouse={setMouse}
                     items={both}
                     size={size}

@@ -1,4 +1,5 @@
 import {coordKey} from '../rendering/coordKey';
+import {coordsEqual} from '../rendering/pathsAreIdentical';
 import {Coord} from '../types';
 import {SegLink, midPoint, allPairs} from './shapesFromSegments';
 
@@ -13,7 +14,20 @@ then consider the fronteir
 
 const numSort = (a: number, b: number) => a - b;
 
-export const weaveIntersections = (segs: [Coord, Coord][], segLinks: SegLink[]) => {
+type Inter = {
+    elevation?: -1 | 1 | 0;
+    // the coordinate of the intersection
+    pos: Coord;
+    // list of segment indices
+    exits: number[];
+    // a unique key for this intersection
+    key: string;
+    // a crossing intersection at the same coordinate, if applicable
+    other?: string;
+    pathId?: number;
+};
+
+const calculateIntersections = (segs: [Coord, Coord][], segLinks: SegLink[]) => {
     /*
     intersection can have multiple pairs
     pairs are identified by [segid]:[segid]
@@ -21,14 +35,6 @@ export const weaveIntersections = (segs: [Coord, Coord][], segLinks: SegLink[]) 
 
     intersection key is segid[].sort().join(',')
     */
-    type Inter = {
-        elevation?: -1 | 1 | 0;
-        pos: Coord;
-        exits: number[];
-        key: string;
-        other?: string;
-        pathId?: number;
-    };
     const intersections: Record<string, Inter> = {};
     const byCoord: Record<string, Inter> = {};
 
@@ -85,9 +91,14 @@ export const weaveIntersections = (segs: [Coord, Coord][], segLinks: SegLink[]) 
         return [left.key, right.key];
     });
 
-    // console.log('Weaving', segLinks, segInts);
+    return {intersections, segInts, weird};
+};
 
+export const weaveIntersections = (segs: [Coord, Coord][], segLinks: SegLink[]) => {
+    const {intersections, segInts, weird} = calculateIntersections(segs, segLinks);
+    // console.log('Weaving', segLinks, segInts);
     // if (weird) return;
+
     const first = Object.keys(intersections).find((k) => intersections[k].other != null);
     if (!first) return;
     const int = intersections[first];
@@ -184,4 +195,41 @@ export const weaveIntersections = (segs: [Coord, Coord][], segLinks: SegLink[]) 
             ];
         })
         .sort((a, b) => a.order - b.order);
+};
+
+export const followPath = (links: SegLink[], segs: [Coord, Coord][], start: Coord) => {
+    const {intersections, segInts, weird} = calculateIntersections(segs, links);
+
+    const int = Object.values(intersections).find((int) => coordsEqual(int.pos, start));
+    if (!int) return;
+
+    const points = [int];
+    const used = {[int.key]: true};
+    while (points.length < 200) {
+        const prev = points[points.length - 1];
+        const next = intersections[prev.key].exits[0];
+        if (!segInts[next]) {
+            console.log('no seg', next, segInts[next]);
+            return;
+        }
+        const [left, right] = segInts[next]!;
+        const neighbor = left === prev.key ? right : left;
+        const int = intersections[neighbor];
+        if (int.key === points[0].key) {
+            console.log('got to the top', points);
+            return points.map((p) => p.pos);
+        }
+        if (used[int.key]) {
+            console.log('nope');
+            return points.map((p) => p.pos);
+        }
+        used[int.key] = true;
+        // if (coordsEqual(int.pos, points[0].pos)) {
+        //     console.log('got to the top', points);
+        //     return points.map((p) => p.pos);
+        // }
+        points.push(int);
+    }
+    console.log(points);
+    console.log('ran out of number');
 };

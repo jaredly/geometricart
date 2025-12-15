@@ -46,6 +46,7 @@ export function mulberry32(seed: number) {
     };
 }
 
+// biome-ignore lint: this one is fine
 export const globals: Record<string, any> = {
     Math,
     dist,

@@ -164,6 +164,7 @@ export const resolveT = (
 
 export const withShared = (anim: Ctx['anim'], shared?: Record<string, AnimatableValue>) => {
     if (!shared) return anim;
+    // biome-ignore lint: this one is fine
     const values: Record<string, any> = {};
     Object.entries(shared).forEach(([name, value]) => {
         values[name] = a.value(anim, value);
@@ -200,6 +201,7 @@ const renderObject = (ctx: Ctx, crops: CropsAndMatrices, object: EObject) => {
 
     if (object.style.disabled) return;
 
+    // biome-ignore lint: this one is fine
     const local: Record<string, any> = {};
     if (object.style.t) {
         const got = resolveT(object.style.t, anim.values.t);
@@ -341,9 +343,10 @@ export const svgItems = (
     const warnings: string[] = [];
     const warn = (v: string) => warnings.push(v);
     const items: RenderItem[] = [];
-    const keyPoints: Coord[] = [];
+    const keyPoints: [Coord, Coord][] = [];
     const byKey: Record<string, string[]> = {};
     const fromtl = evalTimeline(state.styleConfig.timeline, t);
+    // biome-ignore lint: this one is fine
     const values: Record<string, any> = {...globals, t, ...fromtl};
     const seed = a.number(
         {cache: animCache, values, palette: state.styleConfig.palette, warn},

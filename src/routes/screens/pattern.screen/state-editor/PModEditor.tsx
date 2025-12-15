@@ -58,6 +58,7 @@ export const PModEditor = ({
                     <AnimInput
                         label="v"
                         value={value.v}
+                        // biome-ignore lint: this one is fine
                         onChange={update.variant(value.type).v as Updater<any>}
                     />
                 </Disableable>
@@ -73,6 +74,7 @@ export const PModEditor = ({
                     <AnimCoordInput
                         label="v"
                         value={value.v}
+                        // biome-ignore lint: this one is fine
                         onChange={update.variant('translate').v as Updater<any>}
                     />
                 </Disableable>
@@ -129,6 +131,7 @@ export const PModEditor = ({
                     <AnimCoordOrNumberInput
                         label="v"
                         value={value.v}
+                        // biome-ignore lint: this one is fine
                         onChange={update.variant('scale').v as Updater<any>}
                     />
                     <AnimCoordInput
@@ -149,6 +152,7 @@ export const PModEditor = ({
                     <AnimInput
                         label="v"
                         value={value.v}
+                        // biome-ignore lint: this one is fine
                         onChange={update.variant('rotate').v as Updater<any>}
                     />
                     <AnimCoordInput

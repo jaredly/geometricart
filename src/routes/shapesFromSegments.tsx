@@ -387,6 +387,7 @@ export const chooseCorner = (options: Coord[], shapes: Coord[][]) => {
     const bySize = shapesAtPoints
         .map((shape, i) => ({
             i,
+            // biome-ignore lint: nope
             shape: shape && shape.length,
             area: shape ? calcPolygonArea(shape) : 0,
         }))

@@ -1,54 +1,55 @@
 {
-    "$schema": "https://biomejs.dev/schemas/2.1.2/schema.json",
-    "vcs": {
-        "enabled": false,
-        "clientKind": "git",
-        "useIgnoreFile": false
-    },
-    "files": {
-        "ignoreUnknown": true,
-        "includes": ["**/*.ts", "**/*.tsx"]
-    },
-    "formatter": {
-        "enabled": true,
-        "indentStyle": "space",
-        "indentWidth": 4,
-        "bracketSpacing": false,
-        "lineWidth": 100
-    },
-    "linter": {
-        "enabled": true,
-        "rules": {
-            "recommended": true,
-            "a11y": "off",
-            "style": "off",
-            "correctness": {
-                "noUnusedVariables": "off",
-                "noUnusedImports": "off",
-                "useExhaustiveDependencies": "warn",
-                "noSwitchDeclarations": "warn",
-                "useJsxKeyInIterable": "off",
-                "noChildrenProp": "off"
-            },
-            "suspicious": {
-                "noArrayIndexKey": "off",
-                "noAssignInExpressions": "off",
-                "noDoubleEquals": "warn",
-                "noControlCharactersInRegex": "warn"
-            }
-        }
-    },
-    "javascript": {
-        "formatter": {
-            "quoteStyle": "single"
-        }
-    },
-    "assist": {
-        "enabled": true,
-        "actions": {
-            "source": {
-                "organizeImports": "off"
-            }
-        }
+  "$schema": "https://biomejs.dev/schemas/2.1.2/schema.json",
+  "vcs": {
+    "enabled": false,
+    "clientKind": "git",
+    "useIgnoreFile": false
+  },
+  "files": {
+    "ignoreUnknown": true,
+    "includes": ["**/*.ts", "**/*.tsx"]
+  },
+  "formatter": {
+    "enabled": true,
+    "indentStyle": "space",
+    "indentWidth": 4,
+    "bracketSpacing": false,
+    "lineWidth": 100
+  },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "recommended": true,
+      "a11y": "off",
+      "style": "off",
+      "correctness": {
+        "noUnusedVariables": "off",
+        "noUnusedImports": "off",
+        "useExhaustiveDependencies": "warn",
+        "noSwitchDeclarations": "warn",
+        "useJsxKeyInIterable": "off",
+        "noChildrenProp": "off",
+        "noUnusedFunctionParameters": "off"
+      },
+      "suspicious": {
+        "noArrayIndexKey": "off",
+        "noAssignInExpressions": "off",
+        "noDoubleEquals": "warn",
+        "noControlCharactersInRegex": "warn"
+      }
     }
+  },
+  "javascript": {
+    "formatter": {
+      "quoteStyle": "single"
+    }
+  },
+  "assist": {
+    "enabled": true,
+    "actions": {
+      "source": {
+        "organizeImports": "off"
+      }
+    }
+  }
 }

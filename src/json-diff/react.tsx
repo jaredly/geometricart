@@ -234,7 +234,6 @@ export const makeHistoryContext = <T, An, Tag extends string = 'type'>(tag: Tag)
         historyUp: [],
         previewState: null,
         listenersByPath: makePathListenerNode(),
-        // biome-ignore lint: this one is fine
         save(v) {},
         listeners: [],
         queuedChanges: [],

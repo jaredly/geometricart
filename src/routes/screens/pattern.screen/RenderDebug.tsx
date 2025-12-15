@@ -71,6 +71,7 @@ const renderLogSelection = (
                         type: 'path',
                         color: {r: 255, g: 0, b: 0},
                         strokeWidth: 0.02,
+                        adjustForZoom: true,
                         shapes: [{origin: item.prev, segments: [item.seg], open: true}],
                         opacity: detectOverlaps ? 0.3 : undefined,
                         key: 'log-' + i,
@@ -111,6 +112,7 @@ const renderLogSelection = (
                         type: 'path',
                         color: {r: 255, g: 0, b: 0},
                         opacity: detectOverlaps ? 0.3 : undefined,
+                        adjustForZoom: true,
                         shapes: [item.shape],
                         key: 'log-' + i,
                     },
@@ -120,6 +122,7 @@ const renderLogSelection = (
                               {
                                   type: 'path' as const,
                                   color: {r: 255, g: 255, b: 255},
+                                  adjustForZoom: true,
                                   strokeWidth: 0.02,
                                   shapes: [item.shape],
                                   key: 'log-z' + i,
@@ -233,7 +236,7 @@ export const RenderDebug = ({
 
     const {items, warnings, keyPoints, byKey, bg, log} = useMemo(
         () => svgItems(state, animCache, cropCache, patterns, t, true),
-        [state, patterns, cropCache, animCache],
+        [state, patterns, cropCache, animCache, t],
     );
 
     const {zoomProps, box, reset: resetZoom} = useElementZoom(state.view.box);

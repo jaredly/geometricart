@@ -13,7 +13,11 @@ import {coordsEqual} from '../../../rendering/pathsAreIdentical';
 import {calcPathD} from '../../../editor/calcPathD';
 import {transformBarePath} from '../../../rendering/points';
 import {translationMatrix} from '../../../rendering/getMirrorTransforms';
-import {unique} from '../../shapesFromSegments';
+import {edgesByEndpoint, unique} from '../../shapesFromSegments';
+import {coordPairKey, sortCoordPair} from './adjustShapes';
+import {pathsFromSegments} from '../../pathsFromSegments';
+import {outerBoundary} from '../../outerBoundary';
+import {followPath} from '../../weaveIntersections';
 
 export const Canvas = ({
     items,
@@ -70,7 +74,7 @@ export const SVGCanvas = ({
 }: {
     state: State;
     mouse: Coord | null;
-    keyPoints: Coord[];
+    keyPoints: [Coord, Coord][];
     bg: Color;
     items: RenderItem[];
     size: number;
@@ -90,33 +94,12 @@ export const SVGCanvas = ({
     });
     const [focus, setFocus] = useState(null as null | string);
 
-    const points = useMemo(() => unique(keyPoints, coordKey), [keyPoints]);
+    const points = useMemo(() => unique(keyPoints.flat(), coordKey), [keyPoints]);
+    const segs = useMemo(() => unique(keyPoints.map(sortCoordPair), coordPairKey), [keyPoints]);
 
-    // editContext = useEditContext()
-    // pending = editContext.use()
-    // editContext.latest().pending
-    // editContext.update()
     const editContext = usePendingState();
 
     const pending = editContext.use((s) => s.pending);
-    // const points = useMemo(() => {
-    //     if (!pending) return [];
-    //     const pts: Record<string, Coord> = {};
-    //     items.forEach((item) => {
-    //         item.shapes.forEach((shape) => {
-    //             shape.segments.forEach((seg) => {
-    //                 const k = coordKey(seg.to);
-    //                 pts[k] = seg.to;
-    //             });
-    //             const k = coordKey(shape.origin);
-    //             pts[k] = shape.origin;
-    //         });
-    //     });
-    //     return Object.values(pts);
-    // }, [items, pending]);
-
-    // const update = editContext.useUpdate();
-    // const get = editContext.useGet();
 
     useEffect(() => {
         const fn = (evt: KeyboardEvent) => {
@@ -161,29 +144,43 @@ export const SVGCanvas = ({
                     ))}
                 </defs>
             ) : null}
-            {paths.map(({key, shapes, pk, color, strokeWidth, zIndex, shadow, sharp, ...item}) =>
-                shapes.map((shape, m) => (
-                    <path
-                        {...item}
-                        fill={
-                            focus === key
-                                ? 'red'
-                                : strokeWidth
-                                  ? 'none'
-                                  : colorToString(shadow?.color ?? color)
-                        }
-                        strokeLinejoin={sharp ? 'miter' : 'round'}
-                        strokeLinecap={sharp ? 'butt' : 'round'}
-                        stroke={strokeWidth ? colorToString(shadow?.color ?? color) : undefined}
-                        strokeWidth={strokeWidth ? strokeWidth * lw : undefined}
-                        filter={shadow ? `url(#${shadowKey(shadow)})` : undefined}
-                        d={calcPathD(shape, 1, 5)}
-                        key={`${key}-${m}`}
-                        cursor={item.onClick ? 'pointer' : undefined}
-                        onClick={item.onClick} // ?? (() => setFocus(focus === key ? null : key))}
-                        data-z={zIndex}
-                    />
-                )),
+            {paths.map(
+                ({
+                    key,
+                    shapes,
+                    pk,
+                    color,
+                    strokeWidth,
+                    zIndex,
+                    shadow,
+                    sharp,
+                    adjustForZoom,
+                    ...item
+                }) =>
+                    shapes.map((shape, m) => (
+                        <path
+                            {...item}
+                            fill={
+                                focus === key
+                                    ? 'red'
+                                    : strokeWidth
+                                      ? 'none'
+                                      : colorToString(shadow?.color ?? color)
+                            }
+                            strokeLinejoin={sharp ? 'miter' : 'round'}
+                            strokeLinecap={sharp ? 'butt' : 'round'}
+                            stroke={strokeWidth ? colorToString(shadow?.color ?? color) : undefined}
+                            strokeWidth={
+                                strokeWidth && adjustForZoom ? strokeWidth * lw : strokeWidth
+                            }
+                            filter={shadow ? `url(#${shadowKey(shadow)})` : undefined}
+                            d={calcPathD(shape, 1, 5)}
+                            key={`${key}-${m}`}
+                            cursor={item.onClick ? 'pointer' : undefined}
+                            onClick={item.onClick} // ?? (() => setFocus(focus === key ? null : key))}
+                            data-z={zIndex}
+                        />
+                    )),
             )}
             {rpoints.map(({key, coord, color, opacity}) => (
                 <circle
@@ -216,7 +213,23 @@ export const SVGCanvas = ({
                             if (pending.type !== 'shape') return;
                             if (pending.points.length && coordsEqual(pending.points[0], pt)) {
                                 editContext.update.pending.replace(null);
-                                pending.onDone(pending.points, false);
+
+                                if (pending.points.length === 1) {
+                                    const byEndPoint = edgesByEndpoint(keyPoints);
+                                    const pointNames = Object.fromEntries(
+                                        points.map((p, i) => [coordKey(p), i]),
+                                    );
+                                    const outer = outerBoundary(keyPoints, byEndPoint, pointNames);
+                                    const paths = pathsFromSegments(keyPoints, byEndPoint, outer);
+                                    const shape = followPath(paths, keyPoints, pt);
+                                    if (shape) {
+                                        pending.onDone(shape, false);
+                                    } else {
+                                        console.log('failed to find a shape sry');
+                                    }
+                                } else {
+                                    pending.onDone(pending.points, false);
+                                }
                             } else {
                                 editContext.update.pending.variant('shape').points.push(pt);
                             }

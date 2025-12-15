@@ -4,7 +4,7 @@ import {Coord} from '../../../types';
 import {centroid} from '../../findReflectionAxes';
 import {getSimplePatternData, getShapeColors} from '../../getPatternData';
 import {EndPointMap} from '../../shapesFromSegments';
-import {adjustShapes} from './adjustShapes';
+import {adjustShapes, coordPairs} from './adjustShapes';
 import {parseColor} from './colors';
 import {AnimCtx, Ctx, RenderItem, RenderShadow, a, isColor, isCoord} from './evaluate';
 import {
@@ -41,6 +41,7 @@ export const renderPattern = (ctx: Ctx, _outer: CropsAndMatrices, pattern: Patte
 
     const simple = getSimplePatternData(tiling, pattern.psize);
     let baseShapes = simple.uniqueShapes;
+    ctx.keyPoints.push(...baseShapes.flatMap(coordPairs));
 
     const modsBeforeAdjusts = true;
     if (modsBeforeAdjusts) {
@@ -51,7 +52,6 @@ export const renderPattern = (ctx: Ctx, _outer: CropsAndMatrices, pattern: Patte
         ).map((s) => s.shape);
     }
 
-    ctx.keyPoints.push(...baseShapes.flat());
     if (Object.keys(pattern.adjustments).length) {
         const adjusted = adjustShapes(
             panim,
@@ -312,16 +312,16 @@ export const resolveShadow = (anim: Ctx['anim'], shadow?: Shadow): RenderShadow 
             isCoord(v.blur) &&
             isColor(v.color)
         ) {
-            return {
+            return removeNullShadow({
                 offset: scalePos(v.offset, 0.1),
                 blur: scalePos(v.blur, 0.1),
                 color: colorToRgb(v.color),
-            };
+            });
         }
         return;
     }
     if (!shadow) return undefined;
-    return {
+    return removeNullShadow({
         blur: shadow.blur
             ? scalePos(numToCoord(a.coordOrNumber(anim, shadow.blur)), 0.1)
             : {x: 0, y: 0},
@@ -329,7 +329,13 @@ export const resolveShadow = (anim: Ctx['anim'], shadow?: Shadow): RenderShadow 
             ? scalePos(numToCoord(a.coordOrNumber(anim, shadow.offset)), 0.1)
             : {x: 0, y: 0},
         color: shadow.color ? colorToRgb(a.color(anim, shadow.color)) : {r: 0, g: 0, b: 0},
-    };
+    });
+};
+const removeNullShadow = (sh: RenderShadow) => {
+    if (sh.offset.x === 0 && sh.offset.y === 0 && sh.blur.x === 0 && sh.blur.y === 0) {
+        return;
+    }
+    return sh;
 };
 export const matchKind = (
     k: ShapeKind,

@@ -30,6 +30,7 @@ export type RenderItem =
     | {
           type: 'path';
           pk?: PKPath;
+          adjustForZoom?: boolean;
           onClick?: (evt: React.MouseEvent<SVGElement>) => void;
           shadow?: RenderShadow;
           color: {r: number; g: number; b: number};
@@ -57,7 +58,7 @@ export type Ctx = {
     layer: Layer;
     patterns: Patterns;
     items: RenderItem[];
-    keyPoints: Coord[];
+    keyPoints: [Coord, Coord][];
     byKey: Record<string, string[]>;
     log?: RenderLog[];
 };
