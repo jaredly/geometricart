@@ -302,6 +302,7 @@ const renderGroup = (ctx: Ctx, crops: CropsAndMatrices, group: Group) => {
     if (group.type !== 'Group') throw new Error('not a group');
     for (let [id] of Object.entries(group.entities).sort((a, b) => a[1] - b[1])) {
         const entity = ctx.layer.entities[id];
+        if (!entity) continue;
         switch (entity.type) {
             case 'Group':
                 renderGroup(ctx, crops, entity);
@@ -393,15 +394,16 @@ export const barePathFromCoords = (coords: Coord[]): BarePath => ({
 function handleShadowAndZSorting(items: RenderItem[]) {
     const len = items.length;
     for (let i = 0; i < len; i++) {
-        if (items[i].shadow) {
-            items.push({...items[i], shadow: undefined});
+        const item = items[i];
+        if (item.type === 'path' && item.shadow) {
+            items.push({...item, shadow: undefined});
         }
     }
-    const hasZ = items.some((s) => s.zIndex != null || s.shadow != null);
+    const hasZ = items.some((s) => s.zIndex != null || (s.type === 'path' && s.shadow != null));
     if (hasZ) {
         items.sort((a, b) =>
             a.zIndex === b.zIndex
-                ? (a.shadow ? 0 : 1) - (b.shadow ? 0 : 1)
+                ? (a.type === 'path' && a.shadow ? 0 : 1) - (b.type === 'path' && b.shadow ? 0 : 1)
                 : (a.zIndex ?? 0) - (b.zIndex ?? 0),
         );
     }

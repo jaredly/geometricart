@@ -24,19 +24,30 @@ export type AnimCtx = {
     palette: Color[];
 };
 
-export type RenderItem = {
-    type: 'path';
-    pk?: PKPath;
-    onClick?: (evt: React.MouseEvent<SVGElement>) => void;
-    shadow?: {blur: Coord; offset: Coord; color: Rgb};
-    color: {r: number; g: number; b: number};
-    sharp?: boolean;
-    strokeWidth?: number;
-    zIndex?: number | null;
-    shapes: BarePath[];
-    opacity?: number;
-    key: string;
-};
+export type RenderShadow = {blur: Coord; offset: Coord; color: Rgb};
+
+export type RenderItem =
+    | {
+          type: 'path';
+          pk?: PKPath;
+          onClick?: (evt: React.MouseEvent<SVGElement>) => void;
+          shadow?: RenderShadow;
+          color: {r: number; g: number; b: number};
+          sharp?: boolean;
+          strokeWidth?: number;
+          zIndex?: number | null;
+          shapes: BarePath[];
+          opacity?: number;
+          key: string;
+      }
+    | {
+          type: 'point';
+          coord: Coord;
+          color?: {r: number; g: number; b: number};
+          zIndex?: number | null;
+          opacity?: number;
+          key: string;
+      };
 
 export type Ctx = {
     // warn(m: string): void;

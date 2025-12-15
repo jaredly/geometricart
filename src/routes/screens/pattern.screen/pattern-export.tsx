@@ -26,6 +26,7 @@ import {blankHistory, History} from '../../../json-diff/history';
 import {makeContext, makeHistoryContext} from '../../../json-diff/react';
 // import {example3} from './example3';
 
+// biome-ignore lint: any is fine here
 const usePromise = <T,>(f: (abort: AbortSignal) => Promise<T>, deps: any[] = []) => {
     const [v, setV] = useState<T | null>(null);
     const lv = useRef(f);
@@ -34,6 +35,7 @@ const usePromise = <T,>(f: (abort: AbortSignal) => Promise<T>, deps: any[] = [])
         const ctrl = new AbortController();
         lv.current(ctrl.signal).then(setV);
         return () => ctrl.abort();
+        // biome-ignore lint: this is fine
     }, deps);
     return v;
 };
@@ -361,7 +363,7 @@ const Inner = ({initialPatterns}: {initialPatterns: Patterns}) => {
     return (
         <div className="flex">
             {/*<RenderExport state={state} patterns={patternCache} onChange={sctx.update.replace} />*/}
-            <RenderDebug state={state} patterns={patternCache} />
+            <RenderDebug state={state} update={sctx.update} patterns={patternCache} />
             <div className="max-h-250 overflow-auto flex-1">
                 <StateEditor value={state} update={sctx.update} />
             </div>

@@ -131,6 +131,7 @@ const changedPaths = (changes: JsonPatchOp<unknown>[]) => {
     return paths;
 };
 
+// biome-ignore lint: this one is fine
 export const useValue = <Current,>(node: DiffNodeA<unknown, Current, any, unknown, Extra>) => {
     const path = getPath(node);
     const extra = getExtra(node);
@@ -227,11 +228,13 @@ const MakeContext = <T, An, Tag extends string = 'type'>(ctx: CH<T, An, Tag>, ta
 
 export const makeHistoryContext = <T, An, Tag extends string = 'type'>(tag: Tag) => {
     const Ctx = createContext<CH<T, An, Tag>>({
+        // biome-ignore lint: this one is fine
         state: blankHistory(null as any),
         historyListeners: [],
         historyUp: [],
         previewState: null,
         listenersByPath: makePathListenerNode(),
+        // biome-ignore lint: this one is fine
         save(v) {},
         listeners: [],
         queuedChanges: [],
@@ -391,6 +394,7 @@ const clearHistory = <T, An>(h: History<T, An>): History<T, An> => ({
 });
 
 export const makeContext = <T, Tag extends string = 'type'>(tag: Tag) => {
+    // biome-ignore lint: this one is fine
     const Ctx = createContext<C<T>>(null as any);
 
     type Extra = null;

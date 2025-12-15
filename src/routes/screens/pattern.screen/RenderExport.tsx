@@ -18,6 +18,7 @@ import {useAnimate} from './useAnimate';
 import {useCropCache} from './useCropCache';
 import {useElementZoom} from './useSVGZoom';
 import {VideoExport} from './VideoExport';
+import {Updater} from '../../../json-diff/Updater';
 
 export const renderShapes = (
     shapes: State['shapes'],
@@ -38,7 +39,7 @@ export const RenderExport = ({
 }: {
     state: State;
     patterns: Patterns;
-    onChange: (v: State) => void;
+    onChange: Updater<State>;
 }) => {
     const [t, setT] = useState(0); // animateeeee
     const animCache = useMemo<AnimCtx['cache']>(() => new Map(), []);
@@ -108,8 +109,7 @@ export const RenderExport = ({
                         <button
                             className="btn btn-square px-2 py-1 bg-base-100"
                             onClick={() => {
-                                // onChange
-                                onChange({...state, view: {...state.view, box}});
+                                onChange.view.box(box);
                             }}
                         >
                             <AddIcon />

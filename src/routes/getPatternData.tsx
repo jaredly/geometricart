@@ -373,8 +373,9 @@ export const getPatternData = (
         ([a, b]) => `${coordKey(a)}:${coordKey(b)}`,
     );
 
-    const byEndPoint = edgesByEndpoint(allSegments);
-    const shapes = shapesFromSegments(byEndPoint, eigenPoints).shapes;
+    const prec = 3;
+    const byEndPoint = edgesByEndpoint(allSegments, prec);
+    const shapes = shapesFromSegments(byEndPoint, eigenPoints, prec).shapes;
 
     const canons = shapes
         .map(joinAdjacentShapeSegments)
@@ -432,9 +433,10 @@ function getInitialShapes(eigenSegments: [Coord, Coord][], tiling: Tiling, pts: 
         ([a, b]) => `${coordKey(a)}:${coordKey(b)}`,
     );
 
-    const byEndPoint = edgesByEndpoint(allSegments);
+    const prec = 3;
+    const byEndPoint = edgesByEndpoint(allSegments, prec);
     const bounds = pkPathFromCoords(pts)!;
-    const shapes = shapesFromSegments(byEndPoint, eigenPoints).shapes.filter((shape) => {
+    const shapes = shapesFromSegments(byEndPoint, eigenPoints, prec).shapes.filter((shape) => {
         const p = pkPathFromCoords(shape)!;
         p.op(bounds, pk.PathOp.Intersect);
         const shapes = cmdsToSegments([...p.toCmds()]);

@@ -1,5 +1,6 @@
 import {useMemo, useRef, useState} from 'react';
 import {
+    AddIcon,
     BaselineFilterCenterFocus,
     BaselineZoomInMap,
     CheckboxChecked,
@@ -16,6 +17,7 @@ import {useCropCache} from './useCropCache';
 import {useElementZoom} from './useSVGZoom';
 import {useEditState} from './editState';
 import {renderShape} from './RenderExport';
+import {Updater} from '../../../json-diff/Updater';
 
 const allItems = (log: RenderLog): LogItem[] => {
     if (log.type === 'items') return log.items.flatMap((l) => l.item);
@@ -75,13 +77,15 @@ const renderLogSelection = (
                         ? []
                         : [
                               {
-                                  type: 'path' as const,
+                                  type: 'point' as const,
                                   color: {r: 255, g: 255, b: 255},
-                                  strokeWidth: 0.02,
-                                  shapes: [
-                                      circleSeg(item.prev, 0.01),
-                                      circleSeg(item.seg.to, 0.01),
-                                  ],
+                                  coord: item.prev,
+                                  key: 'log-' + i,
+                              },
+                              {
+                                  type: 'point' as const,
+                                  color: {r: 255, g: 255, b: 255},
+                                  coord: item.seg.to,
                                   key: 'log-' + i,
                               },
                           ]),
@@ -89,11 +93,12 @@ const renderLogSelection = (
             case 'point': {
                 return [
                     {
-                        type: 'path',
+                        type: 'point',
                         color: {r: 255, g: 0, b: 0},
-                        strokeWidth: 0.02,
+                        // strokeWidth: 0.02,
                         opacity: detectOverlaps ? 0.3 : undefined,
-                        shapes: [circleSeg(item.p, 0.01)],
+                        // shapes: [circleSeg(item.p, 0.01)],
+                        coord: item.p,
                         key: 'log-' + i,
                     },
                 ];
@@ -203,7 +208,15 @@ const ShowRenderLog = ({
     );
 };
 
-export const RenderDebug = ({state, patterns}: {state: State; patterns: Patterns}) => {
+export const RenderDebug = ({
+    state,
+    patterns,
+    update,
+}: {
+    state: State;
+    patterns: Patterns;
+    update: Updater<State>;
+}) => {
     const animCache = useMemo<AnimCtx['cache']>(() => new Map(), []);
 
     const es = useEditState();
@@ -245,7 +258,7 @@ export const RenderDebug = ({state, patterns}: {state: State; patterns: Patterns
     );
 
     const both = useMemo(
-        () => (showMain || shapesItems ? [...items, ...logItems, ...shapesItems] : logItems),
+        () => (showMain || shapesItems.length ? [...items, ...logItems, ...shapesItems] : logItems),
         [showMain, items, logItems, shapesItems],
     );
 
@@ -271,6 +284,15 @@ export const RenderDebug = ({state, patterns}: {state: State; patterns: Patterns
                         >
                             <BaselineZoomInMap />
                         </button>
+                        <button
+                            className="btn btn-square px-2 py-1 bg-base-100"
+                            onClick={() => {
+                                update.view.box(box);
+                            }}
+                        >
+                            <AddIcon />
+                        </button>
+
                         {!(
                             closeEnough(box.y, -box.height / 2) &&
                             closeEnough(box.x, -box.width / 2)

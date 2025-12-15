@@ -6,7 +6,7 @@ import {getSimplePatternData, getShapeColors} from '../../getPatternData';
 import {EndPointMap} from '../../shapesFromSegments';
 import {adjustShapes} from './adjustShapes';
 import {parseColor} from './colors';
-import {AnimCtx, Ctx, RenderItem, a, isColor, isCoord} from './evaluate';
+import {AnimCtx, Ctx, RenderItem, RenderShadow, a, isColor, isCoord} from './evaluate';
 import {
     Pattern,
     colorToRgb,
@@ -28,7 +28,7 @@ import {
     numToCoord,
 } from './resolveMods';
 
-export const renderPattern = (ctx: Ctx, outer: CropsAndMatrices, pattern: Pattern) => {
+export const renderPattern = (ctx: Ctx, _outer: CropsAndMatrices, pattern: Pattern) => {
     // not doing yet
     if (pattern.contents.type !== 'shapes') return;
     const tiling = ctx.patterns[pattern.tiling];
@@ -120,6 +120,7 @@ export const renderPattern = (ctx: Ctx, outer: CropsAndMatrices, pattern: Patter
                 if (s.disabled) {
                     return;
                 }
+                // biome-ignore lint: any is fine here
                 const local: Record<string, any> = {};
                 if (s.t) {
                     const got = resolveT(s.t, anim.values.t);
@@ -289,7 +290,7 @@ export const dropNully = <T extends {}>(v: T): T => {
     });
     return v;
 };
-export const resolveShadow = (anim: Ctx['anim'], shadow?: Shadow): RenderItem['shadow'] => {
+export const resolveShadow = (anim: Ctx['anim'], shadow?: Shadow): RenderShadow | undefined => {
     if (typeof shadow === 'string') {
         const v = a.value(anim, shadow);
         if (

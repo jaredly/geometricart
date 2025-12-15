@@ -32,6 +32,7 @@ export const adjustShapes = (
     let modified = false;
     const outerDebug: RenderLog[] = [];
     for (let {shapes, mods, t, shared} of adjustments) {
+        // biome-ignore lint: any is fine here
         const local: Record<string, any> = {};
         if (t) {
             const res = resolveT(t, anim.values.t);
@@ -129,9 +130,13 @@ export const adjustShapes = (
                 });
             }
 
-            segs = cutSegments(segs);
+            // const prec = 5;
 
-            segs = unique(segs, coordPairKey);
+            const prec = 5;
+
+            segs = cutSegments(segs, prec);
+
+            segs = unique(segs, (p) => coordPairKey(p, prec));
 
             if (log) {
                 debug.push({
@@ -141,9 +146,16 @@ export const adjustShapes = (
                         item: {type: 'seg', prev: pair[0], seg: {type: 'Line', to: pair[1]}},
                     })),
                 });
+                debug.push({
+                    title: 'Post Cut Coords',
+                    type: 'items',
+                    items: segs.flat().map((coord) => ({
+                        item: {type: 'point', p: coord},
+                    })),
+                });
             }
 
-            const byEndPoint = edgesByEndpoint(segs);
+            const byEndPoint = edgesByEndpoint(segs, prec);
             // TODO: so I want to find eigenpoints, only ones that are ... along the moved path maybe?
             // or like the original or moved path idk.
             const one = unique(segs.flat(), coordKey);
@@ -159,7 +171,7 @@ export const adjustShapes = (
                 });
             }
             const cmoved = centroid(moved.flatMap((m) => m.shape));
-            const fromSegments = shapesFromSegments(byEndPoint, one, debug);
+            const fromSegments = shapesFromSegments(byEndPoint, one, prec, debug);
             const [centerShapes, reconstructed] = unzip(
                 fromSegments.shapes,
                 (c) => !matchesBounds(boundsForCoords(...c), cmoved),

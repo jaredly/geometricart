@@ -86,7 +86,7 @@ const removeOverlappingSegs = (segs: [Coord, Coord][]) => {
     return toRemove.length ? segs.filter((_, i) => !toRemove.includes(i)) : segs;
 };
 
-export const splitOverlappingSegs = (segs: [Coord, Coord][], marks?: number[]) => {
+export const splitOverlappingSegs = (segs: [Coord, Coord][], prec: number, marks?: number[]) => {
     const slopes = segs.map(([a, b]) => lineToSlope(a, b, true));
     const toRemove: number[] = [];
     const toAdd: [Coord, Coord][] = [];
@@ -98,7 +98,10 @@ export const splitOverlappingSegs = (segs: [Coord, Coord][], marks?: number[]) =
             }
             if (closeEnough(slopes[i].m, slopes[j].m) && closeEnough(slopes[i].b, slopes[j].b)) {
                 if (!shareMidPoint(segs[i], segs[j])) {
-                    const got = splitByPoints(unique([...segs[i], ...segs[j]], coordKey));
+                    const got = splitByPoints(
+                        unique([...segs[i], ...segs[j]], (m) => coordKey(m, prec)),
+                        prec,
+                    );
                     toAdd.push(...got);
                     toRemove.push(i, j);
                     marks?.push(i, j);
@@ -119,7 +122,7 @@ const shareMidPoint = ([a1, a2]: [Coord, Coord], [b1, b2]: [Coord, Coord]) => {
     return coordsEqual(sorted[1], sorted[2]);
 };
 
-const findSplitPoints = (segs: [Coord, Coord][]) => {
+const findSplitPoints = (segs: [Coord, Coord][], prec: number) => {
     const splitPoints: Record<number, Coord[]> = {};
 
     const slopes = segs.map(([a, b]) => lineToSlope(a, b, true));
@@ -130,10 +133,10 @@ const findSplitPoints = (segs: [Coord, Coord][]) => {
             // TODO: maybe check bounding box collision first?
             const int = lineLine(slopes[i], slopes[j]);
             if (!int) continue;
-            if (!coordsEqual(segs[i][0], int) && !coordsEqual(segs[i][1], int)) {
+            if (!coordsEqual(segs[i][0], int, prec) && !coordsEqual(segs[i][1], int, prec)) {
                 addToMap(splitPoints, i, int);
             }
-            if (!coordsEqual(segs[j][0], int) && !coordsEqual(segs[j][1], int)) {
+            if (!coordsEqual(segs[j][0], int, prec) && !coordsEqual(segs[j][1], int, prec)) {
                 addToMap(splitPoints, j, int);
             }
         }
@@ -141,9 +144,9 @@ const findSplitPoints = (segs: [Coord, Coord][]) => {
     return splitPoints;
 };
 
-const splitByPoints = (splits: Coord[]): [Coord, Coord][] => {
+const splitByPoints = (splits: Coord[], prec: number): [Coord, Coord][] => {
     // sort by x or y
-    if (closeEnough(splits[0].x, splits[1].x)) {
+    if (closeEnough(splits[0].x, splits[1].x, Math.pow(10, -prec))) {
         // sort by y
         splits.sort((a, b) => a.y - b.y);
     } else {
@@ -154,7 +157,7 @@ const splitByPoints = (splits: Coord[]): [Coord, Coord][] => {
     for (let i = 1; i < splits.length; i++) {
         const prev = splits[i - 1];
         const next = splits[i];
-        if (coordsEqual(prev, next)) {
+        if (coordsEqual(prev, next, prec)) {
             throw new Error(`shouldn't get duplicate points here`);
         }
         res.push([prev, next]);
@@ -162,7 +165,7 @@ const splitByPoints = (splits: Coord[]): [Coord, Coord][] => {
     return res;
 };
 
-export const cutSegments = (segs: [Coord, Coord][]) => {
+export const cutSegments = (segs: [Coord, Coord][], prec = 3) => {
     /*
     1. convert everything to SlopeIntercept form
     2. do line/line collisions with everything. each collision knows the seg indices
@@ -170,11 +173,16 @@ export const cutSegments = (segs: [Coord, Coord][]) => {
         2b. could also first check for shared endpoints
     3. go through each seg, splitting on any collisions
     */
-    const splitPoints = findSplitPoints(segs);
+    const splitPoints = findSplitPoints(segs, prec);
     const result: [Coord, Coord][] = [];
     segs.forEach(([a, b], i) => {
         if (splitPoints[i]) {
-            result.push(...splitByPoints(unique([a, b, ...splitPoints[i]], coordKey)));
+            result.push(
+                ...splitByPoints(
+                    unique([a, b, ...splitPoints[i]], (m) => coordKey(m, prec)),
+                    prec,
+                ),
+            );
         } else {
             result.push([a, b]);
         }
@@ -196,22 +204,23 @@ export type EndPointMap = Record<
     {exits: {idx: number; theta: number; to: Coord}[]; pos: Coord}
 >;
 
-export const edgesByEndpoint = (segs: [Coord, Coord][]) => {
+export const edgesByEndpoint = (segs: [Coord, Coord][], prec?: number) => {
     const byEndPoint: EndPointMap = {};
-    segs = unique(segs, coordPairKey);
+    segs = unique(segs, (p) => coordPairKey(p, prec));
+    const eps = Math.pow(10, -(prec ?? 3));
 
     // const coordsByKey: Record<string, Coord> = {}
     segs.forEach((seg, i) => {
-        if (coordsEqual(seg[0], seg[1])) {
+        if (coordsEqual(seg[0], seg[1], prec)) {
             return;
         }
         const to = angleTo(seg[0], seg[1]);
         const from = angleTo(seg[1], seg[0]);
-        const k0 = coordKey(seg[0]);
+        const k0 = coordKey(seg[0], prec);
         if (!byEndPoint[k0]) byEndPoint[k0] = {exits: [], pos: seg[0]};
         byEndPoint[k0].exits.push({idx: i, theta: to, to: seg[1]});
 
-        const k1 = coordKey(seg[1]);
+        const k1 = coordKey(seg[1], prec);
         if (!byEndPoint[k1]) byEndPoint[k1] = {exits: [], pos: seg[1]};
         byEndPoint[k1].exits.push({idx: i, theta: from, to: seg[0]});
 
@@ -223,9 +232,9 @@ export const edgesByEndpoint = (segs: [Coord, Coord][]) => {
     Object.entries(byEndPoint).forEach(([k, {exits}]) => {
         const seen: Record<string, true> = {};
         exits.forEach((e) => {
-            const key = coordKey(e.to);
+            const key = coordKey(e.to, prec);
             if (seen[key]) {
-                console.warn(`Why is there a dup: ${k} -> ${coordKey(e.to)}`);
+                console.warn(`Why is there a dup: ${k} -> ${coordKey(e.to, prec)}`);
                 sup.push(k, key);
             }
             seen[key] = true;
@@ -235,7 +244,9 @@ export const edgesByEndpoint = (segs: [Coord, Coord][]) => {
         console.log(
             segs
                 .map(sortCoordPair)
-                .filter((s) => sup.includes(coordKey(s[0])) || sup.includes(coordKey(s[1])))
+                .filter(
+                    (s) => sup.includes(coordKey(s[0], prec)) || sup.includes(coordKey(s[1], prec)),
+                )
                 .sort((a, b) => (closeEnough(a[0].x, b[0].x) ? a[0].y - b[0].y : a[0].x - b[0].x)),
             // .map((seg) => coordPairKey(seg))
             // .sort(),
@@ -272,6 +283,7 @@ export const cmpCoords = (a: Coord, b: Coord) => (closeEnough(a.x, b.x) ? a.y - 
 export const shapesFromSegments = (
     byEndPoint: EndPointMap,
     eigenPoints: Coord[],
+    prec: number,
     log?: RenderLog[],
 ) => {
     const used: Record<string, true> = {};
@@ -283,8 +295,8 @@ export const shapesFromSegments = (
     if (log) log.push({type: 'group', title: 'Shapes from segments', children: slog!});
 
     eigenPoints.forEach((point) => {
-        if (!byEndPoint[coordKey(point)]) return;
-        const segs = byEndPoint[coordKey(point)].exits;
+        if (!byEndPoint[coordKey(point, prec)]) return;
+        const segs = byEndPoint[coordKey(point, prec)].exits;
         // slog.push({point, segs});
         if (!segs?.length) {
             console.warn(`no segs from point`, point);
@@ -292,14 +304,14 @@ export const shapesFromSegments = (
         }
         slog?.push({
             type: 'items',
-            title: `Exits from ${coordKey(point)}`,
+            title: `Exits from ${coordKey(point, prec)}`,
             items: segs.map((seg) => ({
                 item: {type: 'seg', prev: point, seg: {type: 'Line', to: seg.to}},
-                text: `${seg.idx} - ${seg.theta.toFixed(2)} - ${coordKey(seg.to)}`,
+                text: `${seg.idx} - ${seg.theta.toFixed(2)} - ${coordKey(seg.to, prec)}`,
             })),
         });
         for (const seg of segs) {
-            const sk = `${coordKey(point)}:${coordKey(seg.to)}`;
+            const sk = `${coordKey(point, prec)}:${coordKey(seg.to, prec)}`;
             if (used[sk]) continue;
             const {points, ranout} = discoverShape(
                 point,
@@ -309,6 +321,7 @@ export const shapesFromSegments = (
                 undefined,
                 undefined,
                 slog,
+                prec,
             );
             // slog.push(log);
             if (points.length === 100 || ranout) {

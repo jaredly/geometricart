@@ -54,7 +54,8 @@ export type DiffNodeA<Root, Current, Tag extends PropertyKey, R, Extra = unknown
                   Extra
               >;
           }
-        : {}) &
+        : // biome-ignore lint: this one is fine
+          {}) &
     // 🔹 tagged union → must choose an arm via variant()
     (IsTaggedUnion<Current, Tag> extends true
         ? {
@@ -93,8 +94,10 @@ export type DiffNodeA<Root, Current, Tag extends PropertyKey, R, Extra = unknown
                                 Extra
                             >;
                         }
-                      : {})
-            : {});
+                      : // biome-ignore lint: this one is fine
+                        {})
+            : // biome-ignore lint: this one is fine
+              {});
 
 export type DiffBuilderA<
     T,
@@ -118,12 +121,16 @@ export function diffBuilderApply<T, Extra, Tag extends string = 'type', R = void
     extra: Extra,
     tag: Tag,
 ): DiffBuilderA<T, Tag, R, Extra> {
+    // biome-ignore lint: this one is fine
     const cache: Record<string, (v: any, b: any) => R> = {};
+    // biome-ignore lint: this one is fine
     const proxyCache: Record<string, any> = {};
     const ghost = {} as {_t: T}; // a phantom type kinda thing
+    // biome-ignore lint: this one is fine
     function makeProxy(path: Array<PathSegment>): any {
         const pathString = JSON.stringify(path);
 
+        // biome-ignore lint: this one is fine
         const handler: ProxyHandler<any> = {
             get(_target, prop, _receiver) {
                 // 🔹 variant(): refine the *last* path segment with `[kind=value]`
@@ -188,6 +195,7 @@ export function diffBuilderApply<T, Extra, Tag extends string = 'type', R = void
                                     from: [...path, {type: 'key', key: fromKey}],
                                     path: [...path, {type: 'key', key: toKey}],
                                     ...ghost,
+                                    // biome-ignore lint: this one is fine
                                 } as any,
                                 when,
                             );
@@ -240,6 +248,7 @@ export function diffBuilderApply<T, Extra, Tag extends string = 'type', R = void
             if (typeof value !== 'function') {
                 return apply({op: 'replace', path, value, ...ghost}, when);
             }
+            // biome-ignore lint: this one is fine
             return apply({op: 'nested', make: value as any, path, ...ghost}, when);
         }, handler);
     }
@@ -317,6 +326,7 @@ type IsSingleOrArray<Current> = [NonNullish<Current>] extends [never]
       : false;
 
 // "Is this a union?" helper
+// biome-ignore lint: this one is fine
 type IsUnion<T, U = T> = (T extends any ? (x: T) => void : never) extends (x: U) => void
     ? false
     : true;
@@ -331,13 +341,16 @@ type VariantOf<T, Tag extends PropertyKey, V extends VariantTags<T, Tag>> = Extr
 >;
 
 // "Is this a tagged union on Tag?"
+// biome-ignore lint: this one is fine
 type IsTaggedUnion<Current, Tag extends PropertyKey> = NonNullish<Current> extends {[K in Tag]: any}
     ? IsUnion<NonNullish<Current>>
     : false;
 
 // For normal object navigation over unions
+// biome-ignore lint: this one is fine
 type KeysOfUnion<T> = T extends any ? keyof T : never;
 
+// biome-ignore lint: this one is fine
 type ValueOfUnion<T, K extends PropertyKey> = T extends any
     ? K extends keyof T
         ? T[K]

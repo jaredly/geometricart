@@ -21,7 +21,7 @@ export const Canvas = ({
     setMouse,
     box,
     innerRef,
-    byKey,
+    // byKey,
     bg,
 }: {
     items: RenderItem[];
@@ -37,7 +37,7 @@ export const Canvas = ({
     useEffect(() => {
         const surface = pk.MakeWebGLCanvasSurface(innerRef.current! as HTMLCanvasElement)!;
         renderItems(surface, box, items, bg);
-    }, [box, items, innerRef]);
+    }, [box, items, innerRef, bg]);
 
     return (
         <canvas
@@ -64,7 +64,7 @@ export const SVGCanvas = ({
     innerRef,
     setMouse,
     keyPoints,
-    byKey,
+    // byKey,
     mouse,
     bg,
 }: {
@@ -82,7 +82,7 @@ export const SVGCanvas = ({
     const shadows: Record<string, ConcreteShadow> = {};
     let hasShadows = false;
     items.map((item) => {
-        if (item.shadow) {
+        if (item.type === 'path' && item.shadow) {
             hasShadows = true;
             const key = shadowKey(item.shadow);
             shadows[key] = item.shadow;
@@ -133,6 +133,10 @@ export const SVGCanvas = ({
         return () => document.removeEventListener('keydown', fn);
     }, [pending, editContext]);
 
+    const lw = box.width / 10;
+    const paths = items.filter((p) => p.type === 'path') as (RenderItem & {type: 'path'})[];
+    const rpoints = items.filter((p) => p.type === 'point') as (RenderItem & {type: 'point'})[];
+
     return (
         // <div>
         <svg
@@ -157,7 +161,7 @@ export const SVGCanvas = ({
                     ))}
                 </defs>
             ) : null}
-            {items.map(({key, shapes, pk, color, strokeWidth, zIndex, shadow, sharp, ...item}) =>
+            {paths.map(({key, shapes, pk, color, strokeWidth, zIndex, shadow, sharp, ...item}) =>
                 shapes.map((shape, m) => (
                     <path
                         {...item}
@@ -171,9 +175,9 @@ export const SVGCanvas = ({
                         strokeLinejoin={sharp ? 'miter' : 'round'}
                         strokeLinecap={sharp ? 'butt' : 'round'}
                         stroke={strokeWidth ? colorToString(shadow?.color ?? color) : undefined}
-                        strokeWidth={strokeWidth}
+                        strokeWidth={strokeWidth ? strokeWidth * lw : undefined}
                         filter={shadow ? `url(#${shadowKey(shadow)})` : undefined}
-                        d={calcPathD(shape)}
+                        d={calcPathD(shape, 1, 5)}
                         key={`${key}-${m}`}
                         cursor={item.onClick ? 'pointer' : undefined}
                         onClick={item.onClick} // ?? (() => setFocus(focus === key ? null : key))}
@@ -181,6 +185,18 @@ export const SVGCanvas = ({
                     />
                 )),
             )}
+            {rpoints.map(({key, coord, color, opacity}) => (
+                <circle
+                    r={lw / 10}
+                    fill={colorToString(color ?? {r: 255, g: 0, b: 0})}
+                    stroke="none"
+                    pointerEvents={'none'}
+                    cx={coord.x}
+                    cy={coord.y}
+                    key={key}
+                    opacity={opacity}
+                />
+            ))}
             {pending &&
                 pending.type !== 'select-shapes' &&
                 points.map((pt, i) => (
@@ -211,7 +227,7 @@ export const SVGCanvas = ({
             {pending?.type === 'shape' && pending.points.length > (mouse ? 0 : 1) && (
                 <>
                     <path
-                        d={shapeD(pending.points.concat(mouse ? [mouse] : []), false)}
+                        d={shapeD(pending.points.concat(mouse ? [mouse] : []), false, 5)}
                         stroke="#000"
                         strokeWidth={0.05}
                         pointerEvents={'none'}
@@ -220,7 +236,7 @@ export const SVGCanvas = ({
                         strokeLinejoin="round"
                     />
                     <path
-                        d={shapeD(pending.points.concat(mouse ? [mouse] : []), false)}
+                        d={shapeD(pending.points.concat(mouse ? [mouse] : []), false, 5)}
                         stroke="#0f7"
                         strokeWidth={0.03}
                         pointerEvents={'none'}

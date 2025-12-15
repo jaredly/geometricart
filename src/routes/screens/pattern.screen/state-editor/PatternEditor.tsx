@@ -142,14 +142,20 @@ const AdjustmentEditor = ({
                               : `${adj.shapes.length} shapes`}
                     </summary>
                     <ul className="menu dropdown-content bg-base-100 rounded-box z-1 w-52 p-2 shadow-sm">
-                        {adj.shapes.map((id) => (
+                        {adj.shapes.map((id, i) => (
                             <li
                                 key={id}
                                 onMouseEnter={() => es.update.hover({type: 'shape', id})}
                                 onMouseLeave={() => es.update.hover(null)}
+                                className="flex flex-row"
                             >
                                 {id}
-                                <button className="btn btn-square">&times;</button>
+                                <button
+                                    onClick={() => update.shapes[i].remove()}
+                                    className="btn btn-square"
+                                >
+                                    &times;
+                                </button>
                             </li>
                         ))}
                     </ul>
