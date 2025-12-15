@@ -22,11 +22,17 @@ export function _get(base: any, at: PathSegment[]) {
         if (key.type === 'single') {
             const isArray = Array.isArray(base);
             if (key.isSingle) {
+                if (isArray) {
+                    throw new Error(`not single`);
+                }
                 // treat array as its first element
-                base = isArray ? base[0] : base;
+                // base = isArray ? base[0] : base;
             } else {
                 // wrap single value into an array
-                base = isArray ? base : [base];
+                // base = isArray ? base : [base];
+                if (!isArray) {
+                    throw new Error(`shouldnt be single0`);
+                }
             }
             continue;
         }
@@ -76,28 +82,34 @@ function _getCloned(root: any, at: PathSegment[]) {
         }
         if (key.type === 'single') {
             const isArray = Array.isArray(base);
-            if (key.isSingle) {
-                if (isArray) {
-                    const cloned = base.slice();
-                    setIntoParent(cloned);
-                    const first = cloned[0];
-                    if (Array.isArray(first)) {
-                        cloned[0] = first.slice();
-                    } else if (first && typeof first === 'object') {
-                        cloned[0] = {...first};
-                    }
-                    parent = cloned;
-                    parentKey = {type: 'key', key: 0};
-                    base = cloned[0];
-                }
-                // if already single, keep base as-is
-            } else {
-                const nextArray = isArray ? base.slice() : [base];
-                setIntoParent(nextArray);
-                parent = nextArray;
-                parentKey = null;
-                base = nextArray;
+            // if (key.isSingle) {
+            //     if (isArray) {
+            //         const cloned = base.slice();
+            //         setIntoParent(cloned);
+            //         const first = cloned[0];
+            //         if (Array.isArray(first)) {
+            //             cloned[0] = first.slice();
+            //         } else if (first && typeof first === 'object') {
+            //             cloned[0] = {...first};
+            //         }
+            //         parent = cloned;
+            //         parentKey = {type: 'key', key: 0};
+            //         base = cloned[0];
+            //     }
+            //     // if already single, keep base as-is
+            // } else {
+            if (key.isSingle && isArray) {
+                throw new Error('cant its single');
             }
+            if (!key.isSingle && !isArray) {
+                throw new Error('cant its not single');
+            }
+            // const nextArray = isArray ? base.slice() : [base];
+            // setIntoParent(nextArray);
+            // parent = nextArray;
+            // parentKey = null;
+            // base = nextArray;
+            // }
             continue;
         }
         if (Array.isArray(base)) {
@@ -128,10 +140,15 @@ export function _replace(
         }
         return value;
     }
+    at = at.slice();
+    while (at[at.length - 1].type !== 'key') {
+        at.pop();
+    }
+
     let root: any;
     ({root, base} = _getCloned(base, at.slice(0, -1)));
     const key = at[at.length - 1];
-    if (key.type !== 'key') throw new Error(`weird final key type while replacing ${key.type}`);
+    if (key.type !== 'key') throw new Error(`weird final key type while replacing: ${key.type}`);
     if (Array.isArray(base)) {
         if (typeof key.key !== 'number') {
             throw new Error(`invalid key for array: ${key.key}`);
@@ -140,7 +157,7 @@ export function _replace(
         throw new Error(`base is not object`);
     }
     if (!equal(previous, base[key.key])) {
-        // console.log(previous, base[key.key], key);
+        console.log(previous, base[key.key], key, base);
         throw new Error(`cannot apply, previous is different from expected`);
     }
     base[key.key] = value;
