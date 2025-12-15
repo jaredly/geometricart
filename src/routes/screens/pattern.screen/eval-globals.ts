@@ -54,6 +54,11 @@ export const globals: Record<string, any> = {
     easeInOutCubic,
     tsplit,
     chunk,
+    zJump(t: number, p = 0.1) {
+        if (t < p) return t / p;
+        if (t > 1 - p) return (1 - t) / p;
+        return 1;
+    },
     // chunk(values: number[], t: number) {
     //     const v = t * values.length;
     //     const t0 = Math.floor(v);
