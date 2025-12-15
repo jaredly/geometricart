@@ -383,7 +383,7 @@ export const svgItems = (
     return {items, warnings, byKey, keyPoints, bg, log};
 };
 
-export type Hover = {type: 'shape'; id: string};
+export type Hover = {type: 'shape'; id: string} | {type: 'shapes'; ids: string[]};
 
 export const barePathFromCoords = (coords: Coord[]): BarePath => ({
     segments: coords.map((c) => ({type: 'Line', to: c})),

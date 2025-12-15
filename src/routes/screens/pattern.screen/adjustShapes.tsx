@@ -22,7 +22,7 @@ export const adjustShapes = (
     cropCache: Ctx['cropCache'],
     uniqueShapes: Coord[][],
     adjustments: {
-        shapes: BarePath[];
+        shapes: {path: BarePath; id: string}[];
         mods: PMods[];
         t?: TChunk;
         shared?: Record<string, AnimatableValue>;
@@ -41,7 +41,7 @@ export const adjustShapes = (
         const aanim = withShared(anim, shared);
         const midDebug: RenderLog[] = [];
 
-        for (let shape of shapes) {
+        for (let {path: shape, id} of shapes) {
             const debug: RenderLog[] = [];
             const shapeCoords = coordsFromBarePath(shape);
             const center = centroid(shapeCoords);
@@ -58,7 +58,7 @@ export const adjustShapes = (
 
             if (log) {
                 debug.push({
-                    title: 'Adjust Shape',
+                    title: 'Adjust Shape: ' + id,
                     type: 'items',
                     items: [
                         {item: {type: 'shape', shape}, text: 'pre-move'},
@@ -187,7 +187,7 @@ export const adjustShapes = (
                 midDebug.push({type: 'group', title: 'One Shape', children: debug});
             }
         }
-        outerDebug.push({type: 'group', title: 'Adjust Shape', children: midDebug});
+        outerDebug.push({type: 'group', title: 'Adjust Shape Group', children: midDebug});
     }
 
     return {shapes: modified ? sortShapesByPolar(uniqueShapes) : uniqueShapes, debug: outerDebug};

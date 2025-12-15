@@ -14,6 +14,8 @@ import {LogItem, RenderLog, svgItems} from './resolveMods';
 import {SVGCanvas} from './SVGCanvas';
 import {useCropCache} from './useCropCache';
 import {useElementZoom} from './useSVGZoom';
+import {useEditState} from './editState';
+import {renderShape} from './RenderExport';
 
 const allItems = (log: RenderLog): LogItem[] => {
     if (log.type === 'items') return log.items.flatMap((l) => l.item);
@@ -204,7 +206,10 @@ const ShowRenderLog = ({
 export const RenderDebug = ({state, patterns}: {state: State; patterns: Patterns}) => {
     const animCache = useMemo<AnimCtx['cache']>(() => new Map(), []);
 
-    const t = 0.763;
+    const es = useEditState();
+    const hover = es.use((es) => es.hover);
+    // const t = 0.763;
+    const t = 0.988;
     const cropCache = useCropCache(state, t, animCache);
 
     const {items, warnings, keyPoints, byKey, bg, log} = useMemo(
@@ -228,9 +233,20 @@ export const RenderDebug = ({state, patterns}: {state: State; patterns: Patterns
         {type: 'group', children: log!, title: 'Log'},
         detectOverlaps,
     );
+
+    const shapesItems = useMemo(
+        (): RenderItem[] =>
+            hover
+                ? (hover.type === 'shape' ? [hover.id] : hover.ids).flatMap((id) =>
+                      renderShape(id, state.shapes[id], hover, []),
+                  )
+                : [],
+        [state.shapes, hover],
+    );
+
     const both = useMemo(
-        () => (showMain ? [...items, ...logItems] : logItems),
-        [showMain, items, logItems],
+        () => (showMain || shapesItems ? [...items, ...logItems, ...shapesItems] : logItems),
+        [showMain, items, logItems, shapesItems],
     );
 
     return (

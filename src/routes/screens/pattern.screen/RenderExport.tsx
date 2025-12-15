@@ -1,7 +1,7 @@
 import {useMemo, useRef, useState} from 'react';
 import {AddIcon, BaselineFilterCenterFocus, BaselineZoomInMap} from '../../../icons/Icon';
 import {closeEnough} from '../../../rendering/epsilonToZero';
-import {Coord} from '../../../types';
+import {BarePath, Coord} from '../../../types';
 import {parseColor} from './colors';
 import {
     EditStateUpdate,
@@ -19,53 +19,16 @@ import {useCropCache} from './useCropCache';
 import {useElementZoom} from './useSVGZoom';
 import {VideoExport} from './VideoExport';
 
-const renderShapes = (
+export const renderShapes = (
     shapes: State['shapes'],
     hover: Hover | null,
     selectedShapes: string[],
     update: PendingStateUpdate,
     pending: PendingState['pending'],
 ): RenderItem[] => {
-    return Object.entries(shapes).flatMap(([key, shape]) => [
-        {
-            type: 'path',
-            color: {r: 255, g: 255, b: 255},
-            shadow: {
-                offset: {x: 0, y: 0},
-                blur: {x: 0.03, y: 0.03},
-                color: {r: 0, g: 0, b: 0},
-            },
-            key,
-            shapes: [shape],
-            strokeWidth: 0.03,
-            zIndex: 100,
-        },
-        {
-            type: 'path',
-            color:
-                hover?.id === key || selectedShapes.includes(key)
-                    ? colorToRgb(parseColor('gold')!)
-                    : {r: 255, g: 255, b: 255},
-            key,
-            onClick() {
-                if (pending?.type === 'select-shape') {
-                    update.pending.replace(null);
-                    pending.onDone(key);
-                    return;
-                }
-                if (pending?.type !== 'select-shapes') return;
-                if (!selectedShapes.includes(key)) {
-                    update.pending.variant('select-shapes').shapes.push(key);
-                } else {
-                    const idx = selectedShapes.indexOf(key);
-                    update.pending.variant('select-shapes').shapes[idx].remove();
-                }
-            },
-            shapes: [shape],
-            strokeWidth: 0.03,
-            zIndex: 100,
-        },
-    ]);
+    return Object.entries(shapes).flatMap(([key, shape]) =>
+        renderShape(key, shape, hover, selectedShapes, pending, update),
+    );
 };
 
 export const RenderExport = ({
@@ -211,3 +174,56 @@ export const RenderExport = ({
 
     // ok
 };
+
+export function renderShape(
+    key: string,
+    shape: BarePath,
+    hover: Hover | null,
+    selectedShapes: string[],
+    pending?: PendingState['pending'],
+    update?: PendingStateUpdate,
+): RenderItem[] {
+    return [
+        {
+            type: 'path',
+            color: {r: 255, g: 255, b: 255},
+            shadow: {
+                offset: {x: 0, y: 0},
+                blur: {x: 0.03, y: 0.03},
+                color: {r: 0, g: 0, b: 0},
+            },
+            key,
+            shapes: [shape],
+            strokeWidth: 0.03,
+            zIndex: 100,
+        },
+        {
+            type: 'path',
+            color:
+                (hover?.type === 'shape' && hover.id === key) ||
+                (hover?.type === 'shapes' && hover.ids.includes(key)) ||
+                selectedShapes.includes(key)
+                    ? colorToRgb(parseColor('gold')!)
+                    : {r: 255, g: 255, b: 255},
+            key,
+            onClick() {
+                if (!update || !pending) return;
+                if (pending?.type === 'select-shape') {
+                    update.pending.replace(null);
+                    pending.onDone(key);
+                    return;
+                }
+                if (pending?.type !== 'select-shapes') return;
+                if (!selectedShapes.includes(key)) {
+                    update.pending.variant('select-shapes').shapes.push(key);
+                } else {
+                    const idx = selectedShapes.indexOf(key);
+                    update.pending.variant('select-shapes').shapes[idx].remove();
+                }
+            },
+            shapes: [shape],
+            strokeWidth: 0.03,
+            zIndex: 100,
+        },
+    ];
+}

@@ -150,6 +150,81 @@ export const useValue = <Current,>(node: DiffNodeA<unknown, Current, any, unknow
     return v;
 };
 
+const makeProvider = <T, An, Tag extends string = 'type'>(Ctx: React.Context<CH<T, An, Tag>>) => {
+    return function Provide({
+        children,
+        initial,
+        save,
+    }: {
+        children: React.ReactElement;
+        initial: History<T, An>;
+        save?(v: History<T, An>): void;
+    }) {
+        const l = useLatest(save);
+        const value = useRef<CH<T, An, Tag>>({
+            state: initial,
+            save: (v) => l.current?.(v),
+            historyListeners: [],
+            listeners: [],
+            historyUp: [],
+            previewState: null,
+            queuedChanges: [],
+            listenersByPath: makePathListenerNode(),
+        });
+        useEffect(() => {
+            if (initial !== value.current.state) {
+                value.current.state = initial;
+                value.current.listeners.forEach((f) => f());
+                notifyAllPaths(value.current.listenersByPath);
+            }
+        }, [initial]);
+        return <Ctx.Provider value={value.current} children={children} />;
+    };
+};
+
+const MakeContext = <T, An, Tag extends string = 'type'>(ctx: CH<T, An, Tag>, tag: Tag) => {
+    const {dispatch, update} = makeDispatch(ctx, tag);
+
+    return {
+        onHistoryChange(f: () => void, includeUndo: boolean) {
+            if (includeUndo) {
+                ctx.historyUp.push(f);
+                return () => {
+                    const at = ctx.historyUp.indexOf(f);
+                    if (at !== -1) ctx.historyUp.splice(at, 1);
+                };
+            }
+            ctx.historyListeners.push(f);
+            return () => {
+                const at = ctx.historyListeners.indexOf(f);
+                if (at !== -1) ctx.historyListeners.splice(at, 1);
+            };
+        },
+        latest() {
+            return ctx.state.current;
+        },
+        clearHistory() {
+            ctx.state = clearHistory(ctx.state);
+            ctx.historyListeners.forEach((f) => f());
+            ctx.historyUp.forEach((f) => f());
+        },
+        canRedo() {
+            return ctx.state.undoTrail.length > 0;
+        },
+        canUndo() {
+            return ctx.state.tip !== ctx.state.root;
+        },
+        undo() {
+            dispatch({op: 'undo'});
+        },
+        redo() {
+            dispatch({op: 'redo'});
+        },
+        update,
+        dispatch,
+    };
+};
+
 export const makeHistoryContext = <T, An, Tag extends string = 'type'>(tag: Tag) => {
     const Ctx = createContext<CH<T, An, Tag>>({
         state: blankHistory(null as any),
@@ -163,104 +238,14 @@ export const makeHistoryContext = <T, An, Tag extends string = 'type'>(tag: Tag)
     });
 
     return [
-        function Provide({
-            children,
-            initial,
-            save,
-        }: {
-            children: React.ReactElement;
-            initial: History<T, An>;
-            save?(v: History<T, An>): void;
-        }) {
-            const l = useLatest(save);
-            const value = useRef<CH<T, An, Tag>>({
-                state: initial,
-                save: (v) => l.current?.(v),
-                historyListeners: [],
-                listeners: [],
-                historyUp: [],
-                previewState: null,
-                queuedChanges: [],
-                listenersByPath: makePathListenerNode(),
-            });
-            useEffect(() => {
-                if (initial !== value.current.state) {
-                    value.current.state = initial;
-                    value.current.listeners.forEach((f) => f());
-                    notifyAllPaths(value.current.listenersByPath);
-                }
-            }, [initial]);
-            return <Ctx.Provider value={value.current} children={children} />;
-        },
+        makeProvider(Ctx),
 
         function useStateContext() {
             const ctx = useContext(Ctx);
 
             return useMemo(() => {
-                const extra: Extra = {
-                    getForPath(path) {
-                        return _get(ctx.previewState?.current ?? ctx.state.current, path);
-                    },
-                    listenToPath(v, f) {
-                        addPathListener(ctx.listenersByPath, v, f);
-                        return () => removePathListener(ctx.listenersByPath, v, f);
-                    },
-                };
-                const go = (
-                    v: {op: 'undo' | 'redo'} | MaybeNested<PendingJsonPatchOp<T, Tag, Extra>>,
-                    when?: ApplyTiming,
-                ) => {
-                    let hChanged = false;
-                    if (when === 'preview') {
-                        if (!Array.isArray(v) && (v.op === 'undo' || v.op === 'redo')) {
-                            return; // not previewing those
-                        }
-                        ctx.queuedChanges.push(
-                            ...(asFlat(v) as PendingJsonPatchOp<T, Tag, Extra>[]),
-                        );
-                        if (ctx.raf == null) {
-                            ctx.raf = requestAnimationFrame(() => {
-                                ctx.raf = undefined;
-                                const base = ctx.previewState?.current ?? ctx.state.current;
-                                const queue = ctx.queuedChanges;
-                                ctx.queuedChanges = [];
-                                const next = dispatch(
-                                    ctx.previewState ?? ctx.state,
-                                    queue,
-                                    extra,
-                                    tag,
-                                );
-                                if (next === ctx.state) return;
-                                const paths = changedPaths(next.nodes[next.tip].changes);
-                                ctx.previewState = next;
-                                ctx.listeners.forEach((f) => f());
-                                notifyPaths(ctx.listenersByPath, paths);
-                            });
-                        }
-                        return;
-                    }
+                const {dispatch, update} = makeDispatch(ctx, tag);
 
-                    ctx.previewState = null;
-                    if (ctx.raf != null) {
-                        cancelAnimationFrame(ctx.raf);
-                        ctx.raf = undefined;
-                    }
-
-                    const next = dispatch(ctx.state, v, extra, tag);
-                    if (next === ctx.state) return;
-                    const pathTargets = changedPaths(next.nodes[next.tip].changes);
-                    hChanged = next.nodes !== ctx.state.nodes;
-                    ctx.state = next;
-                    ctx.save(ctx.state);
-
-                    ctx.listeners.forEach((f) => f());
-                    notifyPaths(ctx.listenersByPath, pathTargets);
-
-                    if (hChanged) {
-                        ctx.historyListeners.forEach((f) => f());
-                    }
-                    ctx.historyUp.forEach((f) => f());
-                };
                 return {
                     use<B>(sel: (t: T) => B, exact = true): B {
                         const lsel = useRef(sel);
@@ -322,17 +307,79 @@ export const makeHistoryContext = <T, An, Tag extends string = 'type'>(tag: Tag)
                         return ctx.state.tip !== ctx.state.root;
                     },
                     undo() {
-                        go({op: 'undo'});
+                        dispatch({op: 'undo'});
                     },
                     redo() {
-                        go({op: 'redo'});
+                        dispatch({op: 'redo'});
                     },
-                    update: diffBuilderApply<T, Extra, Tag>(go, extra, tag),
-                    dispatch: go,
+                    update,
+                    dispatch,
                 };
             }, [ctx, tag]);
         },
     ] as const;
+};
+
+const makeDispatch = <T, An, Tag extends string = 'type'>(ctx: CH<T, An, Tag>, tag: Tag) => {
+    const extra: Extra = {
+        getForPath(path) {
+            return _get(ctx.previewState?.current ?? ctx.state.current, path);
+        },
+        listenToPath(v, f) {
+            addPathListener(ctx.listenersByPath, v, f);
+            return () => removePathListener(ctx.listenersByPath, v, f);
+        },
+    };
+    const go = (
+        v: {op: 'undo' | 'redo'} | MaybeNested<PendingJsonPatchOp<T, Tag, Extra>>,
+        when?: ApplyTiming,
+    ) => {
+        let hChanged = false;
+        if (when === 'preview') {
+            if (!Array.isArray(v) && (v.op === 'undo' || v.op === 'redo')) {
+                return; // not previewing those
+            }
+            ctx.queuedChanges.push(...(asFlat(v) as PendingJsonPatchOp<T, Tag, Extra>[]));
+            if (ctx.raf == null) {
+                ctx.raf = requestAnimationFrame(() => {
+                    ctx.raf = undefined;
+                    const base = ctx.previewState?.current ?? ctx.state.current;
+                    const queue = ctx.queuedChanges;
+                    ctx.queuedChanges = [];
+                    const next = dispatch(ctx.previewState ?? ctx.state, queue, extra, tag);
+                    if (next === ctx.state) return;
+                    const paths = changedPaths(next.nodes[next.tip].changes);
+                    ctx.previewState = next;
+                    ctx.listeners.forEach((f) => f());
+                    notifyPaths(ctx.listenersByPath, paths);
+                });
+            }
+            return;
+        }
+
+        ctx.previewState = null;
+        if (ctx.raf != null) {
+            cancelAnimationFrame(ctx.raf);
+            ctx.raf = undefined;
+        }
+
+        const next = dispatch(ctx.state, v, extra, tag);
+        if (next === ctx.state) return;
+        const pathTargets = changedPaths(next.nodes[next.tip].changes);
+        hChanged = next.nodes !== ctx.state.nodes;
+        ctx.state = next;
+        ctx.save(ctx.state);
+
+        ctx.listeners.forEach((f) => f());
+        notifyPaths(ctx.listenersByPath, pathTargets);
+
+        if (hChanged) {
+            ctx.historyListeners.forEach((f) => f());
+        }
+        ctx.historyUp.forEach((f) => f());
+    };
+
+    return {dispatch: go, update: diffBuilderApply<T, Extra, Tag>(go, extra, tag)};
 };
 
 const clearHistory = <T, An>(h: History<T, An>): History<T, An> => ({
