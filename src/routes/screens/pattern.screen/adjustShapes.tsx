@@ -119,6 +119,15 @@ export const adjustShapes = (
                         item: {type: 'seg', prev: pair[0], seg: {type: 'Line', to: pair[1]}},
                     })),
                 });
+                debug.push({
+                    title: 'Added Segments',
+                    type: 'items',
+                    items: moved.flatMap((shape) =>
+                        coordPairs(shape.shape).flatMap((pair) => ({
+                            item: {type: 'seg', prev: pair[0], seg: {type: 'Line', to: pair[1]}},
+                        })),
+                    ),
+                });
             }
 
             segs.push(...moved.flatMap((m) => coordPairs(m.shape)));
@@ -136,6 +145,8 @@ export const adjustShapes = (
             // const prec = 5;
 
             segs = cutSegments(segs, prec);
+            const norms = normPoints(segs.flat(), prec);
+            segs = normSegs(segs, norms, prec);
 
             segs = unique(segs, (p) => coordPairKey(p, prec));
 
@@ -159,7 +170,7 @@ export const adjustShapes = (
             const byEndPoint = edgesByEndpoint(segs, prec);
             // TODO: so I want to find eigenpoints, only ones that are ... along the moved path maybe?
             // or like the original or moved path idk.
-            const one = unique(segs.flat(), coordKey);
+            const one = unique(segs.flat(), (m) => coordKey(m, prec));
             // const two = unique(
             //     moved.flatMap((m) => m.shape),
             //     coordKey,
@@ -169,6 +180,30 @@ export const adjustShapes = (
                     title: 'All Points',
                     type: 'items',
                     items: one.map((p) => ({item: {type: 'point', p}})),
+                });
+                debug.push({
+                    type: 'group',
+                    title: `By Endpoint`,
+                    children: [
+                        {
+                            type: 'items',
+                            title: 'All Points',
+                            items: Object.values(byEndPoint).map((v) => ({
+                                item: {type: 'point', p: v.pos},
+                            })),
+                        },
+                        ...Object.entries(byEndPoint).map(([key, value], i) => ({
+                            type: 'items' as const,
+                            title: `Point ${i} - ${key}`,
+                            items: [
+                                {item: {type: 'point' as const, p: value.pos}},
+                                ...value.exits.map((exit) => ({
+                                    item: {type: 'point' as const, p: exit.to},
+                                    title: `${exit.idx} - ${exit.theta}`,
+                                })),
+                            ],
+                        })),
+                    ],
                 });
             }
             const cmoved = centroid(moved.flatMap((m) => m.shape));
@@ -274,3 +309,17 @@ export const coordsIntersectCoords = (one: Coord[], twos: SlopeIntercept[], eps:
 export const lineHit = (one: SlopeIntercept, two: SlopeIntercept, eps: number) => {
     return overlapping(one, two, eps) || !!lineLine(one, two);
 };
+
+const normPoints = (points: Coord[], prec: number) => {
+    const map: Record<string, Coord> = {};
+    points.forEach((p) => {
+        const k = coordKey(p, prec);
+        if (!map[k]) map[k] = p;
+    });
+    return map;
+};
+
+const normSegs = (segs: [Coord, Coord][], norm: Record<string, Coord>, prec: number) =>
+    segs.map(
+        ([a, b]): [Coord, Coord] => [norm[coordKey(a, prec)], norm[coordKey(b, prec)]] as const,
+    );

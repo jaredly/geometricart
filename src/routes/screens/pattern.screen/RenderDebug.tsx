@@ -221,10 +221,13 @@ export const RenderDebug = ({
 }) => {
     const animCache = useMemo<AnimCtx['cache']>(() => new Map(), []);
 
+    const m = location.search.match(/debug=([\d.]+)/g);
+    const t = m ? +m[0].split('=')[1] : 0;
+
     const es = useEditState();
     const hover = es.use((es) => es.hover);
     // const t = 0.763;
-    const t = 0.592;
+    // const t = 0.592;
     // const t = 0.992;
     const cropCache = useCropCache(state, t, animCache);
 

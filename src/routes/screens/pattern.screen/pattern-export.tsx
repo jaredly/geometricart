@@ -331,6 +331,7 @@ const Inner = ({initialPatterns}: {initialPatterns: Patterns}) => {
     const state = sctx.use((v) => v);
     const patternCache = useMemo<Patterns>(() => initialPatterns, [initialPatterns]);
     const pctx = usePendingState();
+    const debug = location.search.includes('debug=');
 
     useEffect(() => {
         return sctx.onHistoryChange(() => {
@@ -362,8 +363,11 @@ const Inner = ({initialPatterns}: {initialPatterns: Patterns}) => {
 
     return (
         <div className="flex">
-            {/*<RenderExport state={state} patterns={patternCache} onChange={sctx.update} />*/}
-            <RenderDebug state={state} update={sctx.update} patterns={patternCache} />
+            {debug ? (
+                <RenderDebug state={state} update={sctx.update} patterns={patternCache} />
+            ) : (
+                <RenderExport state={state} patterns={patternCache} onChange={sctx.update} />
+            )}
             <div className="max-h-250 overflow-auto flex-1">
                 <StateEditor value={state} update={sctx.update} />
             </div>
