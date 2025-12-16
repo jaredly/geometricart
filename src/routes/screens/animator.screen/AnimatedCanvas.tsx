@@ -7,6 +7,7 @@ import {pk} from '../../pk';
 import {Config} from '../animator';
 import {State} from './animator.utils';
 import {recordVideo, renderFrame} from './renderFrame';
+import {thinTiling} from '../pattern.screen/renderPattern';
 
 export const AnimatedCanvas = ({
     patternMap,
@@ -25,7 +26,7 @@ export const AnimatedCanvas = ({
     const patternDatas = useMemo(() => {
         return config.showNice
             ? state.layers.map((l) =>
-                  getNewPatternData(patternMap[l.pattern], config.repl, state.crops),
+                  getNewPatternData(thinTiling(patternMap[l.pattern]), config.repl, state.crops),
               )
             : [];
     }, [state.layers, patternMap, config.repl, config.showNice, state.crops]);

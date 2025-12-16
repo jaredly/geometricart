@@ -49,10 +49,14 @@ export const makeContext = <T,>(initial: T) => {
                     latest() {
                         return c.value;
                     },
-                    update: diffBuilderApply<T>((op) => {
-                        c.value = ops.apply(c.value, fromPending(c.value, op));
-                        listeners.forEach((f) => f());
-                    }, 'type'),
+                    update: diffBuilderApply<T, null, 'type'>(
+                        (op) => {
+                            c.value = ops.apply(c.value, fromPending(c.value, op));
+                            listeners.forEach((f) => f());
+                        },
+                        null,
+                        'type',
+                    ),
                 }),
                 [c],
             );

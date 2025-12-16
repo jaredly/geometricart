@@ -1,6 +1,6 @@
 import {scalePos} from '../../../editor/scalePos';
 import {dist} from '../../../rendering/getMirrorTransforms';
-import {Coord} from '../../../types';
+import {Coord, ThinTiling, Tiling} from '../../../types';
 import {centroid} from '../../findReflectionAxes';
 import {getSimplePatternData, getShapeColors} from '../../getPatternData';
 import {EndPointMap} from '../../shapesFromSegments';
@@ -28,16 +28,21 @@ import {
     numToCoord,
 } from './resolveMods';
 
+export const thinTiling = (t: Tiling): ThinTiling => ({segments: t.cache.segments, shape: t.shape});
+
 export const renderPattern = (ctx: Ctx, _outer: CropsAndMatrices, pattern: Pattern) => {
     // not doing yet
     if (pattern.contents.type !== 'shapes') return;
-    const tiling = ctx.patterns[pattern.tiling];
+    const tiling =
+        typeof pattern.tiling === 'string'
+            ? thinTiling(ctx.patterns[pattern.tiling])
+            : pattern.tiling.tiling;
     if (!tiling) {
         throw new Error(`Pattern not found ${pattern.tiling}`);
     }
     const enabledPatternMods = resolveEnabledPMods(ctx.anim, pattern.mods);
 
-    const panim = withShared(ctx.anim, pattern.shared);
+    const panim = withShared(ctx.anim, pattern.shared, true);
 
     const simple = getSimplePatternData(tiling, pattern.psize);
     let baseShapes = simple.uniqueShapes;

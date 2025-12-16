@@ -7,6 +7,7 @@ import {PatternView} from './pattern.screen/pattern-view';
 import {randomUUIDv7} from 'bun';
 import {savePattern} from '../db.server';
 import {useFetcher} from 'react-router';
+import {thinTiling} from './pattern.screen/renderPattern';
 
 export async function action({request, params}: Route.ActionArgs) {
     const data = await request.formData();
@@ -23,7 +24,7 @@ export default function PatternAddScreen() {
 
     const tiling = state ? Object.values(state.tilings)[0] : null;
 
-    const data = useMemo(() => (tiling ? getNewPatternData(tiling) : null), [tiling]);
+    const data = useMemo(() => (tiling ? getNewPatternData(thinTiling(tiling)) : null), [tiling]);
     const fetcher = useFetcher();
 
     if (!state) {

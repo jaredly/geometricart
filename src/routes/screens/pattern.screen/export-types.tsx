@@ -8,7 +8,7 @@ import {
     scaleMatrix,
     translationMatrix,
 } from '../../../rendering/getMirrorTransforms';
-import {GuideGeom, Coord, Segment, BarePath} from '../../../types';
+import {GuideGeom, Coord, Segment, BarePath, Tiling, ThinTiling} from '../../../types';
 import {pk, PKPath} from '../../pk';
 import {colorToString} from './colors';
 import {CropsAndMatrices} from './resolveMods';
@@ -250,7 +250,7 @@ export const modMatrix = (mod: ConcretePMod, origin?: Coord) => {
 export type Pattern = {
     type: 'Pattern';
     id: string;
-    tiling: string;
+    tiling: string | {id: string; tiling: ThinTiling};
 
     psize: Coord | number;
     contents: PatternContents;

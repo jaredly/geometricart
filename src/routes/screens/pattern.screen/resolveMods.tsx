@@ -162,13 +162,20 @@ export const resolveT = (
     return null;
 };
 
-export const withShared = (anim: Ctx['anim'], shared?: Record<string, AnimatableValue>) => {
+export const withShared = (
+    anim: Ctx['anim'],
+    shared?: Record<string, AnimatableValue>,
+    debug = false,
+) => {
     if (!shared) return anim;
     // biome-ignore lint: this one is fine
     const values: Record<string, any> = {};
     Object.entries(shared).forEach(([name, value]) => {
         values[name] = a.value(anim, value);
     });
+    if (debug) {
+        // console.log('shared', anim.values.t, values);
+    }
     return {...anim, values: {...anim.values, ...values}};
 };
 

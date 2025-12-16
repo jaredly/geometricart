@@ -4,7 +4,14 @@ import {segmentsCmds} from '../animator.screen/cropPath';
 import {RenderItem} from './evaluate';
 import {Box, Color, colorToRgb} from './export-types';
 
-export const renderItems = (surface: Surface, box: Box, items: RenderItem[], bg: Color) => {
+export const renderItems = (
+    surface: Surface,
+    box: Box,
+    items: RenderItem[],
+    bg: Color,
+    fontBuffer?: ArrayBuffer,
+    t?: number,
+) => {
     const ctx = surface.getCanvas();
     const bgc = colorToRgb(bg);
     ctx.clear(pk.Color(bgc.r, bgc.g, bgc.b));
@@ -13,6 +20,9 @@ export const renderItems = (surface: Surface, box: Box, items: RenderItem[], bg:
     ctx.scale(surface.width() / box.width, surface.height() / box.height);
     ctx.translate(-box.x, -box.y);
     items.forEach((item) => {
+        if (item.type === 'point') {
+            return;
+        }
         const pkp =
             item.pk ??
             pk.Path.MakeFromCmds(
@@ -61,5 +71,34 @@ export const renderItems = (surface: Surface, box: Box, items: RenderItem[], bg:
         // if (imf != null) imf.delete();
     });
     ctx.restore();
+
+    if (fontBuffer && t != null) {
+        // console.log('darwingg');
+        const fontMgr = pk.FontMgr.FromData(fontBuffer)!;
+        const typeface = fontMgr.matchFamilyStyle('Roboto', {
+            weight: pk.FontWeight.Bold,
+        });
+
+        const font = new pk.Font(typeface, 100);
+        const paint = new pk.Paint();
+        paint.setColor(pk.BLACK);
+        paint.setStyle(pk.PaintStyle.Stroke);
+        paint.setStrokeWidth(10);
+
+        const text = `t = ${t.toFixed(4)}`; //'Hello CanvasKit';
+        const widths = font.getGlyphWidths(font.getGlyphIDs(text));
+        const w = [...widths].reduce((a, b) => a + b);
+
+        ctx.drawText(text, surface.width() / 2 - w / 2, surface.height() / 2, paint, font);
+
+        paint.setColor(pk.WHITE);
+        paint.setStyle(pk.PaintStyle.Fill);
+        ctx.drawText(text, surface.width() / 2 - w / 2, surface.height() / 2, paint, font);
+    }
+    // const font = new pk.Font();
+    // pk.FontMgr
+    // font.setSize(10);
+    // ctx.drawText('hello', surface.width() / 2, surface.height() / 2, paint, font);
+
     surface.flush();
 };

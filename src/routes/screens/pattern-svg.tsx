@@ -5,6 +5,7 @@ import {canvasTiling} from '../canvasTiling';
 import {getNewPatternData, getPatternData} from '../getPatternData';
 import {TilingPattern} from '../ShowTiling';
 import {flipPattern} from '../flipPattern';
+import {thinTiling} from './pattern.screen/renderPattern';
 
 const pngCache: Record<string, Buffer<ArrayBuffer>> = {};
 
@@ -30,7 +31,7 @@ export async function loader({params, request}: Route.LoaderArgs) {
             <TilingPattern
                 tiling={pattern.tiling}
                 size={+size}
-                data={getNewPatternData(pattern.tiling)}
+                data={getNewPatternData(thinTiling(pattern.tiling))}
             />,
         );
         return new Response(tiling, {headers: {'Content-Type': 'image/svg+xml'}});
@@ -55,7 +56,7 @@ export async function loader({params, request}: Route.LoaderArgs) {
     const crop = search.get('crop') ? +search.get('crop')! : undefined;
     const dataUri = await canvasTiling(
         getNewPatternData(
-            flip,
+            thinTiling(flip),
             psize,
             crop
                 ? [

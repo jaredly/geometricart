@@ -14,6 +14,7 @@ import {InspectShape} from '../../InspectShape';
 import {normalizeCanonShape, Shape} from '../../getUniqueShapes';
 import {useElementZoom} from './useSVGZoom';
 import {closeEnough} from '../../../rendering/epsilonToZero';
+import {thinTiling} from './renderPattern';
 
 type Display = {
     bounds: boolean;
@@ -35,7 +36,7 @@ export const PatternView = ({
 }: {
     loaderData: {} & Route.ComponentProps['loaderData'];
 }) => {
-    const data = useMemo(() => getNewPatternData(pattern.tiling, 3), [pattern.tiling]);
+    const data = useMemo(() => getNewPatternData(thinTiling(pattern.tiling), 3), [pattern.tiling]);
     const [display, setDisplay] = useState<Display>({
         bounds: false,
         draw: 'shapes',

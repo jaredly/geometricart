@@ -5,6 +5,7 @@ import {Tiling} from '../types';
 import {canvasTiling} from './canvasTiling';
 import {getNewPatternData, getPatternData} from './getPatternData';
 import {normalizeTilingShape, tilingPoints} from '../editor/tilingPoints';
+import {thinTiling} from './screens/pattern.screen/renderPattern';
 
 const veryBasicTiling: Tiling = {
     shape: {
@@ -47,7 +48,7 @@ test('Memory usage', async () => {
 
     // looks like 3mb per pattern?
     for (let i = 0; i < 1000; i++) {
-        const data = getNewPatternData(veryBasicTiling);
+        const data = getNewPatternData(thinTiling(veryBasicTiling));
         await canvasTiling(data, 100, true, {});
     }
 

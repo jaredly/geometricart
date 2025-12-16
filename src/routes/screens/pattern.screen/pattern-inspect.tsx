@@ -28,6 +28,7 @@ import {filterNull} from './filterNull';
 import {IGuide} from './IGuide';
 import {ShowLabel} from './ShowLabel';
 import {sizeBox, svgCoord, useElementZoom} from './useSVGZoom';
+import {thinTiling} from './renderPattern';
 
 type Selection = {type: 'shape'; i: number} | {type: 'seg'; i: number};
 
@@ -58,7 +59,7 @@ const boxCrop = (cs: number) => ({
 export const PatternInspect = ({tiling}: {tiling: Tiling}) => {
     const size = 800;
     const [psize, setPsize] = useState(3);
-    const data = useMemo(() => getNewPatternData(tiling, psize), [tiling, psize]);
+    const data = useMemo(() => getNewPatternData(thinTiling(tiling), psize), [tiling, psize]);
 
     const [guides, setGuides] = useState([] as IGuide[]);
 

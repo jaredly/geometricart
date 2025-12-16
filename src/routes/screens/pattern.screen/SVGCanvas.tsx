@@ -18,6 +18,7 @@ import {coordPairKey, sortCoordPair} from './adjustShapes';
 import {pathsFromSegments} from '../../pathsFromSegments';
 import {outerBoundary} from '../../outerBoundary';
 import {followPath} from '../../weaveIntersections';
+import {usePromise} from './usePromise';
 
 export const Canvas = ({
     items,
@@ -27,6 +28,7 @@ export const Canvas = ({
     innerRef,
     // byKey,
     bg,
+    t,
 }: {
     items: RenderItem[];
     bg: Color;
@@ -37,7 +39,9 @@ export const Canvas = ({
     innerRef: React.RefObject<SVGElement | HTMLElement | null>;
     setMouse: (m: Coord | null) => void;
     byKey: Record<string, string[]>;
+    t: number;
 }) => {
+    // const font = usePromise(() => fetch('/assets/Roboto-Regular.ttf').then((r) => r.arrayBuffer()));
     useEffect(() => {
         const surface = pk.MakeWebGLCanvasSurface(innerRef.current! as HTMLCanvasElement)!;
         renderItems(surface, box, items, bg);

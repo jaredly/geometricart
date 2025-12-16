@@ -757,6 +757,11 @@ export type TilingShape =
           points: [Coord, Coord, Coord, Coord];
       };
 
+export type ThinTiling = {
+    shape: TilingShape;
+    segments: SegPrev[];
+};
+
 export type Tiling = {
     id: Id;
     // points: Coord[],

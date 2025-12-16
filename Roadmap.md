@@ -1,4 +1,20 @@
 
+#
+
+- [ ] Export pls
+- [ ] let's do shape auto-duplication. that should reduce storage size a fair bit
+- [ ] Q: should I truncate numbers when I store them? 🤔 eh maybe not
+- [ ] how about video render in a worker?
+- [ ] the /patterns/ should be inlined
+
+#
+
+Still have more floating bugs looks like it.
+- [x] I should `normalize` (* 1000 | round | / 1000) instead of just unique'ing on the reduced keys.
+that should clear up a lot.
+
+anyway, chunksss
+
 Nowww what if we make history actually persist
 so then we can play with it.
 

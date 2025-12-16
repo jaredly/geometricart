@@ -28,7 +28,8 @@ export class RoughGenerator {
 
 export class RoughCanvas extends RoughGenerator {
     generator: RoughGenerator;
-    constructor(canvas: null) {
+    // biome-ignore lint: nope
+    constructor(canvas: any) {
         super();
         // biome-ignore lint: nope
         this.generator = null as any;

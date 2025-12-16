@@ -3,7 +3,10 @@ import {diffBuilder, JsonPatchOp, PendingJsonPatchOp} from './helper2';
 import {ops, rebase} from './ops2';
 import {Extra} from './react';
 
-export function fromPending<T, V>(base: T, pending: PendingJsonPatchOp<V>): JsonPatchOp<V> {
+export function fromPending<T, V, Tag extends PropertyKey, Extra>(
+    base: T,
+    pending: PendingJsonPatchOp<V, Tag, Extra>,
+): JsonPatchOp<V> {
     switch (pending.op) {
         case 'add': {
             const prev = _get(base, pending.path);

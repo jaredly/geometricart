@@ -17,6 +17,14 @@ import {
     barePathFromCoords,
 } from './resolveMods';
 
+export const truncateValue = (v: number, amt: number) => Math.round(v * amt) / amt;
+export const truncateCoord = (v: Coord, amt: number): Coord => ({
+    x: truncateValue(v.x, amt),
+    y: truncateValue(v.y, amt),
+});
+export const truncateShape = (v: Coord[], amt: number): Coord[] =>
+    v.map((c) => truncateCoord(c, amt));
+
 export const adjustShapes = (
     anim: Ctx['anim'],
     cropCache: Ctx['cropCache'],
@@ -29,6 +37,9 @@ export const adjustShapes = (
     }[],
     log = false,
 ) => {
+    const amt = 1000;
+    uniqueShapes = uniqueShapes.map((shape) => truncateShape(shape, amt));
+
     let modified = false;
     const outerDebug: RenderLog[] = [];
     for (let {shapes, mods, t, shared} of adjustments) {
@@ -45,14 +56,16 @@ export const adjustShapes = (
         for (let {path: shape, id} of shapes) {
             if (!shape) continue;
             const debug: RenderLog[] = [];
-            const shapeCoords = coordsFromBarePath(shape);
+            const shapeCoords = truncateShape(coordsFromBarePath(shape), amt);
             const center = centroid(shapeCoords);
             const resolved = resolveEnabledPMods(
                 {...aanim, values: {...aanim.values, ...local, center}},
                 mods,
             );
             const shapeLines = coordLines(shapeCoords);
-            const moved = modsToShapes(cropCache, resolved, [{shape: shapeCoords, i: 0}]);
+            const moved = modsToShapes(cropCache, resolved, [{shape: shapeCoords, i: 0}]).map(
+                (a) => ({...a, shape: truncateShape(a.shape, amt)}),
+            );
             const movedLines = moved.map((m) => coordLines(m.shape));
             if (allSameLines(shapeLines, movedLines.flat())) {
                 continue;

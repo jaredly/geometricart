@@ -1,5 +1,5 @@
-import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
-import {Tiling} from '../../../types';
+import {useCallback, useEffect, useMemo, useState} from 'react';
+import {ThinTiling, Tiling} from '../../../types';
 import {
     EditState,
     PendingState,
@@ -24,21 +24,8 @@ import {notNull} from './resolveMods';
 import {RenderDebug} from './RenderDebug';
 import {blankHistory, History} from '../../../json-diff/history';
 import {makeContext, makeHistoryContext} from '../../../json-diff/react';
-// import {example3} from './example3';
-
-// biome-ignore lint: any is fine here
-const usePromise = <T,>(f: (abort: AbortSignal) => Promise<T>, deps: any[] = []) => {
-    const [v, setV] = useState<T | null>(null);
-    const lv = useRef(f);
-    lv.current = f;
-    useEffect(() => {
-        const ctrl = new AbortController();
-        lv.current(ctrl.signal).then(setV);
-        return () => ctrl.abort();
-        // biome-ignore lint: this is fine
-    }, deps);
-    return v;
-};
+import {usePromise} from './usePromise';
+import {thinTiling} from './renderPattern';
 
 const PatternPicker = () => {
     const all = usePromise((signal) => fetch('/gallery.json', {signal}).then((r) => r.json()));
@@ -51,7 +38,7 @@ for (let i = 0; i < colorsRaw.length; i += 6) {
     colors.push('#' + colorsRaw.slice(i, i + 6));
 }
 
-const makeForPattern = (tiling: Tiling, hash: string): State => {
+const makeForPattern = (tiling: ThinTiling, hash: string): State => {
     const pd = getNewPatternData(tiling);
     const styles: Record<string, ShapeStyle> = {};
     for (let i = 0; i <= pd.colorInfo.maxColor; i++) {
@@ -114,7 +101,7 @@ const CreateAndRedirect = ({id}: {id: string}) => {
         const controller = new AbortController();
         const ok = async () => {
             const v: Tiling = await fetch(`/gallery/pattern/${id}/json`).then((r) => r.json());
-            const state = makeForPattern(v, id);
+            const state = makeForPattern(thinTiling(v), id);
             const sid = genid();
             await fetch(`/fs/exports/${sid}.json`, {
                 method: 'POST',
@@ -168,7 +155,7 @@ const LoadPattern = ({id}: {id: string}) => {
                 Object.values(state.current.layers)
                     .flatMap((l) =>
                         Object.values(l.entities).map((e) =>
-                            e.type === 'Pattern' ? e.tiling : null,
+                            e.type === 'Pattern' && typeof e.tiling === 'string' ? e.tiling : null,
                         ),
                     )
                     .filter(notNull),
@@ -222,27 +209,6 @@ const Page = ({
                     ))}
                 </ul>
             </div>
-            {/* <div role="tablist" className="tabs tabs-border">
-                    {tabs.map((tap) =>
-                        tap.enabled !== false ? (
-                            <a
-                                role="tab"
-                                key={tap.name}
-                                className={'tab' + (currentTab === tap.name ? ` tab-active` : '')}
-                                href={tap.link}
-                                onClick={
-                                    tap.link
-                                        ? undefined
-                                        : () => {
-                                              setCurrentTab(tap.name);
-                                          }
-                                }
-                            >
-                                {tap.name}
-                            </a>
-                        ) : null,
-                    )}
-                </div> */}
         </div>
         {children}
     </div>

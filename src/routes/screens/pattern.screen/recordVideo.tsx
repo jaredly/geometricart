@@ -23,6 +23,8 @@ export const recordVideo = async (
 
     const animCache = new Map();
 
+    const fontData = await fetch('/assets/Roboto-Regular.ttf').then((r) => r.arrayBuffer());
+
     const blob = await generateVideo(canvas, frameRate, totalFrames, (_, currentFrame) => {
         if (currentFrame % 10 === 0)
             onStatus.current!.textContent = ((currentFrame / totalFrames) * 100).toFixed(0) + '%';
@@ -35,7 +37,20 @@ export const recordVideo = async (
             patterns,
             currentFrame / totalFrames,
         );
-        renderItems(surface, box, items, bg);
+        const debugTime = false;
+        if (debugTime) {
+            renderItems(surface, box, items, bg, fontData, currentFrame / totalFrames);
+        } else {
+            renderItems(surface, box, items, bg);
+        }
+        // const ctx = surface.getCanvas();
+        // const paint = new pk.Paint();
+        // paint.setColor(pk.RED);
+        // paint.setStyle(pk.PaintStyle.Fill);
+        // const font = new pk.Font();
+        // // font.setSize()
+        // ctx.drawText(currentFrame / totalFrames + '', size / 2, size / 2, paint, font);
+        // surface.flush();
     });
     onStatus.current!.textContent = '';
     return blob ? URL.createObjectURL(blob) : null;

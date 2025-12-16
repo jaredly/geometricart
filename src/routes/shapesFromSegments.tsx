@@ -11,7 +11,7 @@ import {
 import {lineLine, lineToSlope} from '../rendering/intersect';
 import {coordsEqual} from '../rendering/pathsAreIdentical';
 import {isClockwisePoints} from '../rendering/pathToPoints';
-import {Coord, Tiling} from '../types';
+import {Coord, ThinTiling, Tiling} from '../types';
 import {discoverShape} from './discoverShape';
 import {centroid} from './findReflectionAxes';
 import {getNewPatternData, getPatternData} from './getPatternData';
@@ -400,7 +400,7 @@ export const chooseCorner = (options: Coord[], shapes: Coord[][]) => {
 export const shouldFlipTriangle = (
     rotHyp: boolean,
     internalAngle: number,
-    tiling: Tiling,
+    tiling: ThinTiling,
     start: Coord,
     end: Coord,
 ) => {

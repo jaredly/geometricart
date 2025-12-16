@@ -20,7 +20,7 @@ import {
 } from '../rendering/getMirrorTransforms';
 import {angleBetween} from '../rendering/isAngleBetween';
 import {isClockwisePoints, pointsAngles} from '../rendering/pathToPoints';
-import {BarePath, Coord, Segment, Tiling} from '../types';
+import {BarePath, Coord, Segment, ThinTiling, Tiling, TilingShape} from '../types';
 import {colorShapes} from './patternColoring';
 import {pk} from './pk';
 import {
@@ -234,13 +234,11 @@ const shapeSegments = (shape: Coord[]) => {
 
 export type Crop = {segments: Segment[]; hole?: boolean; rough?: boolean};
 
-export const getSimplePatternData = (tiling: Tiling, size: Coord | number) => {
+export const getSimplePatternData = (tiling: ThinTiling, size: Coord | number) => {
     const bounds = tilingPoints(tiling.shape);
-    const eigenSegments = tiling.cache.segments.map(
-        (s) => [s.prev, s.segment.to] as [Coord, Coord],
-    );
+    const eigenSegments = tiling.segments.map((s) => [s.prev, s.segment.to] as [Coord, Coord]);
 
-    const initialShapes = getInitialShapes(eigenSegments, tiling, bounds);
+    const initialShapes = getInitialShapes(eigenSegments, tiling.shape, bounds);
 
     const canons = initialShapes
         .map(joinAdjacentShapeSegments)
@@ -259,7 +257,7 @@ export const getSimplePatternData = (tiling: Tiling, size: Coord | number) => {
         tiling.shape,
         bounds[2],
         bounds,
-        typeof size === 'number' ? simpleSize(tiling, size) : size,
+        typeof size === 'number' ? simpleSize(tiling.shape, size) : size,
     );
     const transformedShapes = applyTilingTransformsG(initialShapes, ttt, transformShape);
     const uniqueShapes = sortShapesByPolar(
@@ -287,9 +285,9 @@ export const sortShapesByPolar = (shapes: Coord[][]) => {
         .map((m) => m.shape);
 };
 
-const simpleSize = (tiling: Tiling, x: number) => {
-    const bounds = tilingPoints(tiling.shape);
-    const y = Math.round(Math.abs(xyratio(tiling.shape, bounds[2])) * x);
+const simpleSize = (shape: TilingShape, x: number) => {
+    const bounds = tilingPoints(shape);
+    const y = Math.round(Math.abs(xyratio(shape, bounds[2])) * x);
     return {x, y};
 };
 
@@ -301,11 +299,11 @@ export const getShapeColors = (allShapes: Coord[][], minSegLength: number, log?:
     return {colors, pointNames, uniquePoints};
 };
 
-export const getNewPatternData = (tiling: Tiling, size = 2, crops?: Crop[]) => {
+export const getNewPatternData = (tiling: ThinTiling, size = 2, crops?: Crop[]) => {
     const bounds = tilingPoints(tiling.shape);
     const {uniqueShapes, initialShapes, minSegLength, canons, ttt} = getSimplePatternData(
         tiling,
-        simpleSize(tiling, size),
+        simpleSize(tiling.shape, size),
     );
 
     const allShapes = cropShapes(uniqueShapes, crops).flat();
@@ -424,11 +422,11 @@ export const getPatternData = (
     };
 };
 
-function getInitialShapes(eigenSegments: [Coord, Coord][], tiling: Tiling, pts: Coord[]) {
+function getInitialShapes(eigenSegments: [Coord, Coord][], shape: TilingShape, pts: Coord[]) {
     const eigenPoints = unique(eigenSegments.flat(), coordKey);
     const allSegments = unique(
-        applyTilingTransforms(eigenSegments, initialTransform(tiling.shape, pts[2], pts)).map(
-            (seg) => (cmpCoords(seg[0], seg[1]) === 1 ? ([seg[1], seg[0]] as [Coord, Coord]) : seg),
+        applyTilingTransforms(eigenSegments, initialTransform(shape, pts[2], pts)).map((seg) =>
+            cmpCoords(seg[0], seg[1]) === 1 ? ([seg[1], seg[0]] as [Coord, Coord]) : seg,
         ),
         ([a, b]) => `${coordKey(a)}:${coordKey(b)}`,
     );
