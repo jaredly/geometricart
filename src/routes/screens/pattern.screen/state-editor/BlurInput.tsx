@@ -6,16 +6,19 @@ export const BlurInput = ({
     placeholder,
     className,
     onBlur,
+    style,
 }: {
     className?: string;
     placeholder?: string;
     value: string;
     onChange: (v: string) => void;
     onBlur?: () => void;
+    style?: React.CSSProperties;
 }) => {
     const [text, setText] = useState<string | null>(null);
     return (
         <input
+            style={style}
             className={
                 `input input-sm ${className ?? ''} ` +
                 (text != null && text !== value ? 'outline-blue-400' : '')

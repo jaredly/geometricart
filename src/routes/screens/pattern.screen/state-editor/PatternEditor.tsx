@@ -1,4 +1,4 @@
-import {Adjustment, AnimatableValue, Color, Pattern} from '../export-types';
+import {Adjustment, Color, Pattern} from '../export-types';
 import {CoordField} from './CoordField';
 import {NumberField} from './NumberField';
 import {PatternContentsEditor} from './PatternContentsEditor';
@@ -6,10 +6,9 @@ import {ModsEditor} from './FillEditor';
 import {genid} from '../genid';
 import {useEditState, useLatest, usePendingState} from '../editState';
 import {ChunkEditor} from './ChunkEditor';
-import {cmp} from './cmp';
 import {AnimInput} from './AnimInput';
-import {BlurInput} from './BlurInput';
 import {Updater} from '../../../../json-diff/Updater';
+import {SharedEditor} from './SharedEditor';
 
 export const PatternEditor = ({
     value,
@@ -45,70 +44,13 @@ export const PatternEditor = ({
 
 const letters = 'abcdefghijklmnopqrstuvwxyz';
 
-const nextKey = (shared: Record<string, string>) => {
+export const nextKey = (shared: Record<string, string>) => {
     for (let j = 0; j < 100; j++) {
         for (let i = 0; i < letters.length; i++) {
             const k = `${letters[i]}${j === 0 ? '' : j + 1}`;
             if (!(k in shared)) return k;
         }
     }
-};
-
-export const SharedEditor = ({
-    shared,
-    onChange,
-}: {
-    shared?: Record<string, AnimatableValue>;
-    onChange(v: Record<string, AnimatableValue>): void;
-}) => {
-    return (
-        <div className="border border-base-300 rounded-md p-4 space-y-4">
-            <button
-                onClick={() => {
-                    const nk = nextKey(shared ?? {});
-                    if (!nk) return;
-                    onChange({...shared, [nk]: '1 + 1'});
-                }}
-                className="btn btn-sm"
-            >
-                Add shared value
-            </button>
-            {Object.entries(shared ?? {})
-                .sort((a, b) => cmp(a[0], b[0]))
-                .map(([key, value]) => (
-                    <div key={key} className="flex flex-row">
-                        <BlurInput
-                            className="w-10"
-                            value={key}
-                            placeholder="key"
-                            onChange={(nkey) => {
-                                if (key === nkey || !nkey) return;
-                                const next = {...shared};
-                                delete next[key];
-                                next[nkey] = value;
-                                onChange(next);
-                            }}
-                        />
-                        <BlurInput
-                            className="flex-1"
-                            value={value}
-                            onChange={(value) => onChange({...shared, [key]: value})}
-                            placeholder="value"
-                        />
-                        <button
-                            className="btn btn-sm btn-square"
-                            onClick={() => {
-                                const next = {...shared};
-                                delete next[key];
-                                onChange(next);
-                            }}
-                        >
-                            &times;
-                        </button>
-                    </div>
-                ))}
-        </div>
-    );
 };
 
 const AdjustmentEditor = ({
@@ -126,12 +68,12 @@ const AdjustmentEditor = ({
     const pending = edit.use((v) => v.pending);
     const isAdding = pending?.type === 'select-shapes' && pending.key === `adj-${adj.id}`;
     return (
-        <div className="border border-base-300 rounded-md p-4 space-y-4">
+        <div className="border border-base-300 bg-base-200 rounded-md p-4 space-y-4">
             <div className="flex items-center">
                 <div className="text-sm bg-base-300 rounded px-2 py-1 mr-4">{adj.id}</div>
                 <details className="dropdown">
                     <summary
-                        className="btn m-1"
+                        className="btn m-1 whitespace-nowrap"
                         onMouseEnter={() => es.update.hover({type: 'shapes', ids: adj.shapes})}
                         onMouseLeave={() => es.update.hover(null)}
                     >
@@ -149,7 +91,7 @@ const AdjustmentEditor = ({
                                 onMouseLeave={() => es.update.hover(null)}
                                 className="flex flex-row"
                             >
-                                {id}
+                                <div className="flex-1">{id}</div>
                                 <button
                                     onClick={() => update.shapes[i].remove()}
                                     className="btn btn-square"
@@ -201,8 +143,8 @@ const AdjustmentsEditor = ({
     update: Updater<Pattern['adjustments']>;
 }) => {
     return (
-        <details className="space-y-4">
-            <summary className="font-semibold text-sm flex flex-row gap-4 items-center">
+        <details className="space-y-4 p-4 border border-base-300">
+            <summary className="font-semibold text-sm gap-4 items-center">
                 Adjustments ({Object.keys(adjustments).length})
                 <button
                     className="btn btn-sm"

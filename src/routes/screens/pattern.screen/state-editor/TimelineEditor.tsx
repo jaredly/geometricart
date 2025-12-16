@@ -64,32 +64,6 @@ const LaneEditor = ({
             }
             items.push(<path d={shapeD(pts, false)} stroke="white" strokeWidth={1} fill="none" />);
         }
-
-        // // const line: Coord[] = [];
-        // ts.forEach((t, i) => {
-        //     const x = i * (w / (ts.length - 1)) + m;
-        //     const y0 = (lane.ys.length - 1 - lane.values[i]) * (h / lane.ys.length) + m;
-        //     if (i < ts.length - 1) {
-        //         const x1 = (i + 1) * (w / (ts.length - 1)) + m;
-        //         const y1 = (lane.ys.length - 1 - lane.values[i + 1]) * (h / lane.ys.length) + m;
-        //         const ease = lane.easings[i] ?? 'straight';
-        //         const pts = evalEase(ease, {x, y: y0}, {x: x1, y: y1});
-        //         items.push(
-        //             <path
-        //                 d={shapeD(pts, false)}
-        //                 strokeWidth={3}
-        //                 stroke="red"
-        //                 fill="none"
-        //             />,
-        //         );
-        //     }
-        //     lane.ys.forEach((value, j) => {
-        //         const y = j * (h / lane.ys.length) + m;
-        //         items.push(
-        //             <circle cx={x} cy={y} r={5} fill="#fff" opacity={0.2} key={`${i}-${j}`} />,
-        //         );
-        //     });
-        // });
         return items;
     }, [lane, ts, w, h]);
     return (
@@ -105,6 +79,7 @@ const LaneEditor = ({
         </div>
     );
 };
+
 type Timeline = State['styleConfig']['timeline'];
 export const TimelineEditor = ({
     timeline,

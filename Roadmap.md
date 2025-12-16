@@ -6,6 +6,7 @@
 - [ ] Q: should I truncate numbers when I store them? 🤔 eh maybe not
 - [ ] how about video render in a worker?
 - [ ] the /patterns/ should be inlined
+  -> "thinTiling" is the thing
 
 #
 

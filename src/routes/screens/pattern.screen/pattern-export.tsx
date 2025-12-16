@@ -76,7 +76,7 @@ const makeForPattern = (tiling: ThinTiling, hash: string): State => {
                         mods: [],
                         psize: 3,
                         contents: {type: 'shapes', styles},
-                        tiling: hash,
+                        tiling: {id: hash, tiling},
                     },
                 },
                 guides: [],

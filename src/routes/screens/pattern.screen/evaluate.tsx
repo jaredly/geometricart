@@ -65,7 +65,7 @@ export type Ctx = {
 
 type AnimFn = (ctx: AnimCtx['values']) => any;
 
-const getScript = (ctx: AnimCtx, v: string) => {
+export const getScript = (ctx: AnimCtx, v: string) => {
     if (!ctx.cache.has(v)) {
         try {
             const {undeclared, arg, needsReturn} = processScript(v);
