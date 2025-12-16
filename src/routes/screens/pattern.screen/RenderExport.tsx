@@ -19,6 +19,7 @@ import {useCropCache} from './useCropCache';
 import {useElementZoom} from './useSVGZoom';
 import {VideoExport} from './VideoExport';
 import {Updater} from '../../../json-diff/Updater';
+import {FrameExport} from './FrameExport';
 
 export const renderShapes = (
     shapes: State['shapes'],
@@ -33,10 +34,12 @@ export const renderShapes = (
 };
 
 export const RenderExport = ({
+    id,
     state,
     patterns,
     onChange,
 }: {
+    id: string;
     state: State;
     patterns: Patterns;
     onChange: Updater<State>;
@@ -159,6 +162,15 @@ export const RenderExport = ({
                     size={size}
                     patterns={patterns}
                     duration={duration}
+                    statusRef={statusRef}
+                    cropCache={cropCache}
+                />
+                <FrameExport
+                    id={id}
+                    state={state}
+                    box={box}
+                    patterns={patterns}
+                    t={t}
                     statusRef={statusRef}
                     cropCache={cropCache}
                 />

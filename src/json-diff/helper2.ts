@@ -62,6 +62,21 @@ export type DiffNodeA<Root, Current, Tag extends PropertyKey, R, Extra = unknown
               variant<V extends VariantTags<NonNullish<Current>, Tag> & (string | number | symbol)>(
                   tag: V,
               ): DiffNodeA<Root, VariantOf<NonNullish<Current>, Tag, V>, Tag, R, Extra>;
+              variant<Result>(
+                  value: Current,
+                  kindFns: {
+                      [V in VariantTags<NonNullish<Current>, Tag> & (string | number | symbol)]: (
+                          value: VariantOf<NonNullish<Current>, Tag, V>,
+                          up: DiffNodeA<
+                              Root,
+                              VariantOf<NonNullish<Current>, Tag, V>,
+                              Tag,
+                              R,
+                              Extra
+                          >,
+                      ) => Result;
+                  },
+              ): Result;
           }
         : // 🔹 arrays → index navigation
           NonNullish<Current> extends (infer Elem)[]
@@ -135,8 +150,23 @@ export function diffBuilderApply<T, Extra, Tag extends string = 'type', R = void
             get(_target, prop, _receiver) {
                 // 🔹 variant(): refine the *last* path segment with `[kind=value]`
                 if (prop === 'variant') {
-                    return (tagValue: string) => {
-                        if (!tag) throw new Error(`no tag identifier configured`);
+                    return (...args: [string] | [any, Record<string, any>]) => {
+                        if (!args.length) {
+                            throw new Error(`Invalid call`);
+                        }
+                        if (args.length === 1) {
+                            const [tagValue] = args;
+
+                            const k = pathString + '/' + tagValue;
+                            if (!proxyCache[k])
+                                proxyCache[k] = makeProxy([
+                                    ...path,
+                                    {type: 'tag', key: tag, value: tagValue},
+                                ]);
+                            return proxyCache[k];
+                        }
+                        const [value, record] = args;
+                        const tagValue = value[tag];
 
                         const k = pathString + '/' + tagValue;
                         if (!proxyCache[k])
@@ -144,7 +174,8 @@ export function diffBuilderApply<T, Extra, Tag extends string = 'type', R = void
                                 ...path,
                                 {type: 'tag', key: tag, value: tagValue},
                             ]);
-                        return proxyCache[k];
+
+                        return record[value[tag]](value, proxyCache[k]);
                     };
                 }
 

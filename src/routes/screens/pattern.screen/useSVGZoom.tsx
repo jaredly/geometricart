@@ -1,6 +1,7 @@
 import {useState, useRef, useEffect, useCallback} from 'react';
 import {Coord} from '../../../types';
 import {Box} from './export-types';
+import {useLatest} from './editState';
 
 export const percentToWorld = (percent: Coord, viewBox: Box) => {
     const x = viewBox.width * percent.x + viewBox.x;
@@ -26,10 +27,17 @@ export const sizeBox = (initialSize: number) => ({
 });
 
 export const useElementZoom = (initialBox: Box) => {
-    const [box, setBox] = useState(initialBox);
+    const [sbox, setBox] = useState<null | Box>(null);
+    const box = sbox ?? initialBox;
 
-    const latest = useRef(box);
-    latest.current = box;
+    const lbox = useLatest(box);
+    useEffect(() => {
+        if (lbox.current != null && lbox.current !== initialBox) {
+            setBox(null);
+        }
+    }, [initialBox, lbox]);
+
+    const latest = useLatest(box);
     const ref = useRef<HTMLElement | SVGElement>(null);
     useEffect(() => {
         if (!ref.current) return;
@@ -63,20 +71,16 @@ export const useElementZoom = (initialBox: Box) => {
         } as EventListenerOrEventListenerObject;
         ref.current.addEventListener('wheel', fn, {passive: false});
         return () => ref.current?.removeEventListener('wheel', fn);
-    }, []);
+    }, [latest]);
 
     const reset = useCallback(
         (keepZoom = false) =>
             setBox(
                 keepZoom
-                    ? (box) => ({
-                          ...box,
-                          x: -box.width / 2,
-                          y: -box.height / 2,
-                      })
-                    : initialBox,
+                    ? (box) => (box ? {...box, x: -box.width / 2, y: -box.height / 2} : null)
+                    : null,
             ),
-        [initialBox],
+        [],
     );
 
     const canReset =

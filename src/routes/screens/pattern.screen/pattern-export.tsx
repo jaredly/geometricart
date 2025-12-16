@@ -13,7 +13,7 @@ import {ShapeStyle, State} from './export-types';
 import {RenderExport} from './RenderExport';
 import {StateEditor} from './state-editor/StateEditor';
 import type {Route} from './+types/pattern-export';
-import {useLocation} from 'react-router';
+import {useLocation, useParams} from 'react-router';
 import {getNewPatternData} from '../../getPatternData';
 import {sizeBox} from './useSVGZoom';
 import {parseColor} from './colors';
@@ -276,13 +276,7 @@ const PatternExport = ({
     initialPatterns: Patterns;
 }) => {
     return (
-        <ProvideExportState
-            initial={initial}
-            save={(v) => {
-                console.log('saving a history', v);
-                onSave(v);
-            }}
-        >
+        <ProvideExportState initial={initial} save={onSave}>
             <ProvidePendingState initial={initialPendingStateHistory}>
                 <ProvideEditState initial={initialEditState}>
                     <Inner initialPatterns={initialPatterns} />
@@ -298,6 +292,7 @@ const Inner = ({initialPatterns}: {initialPatterns: Patterns}) => {
     const patternCache = useMemo<Patterns>(() => initialPatterns, [initialPatterns]);
     const pctx = usePendingState();
     const debug = location.search.includes('debug=');
+    const params = useParams();
 
     useEffect(() => {
         return sctx.onHistoryChange(() => {
@@ -332,7 +327,12 @@ const Inner = ({initialPatterns}: {initialPatterns: Patterns}) => {
             {debug ? (
                 <RenderDebug state={state} update={sctx.update} patterns={patternCache} />
             ) : (
-                <RenderExport state={state} patterns={patternCache} onChange={sctx.update} />
+                <RenderExport
+                    id={params.id!}
+                    state={state}
+                    patterns={patternCache}
+                    onChange={sctx.update}
+                />
             )}
             <div className="max-h-250 overflow-auto flex-1">
                 <StateEditor value={state} update={sctx.update} />
