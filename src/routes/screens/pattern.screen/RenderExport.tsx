@@ -20,6 +20,7 @@ import {useElementZoom} from './useSVGZoom';
 import {VideoExport} from './VideoExport';
 import {Updater} from '../../../json-diff/Updater';
 import {FrameExport} from './FrameExport';
+import {useWorker} from './render-client';
 
 export const renderShapes = (
     shapes: State['shapes'],
@@ -85,6 +86,8 @@ export const RenderExport = ({
     const size = 500;
 
     const statusRef = useRef<HTMLDivElement>(null);
+
+    const worker = useWorker();
 
     return (
         <div className="flex">
@@ -171,6 +174,7 @@ export const RenderExport = ({
                     box={box}
                     patterns={patterns}
                     t={t}
+                    worker={worker}
                     statusRef={statusRef}
                     cropCache={cropCache}
                 />

@@ -15,6 +15,7 @@ import {BaselineDownload} from '../../../icons/Icon';
 import {renderToStaticMarkup} from 'react-dom/server';
 import {colorToString} from './colors';
 import {generateSvgItems} from './SVGCanvas';
+import {WorkerSend} from './render-client';
 
 /*
 ExportSettings:
@@ -138,6 +139,7 @@ const ButtonSwitch = <T extends string>({
 
 const ExportSettingsForm = ({
     id,
+    worker,
     patterns,
     cropCache,
     state,
@@ -145,6 +147,7 @@ const ExportSettingsForm = ({
     t,
 }: {
     id: string;
+    worker: WorkerSend;
     patterns: Patterns;
     cropCache: Ctx['cropCache'];
     state: State;
@@ -174,14 +177,18 @@ const ExportSettingsForm = ({
             <button
                 className="btn btn-accent ml-4"
                 onClick={() => {
-                    const animCache = new Map();
-                    const {items, bg} = svgItems(state, animCache, cropCache, patterns, t);
-
-                    if (settings.kind === 'png') {
-                        runPNGExport(id, settings, box, items, bg, setImages);
-                    } else if (settings.kind === 'svg') {
-                        runSVGExport(id, settings, box, items, bg, setImages);
-                    }
+                    worker({type: 'frame', state, patterns, t}, (res) => {
+                        if (res.type !== 'frame') {
+                            return;
+                        }
+                        const {items, bg} = res;
+                        if (settings.kind === 'png') {
+                            runPNGExport(id, settings, box, items, bg, setImages);
+                        } else if (settings.kind === 'svg') {
+                            runSVGExport(id, settings, box, items, bg, setImages);
+                        }
+                    });
+                    // const {items, bg} = svgItems(state, animCache, cropCache, patterns, t);
                 }}
             >
                 Export
@@ -236,14 +243,16 @@ export function FrameExport({
     patterns,
     statusRef,
     cropCache,
+    worker,
     state,
     t,
     id,
 }: {
-    id: string;
-    t: number;
-    state: State;
     box: Box;
+    t: number;
+    id: string;
+    state: State;
+    worker: WorkerSend;
     statusRef: React.RefObject<HTMLDivElement | null>;
     patterns: Patterns;
     cropCache: Ctx['cropCache'];
@@ -254,6 +263,7 @@ export function FrameExport({
                 <ExportSettingsForm
                     id={id}
                     state={state}
+                    worker={worker}
                     t={t}
                     box={box}
                     patterns={patterns}
