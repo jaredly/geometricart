@@ -86,6 +86,25 @@ const runExport = (
     surface.delete();
 };
 
+const ButtonSwitch = <T extends string>({
+    value,
+    values,
+    onChange,
+}: {
+    value: T | null;
+    values: T[];
+    onChange: (v: T | null) => void;
+}) =>
+    values.map((name) => (
+        <button
+            key={name}
+            className={'btn ' + (name === value ? 'btn-accent' : '')}
+            onClick={() => (name === value ? onChange(null) : onChange(name))}
+        >
+            {name}
+        </button>
+    ));
+
 const ExportSettingsForm = ({
     id,
     patterns,
@@ -116,16 +135,11 @@ const ExportSettingsForm = ({
                     className="input w-20 mx-4"
                 />
             </label>
-            {(['png', 'svg', 'mp4'] as const).map((name) => (
-                <button
-                    key={name}
-                    className={'btn ' + (name === settings.kind ? 'btn-accent' : '')}
-                    // disabled={name === settings.kind}
-                    onClick={() => update.kind(name)}
-                >
-                    {name}
-                </button>
-            ))}
+            <ButtonSwitch
+                values={['png', 'svg', 'mp4'] as const}
+                value={settings.kind}
+                onChange={(v) => (v ? update.kind(v) : null)}
+            />
             <button
                 className="btn btn-accent ml-4"
                 onClick={() => {
@@ -134,6 +148,29 @@ const ExportSettingsForm = ({
             >
                 Export
             </button>
+            <div>
+                {settings.kind === 'svg' && (
+                    <div className="border border-base-100 p-4 rounded bg-base-100 my-4">
+                        <label className="p-2">
+                            <span className="mr-4">Split?</span>
+                            <ButtonSwitch
+                                values={['zIndex', 'color'] as const}
+                                value={settings.svg.split}
+                                onChange={update.svg.split}
+                            />
+                        </label>
+                        <label className="p-2">
+                            Crop
+                            <input
+                                checked={settings.svg.crop}
+                                onChange={(evt) => update.svg.crop(evt.target.checked)}
+                                className="checkbox mx-2"
+                                type="checkbox"
+                            />
+                        </label>
+                    </div>
+                )}
+            </div>
             <div className="flex flex-col items-start p-4 gap-4">
                 {images.map((im, i) => (
                     <div key={i} className="relative group">
