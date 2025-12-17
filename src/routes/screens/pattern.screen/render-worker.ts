@@ -1,3 +1,4 @@
+import {Coord} from '../../../types';
 import {PKPath} from '../../pk';
 import {cacheCrops} from './cacheCrops';
 import {Patterns, RenderItem} from './evaluate';
@@ -29,6 +30,8 @@ export type MessageResponse =
           type: 'frame';
           items: RenderItem[];
           byKey: Record<string, string[]>;
+          warnings: string[];
+          keyPoints: [Coord, Coord][];
           bg: Color;
       }
     | {
@@ -41,16 +44,29 @@ const animCache = new Map();
 const cropCache = new Map<string, {path: PKPath; crop: Crop; t?: number}>();
 
 self.onmessage = (evt: MessageEvent<MessageToWorker & {id: string}>) => {
-    console.log('worker got msg', evt.data.id);
     try {
         switch (evt.data.type) {
             case 'frame': {
                 const {state, patterns, t} = evt.data;
                 cacheCrops(state.crops, state.shapes, cropCache, t, animCache);
 
-                const {items, bg, byKey} = svgItems(state, animCache, cropCache, patterns, t);
+                const {items, bg, byKey, warnings, keyPoints} = svgItems(
+                    state,
+                    animCache,
+                    cropCache,
+                    patterns,
+                    t,
+                );
 
-                const msg: MessageResponse = {type: 'frame', items, bg, id: evt.data.id, byKey};
+                const msg: MessageResponse = {
+                    type: 'frame',
+                    items,
+                    keyPoints,
+                    bg,
+                    id: evt.data.id,
+                    byKey,
+                    warnings,
+                };
                 return postMessage(msg);
             }
             case 'video':
@@ -63,5 +79,4 @@ self.onmessage = (evt: MessageEvent<MessageToWorker & {id: string}>) => {
     }
 };
 
-console.log('sending hello');
 postMessage({type: 'hello'});

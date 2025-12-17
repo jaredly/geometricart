@@ -17,10 +17,8 @@ export const useWorker = () => {
         });
 
         const fn = (evt: MessageEvent<MessageResponse | {type: 'hello'}>) => {
-            console.log('got evt', evt.data);
             if (evt.data.type === 'hello') {
                 const waiting = worker.current.waiting;
-                console.log('sending waiting', waiting.length);
                 worker.current.waiting = [];
                 waiting.forEach(({data, f}) => {
                     enqueue(worker.current, f, data);
@@ -37,9 +35,7 @@ export const useWorker = () => {
         return () => worker.current.worker?.removeEventListener('message', fn);
     }, []);
     return useCallback((data: MessageToWorker, f: (v: MessageResponse) => void) => {
-        console.log('pls', data, f);
         if (!worker.current.worker) {
-            console.log('waiting...');
             worker.current.waiting.push({data, f});
             return;
         }
@@ -55,6 +51,5 @@ function enqueue(worker: WRef, f: (v: MessageResponse) => void, data: MessageToW
         delete worker.inflight[id];
         f(res);
     };
-    console.log('send to worker', id);
     worker.worker.postMessage({...data, id});
 }
