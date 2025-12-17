@@ -3,7 +3,7 @@ import {Color, PMods, AnimatableNumber, AnimatableCoord} from '../export-types';
 import {AnimInput} from './AnimInput';
 import {AnimCoordInput} from './AnimCoordInput';
 import {AnimCoordOrNumberInput} from './AnimCoordOrNumberInput';
-import {useExportState} from '../pattern-export';
+import {useExportState} from '../ExportHistory';
 import {EyeIcon, EyeInvisibleIcon} from '../../../../icons/Eyes';
 import {Updater} from '../../../../json-diff/Updater';
 

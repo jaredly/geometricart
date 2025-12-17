@@ -18,7 +18,7 @@ import {createLayerTemplate, parseAnimatable} from './createLayerTemplate';
 import {JsonPatchOp, Path} from '../../../../json-diff/helper2';
 import {Updater} from '../../../../json-diff/Updater';
 import {ModsEditor} from './FillEditor';
-import {useExportState} from '../pattern-export';
+import {useExportState} from '../ExportHistory';
 import {History} from '../../../../json-diff/history';
 
 type StateEditorProps = {

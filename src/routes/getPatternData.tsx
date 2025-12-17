@@ -285,7 +285,7 @@ export const sortShapesByPolar = (shapes: Coord[][]) => {
         .map((m) => m.shape);
 };
 
-const simpleSize = (shape: TilingShape, x: number) => {
+export const simpleSize = (shape: TilingShape, x: number) => {
     const bounds = tilingPoints(shape);
     const y = Math.round(Math.abs(xyratio(shape, bounds[2])) * x);
     return {x, y};

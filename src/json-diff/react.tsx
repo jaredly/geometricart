@@ -179,6 +179,7 @@ const makeProvider = <T, An, Tag extends string = 'type'>(Ctx: React.Context<CH<
                 notifyAllPaths(value.current.listenersByPath);
             }
         }, [initial]);
+        console.log('providing', value.current);
         return <Ctx.Provider value={value.current} children={children} />;
     };
 };
@@ -227,23 +228,17 @@ const MakeContext = <T, An, Tag extends string = 'type'>(ctx: CH<T, An, Tag>, ta
 };
 
 export const makeHistoryContext = <T, An, Tag extends string = 'type'>(tag: Tag) => {
-    const Ctx = createContext<CH<T, An, Tag>>({
-        // biome-ignore lint: this one is fine
-        state: blankHistory(null as any),
-        historyListeners: [],
-        historyUp: [],
-        previewState: null,
-        listenersByPath: makePathListenerNode(),
-        save(v) {},
-        listeners: [],
-        queuedChanges: [],
-    });
+    const Ctx = createContext<CH<T, An, Tag>>(null);
 
     return [
         makeProvider(Ctx),
 
         function useStateContext() {
             const ctx = useContext(Ctx);
+            if (ctx === null) {
+                console.log('got a got');
+                throw new Error(`Used a context but its not there`);
+            }
 
             return useMemo(() => {
                 const {dispatch, update} = makeDispatch(ctx, tag);
@@ -253,6 +248,10 @@ export const makeHistoryContext = <T, An, Tag extends string = 'type'>(tag: Tag)
                         const lsel = useRef(sel);
                         lsel.current = sel;
 
+                        if ((ctx.previewState?.current ?? ctx.state.current) == null) {
+                            console.log(ctx);
+                            throw new Error('wy is it this way');
+                        }
                         const [value, setValue] = useState(() =>
                             sel(ctx.previewState?.current ?? ctx.state.current),
                         );

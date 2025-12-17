@@ -64,7 +64,9 @@ const rgbFromArr = (c: [number, number, number]) => ({r: c[0], g: c[1], b: c[2]}
 
 export type Crop = {id: string; shape: string; mods?: PMods[]};
 export type State = {
-    shapes: Record<string, BarePath & {multiply?: boolean}>;
+    // multiply = a pattern id in a layer.
+    // that's used to determine the dooblydoo.
+    shapes: Record<string, BarePath & {multiply?: string}>;
     layers: Record<string, Layer>;
     crops: Record<string, Crop>;
     view: {

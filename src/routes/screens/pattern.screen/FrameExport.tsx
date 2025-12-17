@@ -6,7 +6,7 @@ import {Updater} from '../../../json-diff/Updater';
 import {BlurInput} from './state-editor/BlurInput';
 import {BlurInt} from '../../../editor/Forms';
 import {makeContext} from '../../../json-diff/react';
-import {useExportState} from './pattern-export';
+import {useExportState} from './ExportHistory';
 import {pk} from '../../pk';
 import {svgItems} from './resolveMods';
 import {useCropCache} from './useCropCache';

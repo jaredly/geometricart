@@ -4,6 +4,7 @@ import {drawShapes, drawLines, drawWoven, drawBounds} from '../../canvasDraw';
 import {getPatternData} from '../../getPatternData';
 import {pk} from '../../pk';
 import {Box} from './export-types';
+import {ZoomProps} from './useSVGZoom';
 
 export const CanvasPattern = ({
     data,
@@ -26,12 +27,14 @@ export const CanvasPattern = ({
     showShapes?: boolean;
     sharp?: boolean;
     lineWidth: number;
-    zoomProps: {innerRef: React.RefObject<SVGElement | HTMLElement | null>; box: Box};
+    zoomProps: ZoomProps;
 }) => {
     useEffect(() => {
         if (!zoomProps.innerRef.current) return;
 
-        const surface = pk.MakeWebGLCanvasSurface(zoomProps.innerRef.current as HTMLCanvasElement);
+        const surface = pk.MakeWebGLCanvasSurface(
+            zoomProps.innerRef.current.node as HTMLCanvasElement,
+        );
         if (!surface) return;
         const ctx = surface.getCanvas();
         ctx.clear(pk.BLACK);
@@ -59,7 +62,12 @@ export const CanvasPattern = ({
     }, [tiling, data, showShapes, showLines, showWoven, showBounds, lineWidth, sharp, zoomProps]);
     return (
         <canvas
-            ref={zoomProps.innerRef as React.RefObject<HTMLCanvasElement>}
+            ref={(node) => {
+                if (node && zoomProps.innerRef.current.node !== node) {
+                    zoomProps.innerRef.current.node = node;
+                    zoomProps.innerRef.current.tick();
+                }
+            }}
             width={size * 2}
             height={size * 2}
             style={{width: size, height: size}}

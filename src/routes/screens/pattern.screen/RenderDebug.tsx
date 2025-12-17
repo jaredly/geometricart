@@ -275,7 +275,7 @@ export const RenderDebug = ({
         <div className="p-4">
             <div className="relative">
                 <SVGCanvas
-                    {...zoomProps}
+                    zoomProps={zoomProps}
                     state={state}
                     mouse={mouse}
                     keyPoints={keyPoints}

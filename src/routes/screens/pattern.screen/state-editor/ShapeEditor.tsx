@@ -3,6 +3,8 @@ import {BarePath, Coord} from '../../../../types';
 import {useEditState, usePendingState} from '../editState';
 import {JsonEditor} from './JsonEditor';
 import {Updater} from '../../../../json-diff/Updater';
+import {useExportState} from '../ExportHistory';
+import {notNull} from '../resolveMods';
 
 export const ShapeEditor = ({
     shape,
@@ -12,14 +14,27 @@ export const ShapeEditor = ({
     onDup,
     onCrop,
 }: {
-    shape: BarePath & {multiply?: boolean};
+    shape: BarePath & {multiply?: string};
     id: string;
     onHover: (v: {type: 'shape'; id: string} | null) => void;
-    update: Updater<BarePath & {multiply?: boolean}>;
+    update: Updater<BarePath & {multiply?: string}>;
     onCrop(): void;
     onDup: (p: Coord) => void;
 }) => {
     const es = usePendingState();
+    const st = useExportState();
+    const tilingIds = st.use((state) => {
+        if (!state) throw new Error('cant happen');
+        const ids = Object.values(state.layers)
+            .flatMap((layer) =>
+                Object.values(layer.entities).map((entity) =>
+                    entity.type === 'Pattern' ? entity.id : null,
+                ),
+            )
+            .filter(notNull);
+        return ids;
+    }, false);
+
     return (
         <div
             className="p-4 cursor-pointer hover:bg-base-300"
@@ -47,12 +62,25 @@ export const ShapeEditor = ({
             <div>
                 <label>
                     Mulitply
-                    <input
-                        className="checkbox"
-                        checked={!!shape.multiply}
-                        type="checkbox"
-                        onChange={(evt) => update.multiply.replace(!shape.multiply)}
-                    />
+                    <select
+                        className="select"
+                        onChange={(evt) => {
+                            const id = evt.target.value;
+                            if (id !== '') {
+                                update.multiply.replace(id);
+                            } else {
+                                update.multiply.remove();
+                            }
+                        }}
+                        value={shape.multiply ?? ''}
+                    >
+                        <option value="">Select a pattern</option>
+                        {tilingIds.map((id) => (
+                            <option value={id} key={id}>
+                                {id}
+                            </option>
+                        ))}
+                    </select>
                 </label>
                 <button className="btn btn-sm" onClick={() => update.remove()}>
                     &times;

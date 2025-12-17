@@ -22,10 +22,11 @@ import {Patterns} from './evaluate';
 import {unique} from '../../shapesFromSegments';
 import {notNull} from './resolveMods';
 import {RenderDebug} from './RenderDebug';
-import {blankHistory, History} from '../../../json-diff/history';
-import {makeContext, makeHistoryContext} from '../../../json-diff/react';
+import {blankHistory} from '../../../json-diff/history';
+import {makeContext} from '../../../json-diff/react';
 import {usePromise} from './usePromise';
 import {thinTiling} from './renderPattern';
+import {ExportHistory, ProvideExportState, useExportState} from './ExportHistory';
 
 const PatternPicker = () => {
     const all = usePromise((signal) => fetch('/gallery.json', {signal}).then((r) => r.json()));
@@ -258,13 +259,6 @@ const initialEditState: EditState = {
     showShapes: false,
 };
 const initialPendingStateHistory = blankHistory<PendingState>({pending: null});
-
-type ExportAnnotation = {type: 'img'; url: string} | {type: 'video'; url: string};
-type ExportHistory = History<State, ExportAnnotation>;
-
-export const [ProvideExportState, useExportState] = makeHistoryContext<State, ExportAnnotation>(
-    'type',
-);
 
 const PatternExport = ({
     initial,
