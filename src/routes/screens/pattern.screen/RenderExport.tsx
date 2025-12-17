@@ -115,6 +115,7 @@ export const RenderExport = ({
                     />
                 </div>
                 <VideoExport
+                    worker={worker}
                     state={state}
                     box={box}
                     size={size}

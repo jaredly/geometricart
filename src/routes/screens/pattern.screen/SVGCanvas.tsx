@@ -68,9 +68,8 @@ export const Canvas = ({
 export const SVGCanvas = ({
     items,
     size,
-    box,
+    zoomProps: {box, innerRef},
     state,
-    innerRef,
     setMouse,
     keyPoints,
     // byKey,
@@ -83,8 +82,7 @@ export const SVGCanvas = ({
     bg: Color;
     items: RenderItem[];
     size: number;
-    box: Box;
-    innerRef: React.RefObject<SVGElement | HTMLElement | null>;
+    zoomProps: ZoomProps;
     setMouse: (m: Coord | null) => void;
     byKey: Record<string, string[]>;
 }) => {
@@ -123,7 +121,12 @@ export const SVGCanvas = ({
         <svg
             xmlns="http://www.w3.org/2000/svg"
             viewBox={`${box.x.toFixed(7)} ${box.y.toFixed(7)} ${box.width.toFixed(7)} ${box.height.toFixed(7)}`}
-            ref={innerRef as React.RefObject<SVGSVGElement>}
+            ref={(node) => {
+                if (node && innerRef.current.node !== node) {
+                    innerRef.current.node = node;
+                    innerRef.current.tick();
+                }
+            }}
             style={{background: colorToString(bg), width: size, height: size}}
             onMouseLeave={() => setMouse(null)}
             onMouseMove={(evt) => setMouse(svgCoord(evt))}

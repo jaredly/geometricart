@@ -48,7 +48,9 @@ function enqueue(worker: WRef, f: (v: MessageResponse) => void, data: MessageToW
     if (!worker.worker) return;
     const id = Math.random().toString(36).slice(2);
     worker.inflight[id] = (res) => {
-        delete worker.inflight[id];
+        if (res.type !== 'status') {
+            delete worker.inflight[id];
+        }
         f(res);
     };
     worker.worker.postMessage({...data, id});

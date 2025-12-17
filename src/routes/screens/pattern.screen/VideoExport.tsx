@@ -2,6 +2,8 @@ import {useState} from 'react';
 import {Patterns, Ctx} from './evaluate';
 import {State, Box} from './export-types';
 import {recordVideo} from './recordVideo';
+import {WorkerSend} from './render-client';
+import {SpinnerEarring} from '../../../icons/Icon';
 
 export function VideoExport({
     state,
@@ -11,7 +13,9 @@ export function VideoExport({
     duration,
     statusRef,
     cropCache,
+    worker,
 }: {
+    worker: WorkerSend;
     state: State;
     box: Box;
     size: number;
@@ -22,24 +26,40 @@ export function VideoExport({
 }) {
     const [video, setVideo] = useState(null as null | number | string);
     const [exSize, setExSize] = useState(size);
+    const [status, setStatus] = useState<null | number>(null);
+
     return (
         <>
             <div className="flex gap-2 items-center">
                 <button
                     className={'btn'}
-                    onClick={() =>
-                        recordVideo(
-                            state,
-                            exSize,
-                            box,
-                            patterns,
-                            duration,
-                            statusRef,
-                            cropCache,
-                        ).then((url) => setVideo(url))
-                    }
+                    disabled={status !== null}
+                    onClick={() => {
+                        // recordVideo(
+                        //     state,
+                        //     exSize,
+                        //     box,
+                        //     patterns,
+                        //     duration,
+                        //     (percent) => statusRef.current!.textContent = (percent * 100).toFixed(0) + '%,
+                        //     cropCache,
+                        // ).then((url) => setVideo(url));
+
+                        setStatus(0);
+                        worker({type: 'video', state, patterns, size, box, duration}, (res) => {
+                            if (res.type === 'status') {
+                                setStatus(res.progress);
+                            } else if (res.type === 'video') {
+                                setStatus(null);
+                                if (res.url) {
+                                    setVideo(res.url);
+                                }
+                            }
+                        });
+                    }}
                 >
-                    Record Video
+                    Record Video {status != null ? `${(status * 100).toFixed(0)}%` : ''}
+                    {status != null ? <SpinnerEarring className="animate-spin" /> : null}
                 </button>
                 <div ref={statusRef} className="w-20 text-right" />
                 <label>

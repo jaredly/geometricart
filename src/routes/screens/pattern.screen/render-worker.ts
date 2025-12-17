@@ -2,7 +2,8 @@ import {Coord} from '../../../types';
 import {PKPath} from '../../pk';
 import {cacheCrops} from './cacheCrops';
 import {Patterns, RenderItem} from './evaluate';
-import {Color, Crop, State} from './export-types';
+import {Box, Color, Crop, State} from './export-types';
+import {recordVideo} from './recordVideo';
 import {svgItems} from './resolveMods';
 
 export type MessageToWorker =
@@ -14,6 +15,9 @@ export type MessageToWorker =
       }
     | {
           type: 'video';
+          size: number;
+          duration: number;
+          box: Box;
           state: State;
           patterns: Patterns;
       }
@@ -34,6 +38,7 @@ export type MessageResponse =
           keyPoints: [Coord, Coord][];
           bg: Color;
       }
+    | {type: 'video'; id: string; url?: string}
     | {
           type: 'status';
           progress: number;
@@ -69,7 +74,18 @@ self.onmessage = (evt: MessageEvent<MessageToWorker & {id: string}>) => {
                 };
                 return postMessage(msg);
             }
-            case 'video':
+            case 'video': {
+                recordVideo(
+                    evt.data.state,
+                    evt.data.size,
+                    evt.data.box,
+                    evt.data.patterns,
+                    evt.data.duration,
+                    (progress) => postMessage({type: 'status', progress, id: evt.data.id}),
+                    cropCache,
+                ).then((url) => postMessage({type: 'video', id: evt.data.id, url}));
+                return;
+            }
             case 'animate':
                 throw new Error('not yet');
         }

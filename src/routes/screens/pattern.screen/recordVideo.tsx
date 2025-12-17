@@ -13,7 +13,8 @@ export const recordVideo = async (
     box: Box,
     patterns: Patterns,
     duration: number,
-    onStatus: {current: HTMLElement | null},
+    // onStatus: {current: HTMLElement | null},
+    onStatus: (progress: number) => void,
     cropCache: Ctx['cropCache'],
 ) => {
     const canvas = new OffscreenCanvas(size * 2, size * 2);
@@ -25,9 +26,14 @@ export const recordVideo = async (
 
     const fontData = await fetch('/assets/Roboto-Regular.ttf').then((r) => r.arrayBuffer());
 
+    let last = Date.now();
     const blob = await generateVideo(canvas, frameRate, totalFrames, (_, currentFrame) => {
-        if (currentFrame % 10 === 0)
-            onStatus.current!.textContent = ((currentFrame / totalFrames) * 100).toFixed(0) + '%';
+        let now = Date.now();
+        if (now - last > 200) {
+            last = now;
+            onStatus(currentFrame / totalFrames);
+        }
+        // if (currentFrame % 10 === 0)
         const surface = pk.MakeWebGLCanvasSurface(canvas)!;
 
         const {items, bg} = svgItems(
@@ -52,6 +58,5 @@ export const recordVideo = async (
         // ctx.drawText(currentFrame / totalFrames + '', size / 2, size / 2, paint, font);
         // surface.flush();
     });
-    onStatus.current!.textContent = '';
     return blob ? URL.createObjectURL(blob) : null;
 };
