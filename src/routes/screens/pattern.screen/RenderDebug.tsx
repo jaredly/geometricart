@@ -127,6 +127,12 @@ const renderLogSelection = (
                                   shapes: [item.shape],
                                   key: 'log-z' + i,
                               },
+                              ...item.shape.segments.map((item, j) => ({
+                                  type: 'point' as const,
+                                  coord: item.to,
+                                  color: {r: 255, g: 255, b: 255},
+                                  key: `seg-${i}-pt-${j}`,
+                              })),
                           ]),
                 ];
         }
@@ -168,17 +174,19 @@ const ShowRenderLog = ({
                     {sel?.toString()} {v?.text ?? 'No text'}
                 </div>
                 <div>
-                    <input
-                        type="range"
-                        className="range"
-                        value={sel ?? 0}
-                        min={0}
-                        max={log.items.length - 1}
-                        onClick={() =>
-                            sel === -1 || sel == null ? onSelect(path.concat([0])) : null
-                        }
-                        onChange={(evt) => onSelect(path.concat([+evt.target.value]))}
-                    />
+                    {log.items.length > 1 ? (
+                        <input
+                            type="range"
+                            className="range"
+                            value={sel ?? 0}
+                            min={0}
+                            max={log.items.length - 1}
+                            onClick={() =>
+                                sel === -1 || sel == null ? onSelect(path.concat([0])) : null
+                            }
+                            onChange={(evt) => onSelect(path.concat([+evt.target.value]))}
+                        />
+                    ) : null}
                 </div>
             </div>
         );

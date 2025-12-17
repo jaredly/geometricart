@@ -4,7 +4,7 @@ import {Coord, ThinTiling, Tiling} from '../../../types';
 import {centroid} from '../../findReflectionAxes';
 import {getSimplePatternData, getShapeColors} from '../../getPatternData';
 import {EndPointMap} from '../../shapesFromSegments';
-import {adjustShapes, coordPairs} from './adjustShapes';
+import {adjustShapes, adjustShapes2, coordPairs} from './adjustShapes';
 import {parseColor} from './colors';
 import {AnimCtx, Ctx, RenderItem, RenderShadow, a, isColor, isCoord} from './evaluate';
 import {
@@ -58,7 +58,7 @@ export const renderPattern = (ctx: Ctx, _outer: CropsAndMatrices, pattern: Patte
     }
 
     if (Object.keys(pattern.adjustments).length) {
-        const adjusted = adjustShapes(
+        const adjusted = adjustShapes2(
             panim,
             ctx.cropCache,
             baseShapes,

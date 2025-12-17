@@ -21,6 +21,12 @@ import {RenderLog} from './screens/pattern.screen/resolveMods';
 const gte = (a: number, b: number) => a >= b - epsilon;
 const lte = (a: number, b: number) => a <= b + epsilon;
 
+// const between = (a: number, b: number, x: number, y: number) =>
+
+function aabbIntersects(a: Bounds, b: Bounds) {
+    return !(a.x1 < b.x0 || a.x0 > b.x1 || a.y1 < b.y0 || a.y0 > b.y1);
+}
+
 const boundsIntersect = (l1: [Coord, Coord], l2: [Coord, Coord], log = false) => {
     // Get bounding box for line 1
     const l1MinX = Math.min(l1[0].x, l1[1].x);
@@ -62,40 +68,51 @@ const isLargerThan = (l1: [Coord, Coord], l2: [Coord, Coord]) => {
     return lte(l1MinX, l2MinX) && lte(l1MinY, l2MinY) && gte(l1MaxX, l2MaxX) && gte(l1MaxY, l2MaxY);
 };
 
-const removeOverlappingSegs = (segs: [Coord, Coord][]) => {
-    const slopes = segs.map(([a, b]) => lineToSlope(a, b, true));
-    const toRemove: number[] = [];
-    for (let i = 0; i < slopes.length; i++) {
-        if (toRemove.includes(i)) continue;
-        // const ki1 = coordKey(segs[i][0]);
-        // const ki2 = coordKey(segs[i][1]);
-        for (let j = i + 1; j < slopes.length; j++) {
-            if (!boundsIntersect(segs[i], segs[j])) continue;
-            if (closeEnough(slopes[i].m, slopes[j].m)) {
-                // if one is contained by the other
-                if (isLargerThan(segs[i], segs[j])) {
-                    toRemove.push(j);
-                } else if (isLargerThan(segs[j], segs[i])) {
-                    toRemove.push(i);
-                    break;
-                }
-            }
-        }
-    }
+// const removeOverlappingSegs = (segs: [Coord, Coord][]) => {
+//     const slopes = segs.map(([a, b]) => lineToSlope(a, b, true));
+//     const toRemove: number[] = [];
+//     for (let i = 0; i < slopes.length; i++) {
+//         if (toRemove.includes(i)) continue;
+//         // const ki1 = coordKey(segs[i][0]);
+//         // const ki2 = coordKey(segs[i][1]);
+//         for (let j = i + 1; j < slopes.length; j++) {
+//             if (!boundsIntersect(segs[i], segs[j])) continue;
+//             if (closeEnough(slopes[i].m, slopes[j].m)) {
+//                 // if one is contained by the other
+//                 if (isLargerThan(segs[i], segs[j])) {
+//                     toRemove.push(j);
+//                 } else if (isLargerThan(segs[j], segs[i])) {
+//                     toRemove.push(i);
+//                     break;
+//                 }
+//             }
+//         }
+//     }
 
-    return toRemove.length ? segs.filter((_, i) => !toRemove.includes(i)) : segs;
-};
+//     return toRemove.length ? segs.filter((_, i) => !toRemove.includes(i)) : segs;
+// };
+
+const segToBounds = (seg: [Coord, Coord]): Bounds => ({
+    x0: Math.min(seg[0].x, seg[1].x),
+    y0: Math.min(seg[0].y, seg[1].y),
+    x1: Math.max(seg[0].x, seg[1].x),
+    y1: Math.max(seg[0].y, seg[1].y),
+});
 
 export const splitOverlappingSegs = (segs: [Coord, Coord][], prec: number, marks?: number[]) => {
     const slopes = segs.map(([a, b]) => lineToSlope(a, b, true));
     const toRemove: number[] = [];
     const toAdd: [Coord, Coord][] = [];
+    const bounds = segs.map(segToBounds);
     for (let i = 0; i < slopes.length; i++) {
         if (toRemove.includes(i)) continue;
         for (let j = i + 1; j < slopes.length; j++) {
-            if (!boundsIntersect(segs[i], segs[j])) {
+            if (!aabbIntersects(bounds[i], bounds[j])) {
                 continue;
             }
+            // if (!boundsIntersect(segs[i], segs[j])) {
+            //     continue;
+            // }
             if (closeEnough(slopes[i].m, slopes[j].m) && closeEnough(slopes[i].b, slopes[j].b)) {
                 if (!shareMidPoint(segs[i], segs[j])) {
                     const got = splitByPoints(
@@ -125,10 +142,14 @@ const shareMidPoint = ([a1, a2]: [Coord, Coord], [b1, b2]: [Coord, Coord]) => {
 const findSplitPoints = (segs: [Coord, Coord][], prec: number) => {
     const splitPoints: Record<number, Coord[]> = {};
 
+    const bounds = segs.map(segToBounds);
     const slopes = segs.map(([a, b]) => lineToSlope(a, b, true));
     for (let i = 0; i < slopes.length; i++) {
         for (let j = i + 1; j < slopes.length; j++) {
-            if (!boundsIntersect(segs[i], segs[j])) continue;
+            // if (!boundsIntersect(segs[i], segs[j])) continue;
+            if (!aabbIntersects(bounds[i], bounds[j])) {
+                continue;
+            }
 
             // TODO: maybe check bounding box collision first?
             const int = lineLine(slopes[i], slopes[j]);

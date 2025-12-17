@@ -24,7 +24,7 @@ export function VideoExport({
     statusRef: React.RefObject<HTMLDivElement | null>;
     cropCache: Ctx['cropCache'];
 }) {
-    const [video, setVideo] = useState(null as null | number | string);
+    const [video, setVideo] = useState<null | {url: string; time: number}>(null);
     const [exSize, setExSize] = useState(size);
     const [status, setStatus] = useState<null | number>(null);
 
@@ -36,13 +36,14 @@ export function VideoExport({
                     disabled={status !== null}
                     onClick={() => {
                         setStatus(0);
+                        const start = Date.now();
                         worker({type: 'video', state, patterns, size, box, duration}, (res) => {
                             if (res.type === 'status') {
                                 setStatus(res.progress);
                             } else if (res.type === 'video') {
                                 setStatus(null);
                                 if (res.url) {
-                                    setVideo(res.url);
+                                    setVideo({url: res.url, time: Date.now() - start});
                                 }
                             }
                         });
@@ -65,12 +66,13 @@ export function VideoExport({
             <input type="range" value={video} onChange={() => {}} min={0} max={1} />
         ) : null} */}
             </div>
-            {typeof video === 'string' ? (
+            {video ? (
                 <div className="relative">
-                    <video src={video} controls loop style={{width: size, height: size}} />
+                    <video src={video.url} controls loop style={{width: size, height: size}} />
                     <button className={'btn absolute top-0 right-0'} onClick={() => setVideo(null)}>
                         &times;
                     </button>
+                    <div>Generated in {video.time / 1000}s</div>
                 </div>
             ) : null}
         </>

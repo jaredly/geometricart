@@ -18,12 +18,167 @@ import {
 } from './resolveMods';
 
 export const truncateValue = (v: number, amt: number) => Math.round(v * amt) / amt;
+export const truncatePair = (v: [Coord, Coord], amt: number): [Coord, Coord] => [
+    truncateCoord(v[0], amt),
+    truncateCoord(v[1], amt),
+];
 export const truncateCoord = (v: Coord, amt: number): Coord => ({
     x: truncateValue(v.x, amt),
     y: truncateValue(v.y, amt),
 });
 export const truncateShape = (v: Coord[], amt: number): Coord[] =>
     v.map((c) => truncateCoord(c, amt));
+
+export const adjustShapes2 = (
+    anim: Ctx['anim'],
+    cropCache: Ctx['cropCache'],
+    uniqueShapes: Coord[][],
+    adjustments: {
+        shapes: {path: BarePath; id: string}[];
+        mods: PMods[];
+        t?: TChunk;
+        shared?: Record<string, AnimatableValue>;
+    }[],
+    log = false,
+) => {
+    const amt = 1000;
+    const prec = 3;
+    const eps = Math.pow(10, -prec);
+    const outerDebug: RenderLog[] | undefined = log ? [] : undefined;
+    console.time();
+
+    let segments = unique(
+        uniqueShapes.map((shape) => truncateShape(shape, amt)).flatMap(coordPairs),
+        (p) => coordPairKey(p, prec),
+    );
+
+    outerDebug?.push({
+        type: 'items',
+        title: 'Unique Truncated Segments',
+        items: segments.map((seg) => ({
+            item: {type: 'seg', prev: seg[0], seg: {type: 'Line', to: seg[1]}},
+        })),
+    });
+
+    let modified = false;
+    for (let {shapes, mods, t, shared} of adjustments) {
+        // biome-ignore lint: any is fine here
+        const local: Record<string, any> = {};
+        if (t) {
+            const res = resolveT(t, anim.values.t);
+            if (res == null) continue;
+            local.t = res;
+        }
+        const aanim = withShared(anim, shared);
+
+        for (let {path: shape, id} of shapes) {
+            if (!shape) continue;
+            // console.time('pre');
+            const shapeCoords = truncateShape(coordsFromBarePath(shape), amt);
+            const resolved = resolveEnabledPMods(
+                {...aanim, values: {...aanim.values, ...local, center: centroid(shapeCoords)}},
+                mods,
+            );
+            const shapeLines = coordLines(shapeCoords);
+            const moved = modsToShapes(cropCache, resolved, [{shape: shapeCoords, i: 0}]).map(
+                (a) => ({...a, shape: truncateShape(a.shape, amt)}),
+            );
+            const movedLines = moved.map((m) => coordLines(m.shape));
+            // console.timeEnd('pre');
+            if (allSameLines(shapeLines, movedLines.flat())) {
+                continue;
+            }
+
+            // console.time('shape');
+            outerDebug?.push({
+                type: 'items',
+                title: 'Segments',
+                items: segments.map((seg) => ({
+                    item: {type: 'seg', prev: seg[0], seg: {type: 'Line', to: seg[1]}},
+                })),
+            });
+
+            // console.time('onshape');
+            modified = true;
+            segments = segments.filter((pair) => !coordPairOnShape(pair, shapeLines, eps));
+            // console.timeEnd('onshape');
+
+            outerDebug?.push({
+                type: 'items',
+                title: 'Pre Shape',
+                items: [{item: {type: 'shape', shape: barePathFromCoords(shapeCoords)}}],
+            });
+
+            outerDebug?.push({
+                type: 'items',
+                title: 'Removed Pre Shape',
+                items: segments.map((seg) => ({
+                    item: {type: 'seg', prev: seg[0], seg: {type: 'Line', to: seg[1]}},
+                })),
+            });
+
+            segments.push(...moved.flatMap((m) => coordPairs(m.shape)));
+
+            outerDebug?.push({
+                type: 'items',
+                title: 'Post Shape',
+                items: moved.map((moved) => ({
+                    item: {type: 'shape', shape: barePathFromCoords(moved.shape)},
+                })),
+            });
+
+            outerDebug?.push({
+                type: 'items',
+                title: 'Added post Shape',
+                items: segments.map((seg) => ({
+                    item: {type: 'seg', prev: seg[0], seg: {type: 'Line', to: seg[1]}},
+                })),
+            });
+            // console.time('cut');
+            // console.timeEnd('cut');
+
+            outerDebug?.push({
+                type: 'items',
+                title: 'Cut segments',
+                items: segments.map((seg) => ({
+                    item: {type: 'seg', prev: seg[0], seg: {type: 'Line', to: seg[1]}},
+                })),
+            });
+            // console.timeEnd('shape');
+
+            // segments = unique(segments.map(truncatePair), (p) => coordPairKey(p, prec));
+        }
+    }
+
+    if (!modified) return {shapes: uniqueShapes, debug: outerDebug ?? []};
+    console.time('cut');
+    segments = cutSegments(segments, prec);
+    console.timeEnd('cut');
+
+    outerDebug?.push({
+        type: 'items',
+        title: 'Post Adjustment Segments',
+        items: segments.map((seg) => ({
+            item: {type: 'seg', prev: seg[0], seg: {type: 'Line', to: seg[1]}},
+        })),
+    });
+
+    console.time('by endpoint');
+    const byEndPoint = edgesByEndpoint(segments, prec);
+    const one = unique(segments.flat(), (m) => coordKey(m, prec));
+    console.timeEnd('by endpoint');
+
+    console.time('the shapes');
+    // const cmoved = centroid(moved.flatMap((m) => m.shape));
+    const fromSegments = shapesFromSegments(byEndPoint, one, prec);
+    console.timeEnd('the shapes');
+    // const [centerShapes, reconstructed] = unzip(
+    //     fromSegments.shapes,
+    //     (c) => !matchesBounds(boundsForCoords(...c), cmoved),
+    // );
+    console.timeEnd();
+    return {shapes: fromSegments.shapes, debug: outerDebug ?? []};
+};
 
 export const adjustShapes = (
     anim: Ctx['anim'],
@@ -39,6 +194,8 @@ export const adjustShapes = (
 ) => {
     const amt = 1000;
     uniqueShapes = uniqueShapes.map((shape) => truncateShape(shape, amt));
+
+    console.time();
 
     let modified = false;
     const outerDebug: RenderLog[] = [];
@@ -252,6 +409,8 @@ export const adjustShapes = (
         }
         outerDebug.push({type: 'group', title: 'Adjust Shape Group', children: midDebug});
     }
+
+    console.timeEnd();
 
     return {shapes: modified ? sortShapesByPolar(uniqueShapes) : uniqueShapes, debug: outerDebug};
 };

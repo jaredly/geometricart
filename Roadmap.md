@@ -1,4 +1,7 @@
 
+Ok I tried the dumber adjustShapes and it took like 10x as long.
+30s to 220s 😭
+
 #
 
 - [ ] MOER BUGS
