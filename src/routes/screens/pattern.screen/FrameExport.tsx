@@ -1,6 +1,6 @@
 import {useState} from 'react';
-import {Patterns, Ctx} from './evaluate';
-import {State, Box} from './export-types';
+import {Patterns, Ctx, RenderItem} from './evaluate';
+import {State, Box, Color} from './export-types';
 import {recordVideo} from './recordVideo';
 import {Updater} from '../../../json-diff/Updater';
 import {BlurInput} from './state-editor/BlurInput';
@@ -12,6 +12,9 @@ import {svgItems} from './resolveMods';
 import {useCropCache} from './useCropCache';
 import {renderItems} from './renderItems';
 import {BaselineDownload} from '../../../icons/Icon';
+import {renderToStaticMarkup} from 'react-dom/server';
+import {colorToString} from './colors';
+import {generateSvgItems} from './SVGCanvas';
 
 /*
 ExportSettings:
@@ -56,23 +59,49 @@ const [ProvideExportCtx, useExportCtx] = makeContext<ExportSettings>('type');
 
 type ExImage = {url: string; title: string};
 
-const runExport = (
+const runSVGExport = (
     id: string,
     ex: ExportSettings,
-    state: State,
     box: Box,
-    t: number,
-    cropCache: Ctx['cropCache'],
-    patterns: Patterns,
+    items: RenderItem[],
+    bg: Color,
+    setImages: (up: (v: ExImage[]) => ExImage[]) => void,
+) => {
+    const lw = box.width / 10;
+    const svgItems = generateSvgItems(
+        items.filter((i) => i.type === 'path'),
+        null,
+        lw,
+    );
+
+    const text = renderToStaticMarkup(
+        <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox={`${box.x.toFixed(7)} ${box.y.toFixed(7)} ${box.width.toFixed(7)} ${box.height.toFixed(7)}`}
+            style={{background: colorToString(bg), width: ex.size, height: ex.size}}
+        >
+            {svgItems}
+        </svg>,
+    );
+
+    const blob = new Blob([text], {type: 'image/svg+xml'});
+
+    setImages((images) => [
+        ...images,
+        {url: URL.createObjectURL(blob), title: id + '-' + new Date().toISOString() + '.svg'},
+    ]);
+};
+
+const runPNGExport = (
+    id: string,
+    ex: ExportSettings,
+    box: Box,
+    items: RenderItem[],
+    bg: Color,
     setImages: (up: (v: ExImage[]) => ExImage[]) => void,
 ) => {
     const canvas = new OffscreenCanvas(ex.size, ex.size);
-
     const surface = pk.MakeWebGLCanvasSurface(canvas)!;
-
-    const animCache = new Map();
-
-    const {items, bg} = svgItems(state, animCache, cropCache, patterns, t);
 
     renderItems(surface, box, items, bg);
     const img = surface.makeImageSnapshot();
@@ -143,7 +172,14 @@ const ExportSettingsForm = ({
             <button
                 className="btn btn-accent ml-4"
                 onClick={() => {
-                    runExport(id, settings, state, box, t, cropCache, patterns, setImages);
+                    const animCache = new Map();
+                    const {items, bg} = svgItems(state, animCache, cropCache, patterns, t);
+
+                    if (settings.kind === 'png') {
+                        runPNGExport(id, settings, box, items, bg, setImages);
+                    } else if (settings.kind === 'svg') {
+                        runSVGExport(id, settings, box, items, bg, setImages);
+                    }
                 }}
             >
                 Export

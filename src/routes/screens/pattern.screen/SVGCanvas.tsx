@@ -1,9 +1,9 @@
 import {useEffect, useMemo, useState} from 'react';
-import {Coord, shapeKey} from '../../../types';
-import {pk} from '../../pk';
+import {BarePath, Coord, shapeKey} from '../../../types';
+import {Path, pk} from '../../pk';
 import {shapeD} from '../../shapeD';
 import {colorToString} from './colors';
-import {RenderItem} from './evaluate';
+import {RenderItem, RenderShadow} from './evaluate';
 import {Box, Color, ConcreteShadow, shadowKey, State} from './export-types';
 import {renderItems} from './renderItems';
 import {percentToWorld, worldToPercent, svgCoord} from './useSVGZoom';
@@ -87,15 +87,6 @@ export const SVGCanvas = ({
     setMouse: (m: Coord | null) => void;
     byKey: Record<string, string[]>;
 }) => {
-    const shadows: Record<string, ConcreteShadow> = {};
-    let hasShadows = false;
-    items.map((item) => {
-        if (item.type === 'path' && item.shadow) {
-            hasShadows = true;
-            const key = shadowKey(item.shadow);
-            shadows[key] = item.shadow;
-        }
-    });
     const [focus, setFocus] = useState(null as null | string);
 
     const points = useMemo(() => unique(keyPoints.flat(), coordKey), [keyPoints]);
@@ -124,6 +115,8 @@ export const SVGCanvas = ({
     const paths = items.filter((p) => p.type === 'path') as (RenderItem & {type: 'path'})[];
     const rpoints = items.filter((p) => p.type === 'point') as (RenderItem & {type: 'point'})[];
 
+    const svgItems = generateSvgItems(paths, focus, lw);
+
     return (
         // <div>
         <svg
@@ -134,58 +127,7 @@ export const SVGCanvas = ({
             onMouseLeave={() => setMouse(null)}
             onMouseMove={(evt) => setMouse(svgCoord(evt))}
         >
-            {hasShadows ? (
-                <defs>
-                    {Object.entries(shadows).map(([key, shadow]) => (
-                        <filter key={key} id={key} x="-50%" width="200%" y="-50%" height="200%">
-                            <feDropShadow
-                                dx={shadow.offset?.x ?? 0}
-                                dy={shadow.offset?.y ?? 0}
-                                stdDeviation={((shadow.blur?.x ?? 0) + (shadow.blur?.y ?? 0)) / 2}
-                                floodColor={colorToString(shadow.color ?? [0, 0, 0])}
-                            />
-                        </filter>
-                    ))}
-                </defs>
-            ) : null}
-            {paths.map(
-                ({
-                    key,
-                    shapes,
-                    pk,
-                    color,
-                    strokeWidth,
-                    zIndex,
-                    shadow,
-                    sharp,
-                    adjustForZoom,
-                    ...item
-                }) =>
-                    shapes.map((shape, m) => (
-                        <path
-                            {...item}
-                            fill={
-                                focus === key
-                                    ? 'red'
-                                    : strokeWidth
-                                      ? 'none'
-                                      : colorToString(shadow?.color ?? color)
-                            }
-                            strokeLinejoin={sharp ? 'miter' : 'round'}
-                            strokeLinecap={sharp ? 'butt' : 'round'}
-                            stroke={strokeWidth ? colorToString(shadow?.color ?? color) : undefined}
-                            strokeWidth={
-                                strokeWidth && adjustForZoom ? strokeWidth * lw : strokeWidth
-                            }
-                            filter={shadow ? `url(#${shadowKey(shadow)})` : undefined}
-                            d={calcPathD(shape, 1, 5)}
-                            key={`${key}-${m}`}
-                            cursor={item.onClick ? 'pointer' : undefined}
-                            onClick={item.onClick} // ?? (() => setFocus(focus === key ? null : key))}
-                            data-z={zIndex}
-                        />
-                    )),
-            )}
+            {svgItems}
             {rpoints.map(({key, coord, color, opacity}) => (
                 <circle
                     r={lw / 10}
@@ -286,3 +228,72 @@ export const SVGCanvas = ({
         // </div>
     );
 };
+
+export function generateSvgItems(
+    paths: (RenderItem & {type: 'path'})[],
+    focus: string | null,
+    lw: number,
+) {
+    const shadows: Record<string, ConcreteShadow> = {};
+    let hasShadows = false;
+    paths.map((item) => {
+        if (item.shadow) {
+            hasShadows = true;
+            const key = shadowKey(item.shadow);
+            shadows[key] = item.shadow;
+        }
+    });
+
+    return [
+        hasShadows ? (
+            <defs>
+                {Object.entries(shadows).map(([key, shadow]) => (
+                    <filter key={key} id={key} x="-50%" width="200%" y="-50%" height="200%">
+                        <feDropShadow
+                            dx={shadow.offset?.x ?? 0}
+                            dy={shadow.offset?.y ?? 0}
+                            stdDeviation={((shadow.blur?.x ?? 0) + (shadow.blur?.y ?? 0)) / 2}
+                            floodColor={colorToString(shadow.color ?? [0, 0, 0])}
+                        />
+                    </filter>
+                ))}
+            </defs>
+        ) : null,
+        paths.map(
+            ({
+                key,
+                shapes,
+                pk,
+                color,
+                strokeWidth,
+                zIndex,
+                shadow,
+                sharp,
+                adjustForZoom,
+                ...item
+            }) =>
+                shapes.map((shape, m) => (
+                    <path
+                        {...item}
+                        fill={
+                            focus === key
+                                ? 'red'
+                                : strokeWidth
+                                  ? 'none'
+                                  : colorToString(shadow?.color ?? color)
+                        }
+                        strokeLinejoin={sharp ? 'miter' : 'round'}
+                        strokeLinecap={sharp ? 'butt' : 'round'}
+                        stroke={strokeWidth ? colorToString(shadow?.color ?? color) : undefined}
+                        strokeWidth={strokeWidth && adjustForZoom ? strokeWidth * lw : strokeWidth}
+                        filter={shadow ? `url(#${shadowKey(shadow)})` : undefined}
+                        d={calcPathD(shape, 1, 5)}
+                        key={`${key}-${m}`}
+                        cursor={item.onClick ? 'pointer' : undefined}
+                        onClick={item.onClick} // ?? (() => setFocus(focus === key ? null : key))}
+                        data-z={zIndex}
+                    />
+                )),
+        ),
+    ];
+}
