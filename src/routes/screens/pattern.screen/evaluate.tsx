@@ -52,6 +52,7 @@ export type RenderItem =
 
 export type Ctx = {
     // warn(m: string): void;
+    shapes: State['shapes'];
     state: State;
     anim: AnimCtx;
     cropCache: Map<string, {path: PKPath; crop: Crop}>;

@@ -228,7 +228,7 @@ const MakeContext = <T, An, Tag extends string = 'type'>(ctx: CH<T, An, Tag>, ta
 };
 
 export const makeHistoryContext = <T, An, Tag extends string = 'type'>(tag: Tag) => {
-    const Ctx = createContext<CH<T, An, Tag>>(null);
+    const Ctx = createContext<CH<T, An, Tag>>(null as any);
 
     return [
         makeProvider(Ctx),

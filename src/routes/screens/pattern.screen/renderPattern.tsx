@@ -66,9 +66,7 @@ export const renderPattern = (ctx: Ctx, _outer: CropsAndMatrices, pattern: Patte
                 .filter((a) => !a.disabled)
                 .map(({shapes, shared, mods, t}) => ({
                     t,
-                    shapes: shapes
-                        .map((key) => ({path: ctx.state.shapes[key], id: key}))
-                        .filter(Boolean),
+                    shapes: shapes.map((key) => ({path: ctx.shapes[key], id: key})).filter(Boolean),
                     mods,
                     shared,
                 })),

@@ -33,6 +33,7 @@ import {
     resolveLine,
     resolveShadow,
 } from './renderPattern';
+import {expandShapes} from './expandShapes';
 
 type CCrop = {type: 'crop'; id: string; mode?: CropMode; hole?: boolean};
 type CInset = {type: 'inset'; v: number};
@@ -378,7 +379,18 @@ export const svgItems = (
         });
 
         renderGroup(
-            {state, anim, layer, patterns, items, keyPoints, cropCache, byKey, log},
+            {
+                state,
+                anim,
+                layer,
+                patterns,
+                items,
+                keyPoints,
+                cropCache,
+                byKey,
+                log,
+                shapes: expandShapes(state.shapes, state.layers, patterns),
+            },
             [],
             group,
         );
