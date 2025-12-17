@@ -161,6 +161,7 @@ export const adjustShapes = (
             segs = cutSegments(segs, prec);
             const norms = normPoints(segs.flat(), prec);
             segs = normSegs(segs, norms, prec);
+            // segs = segs.map(([a, b]) => [truncateCoord(a, amt), truncateCoord(b, amt)] as const);
 
             segs = unique(segs, (p) => coordPairKey(p, prec));
 

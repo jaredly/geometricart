@@ -1,14 +1,19 @@
 
 #
 
+- [ ] MOER BUGS
+  -> now it's on the coloring side maybe?
+    -> it might be useful to go through and ensure that everything is next to each other?
+
 - [x] Export pls
 - [x] export svg would be good toooo
 - [x] export video w/ worker
 - [ ] let's do shape auto-duplication. that should reduce storage size a fair bit
   ->> lol now I need to deduplicate the whatsits
+  - [ ] deduplicate the newly produced shapes yes pls
 - [ ] Q: should I truncate numbers when I store them? 🤔 eh maybe not
-- [ ] how about video render in a worker?
-- [ ] the /patterns/ should be inlined
+- [x] how about video render in a worker?
+- [x] the /patterns/ should be inlined
   -> "thinTiling" is the thing
 
 how about alsooo

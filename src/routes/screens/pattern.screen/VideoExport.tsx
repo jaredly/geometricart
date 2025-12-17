@@ -58,7 +58,7 @@ export function VideoExport({
                         value={exSize}
                         onChange={(evt) => setExSize(+evt.target.value)}
                         type="number"
-                        className="input"
+                        className="input w-30"
                     />
                 </label>
                 {/* {typeof video === 'number' ? (

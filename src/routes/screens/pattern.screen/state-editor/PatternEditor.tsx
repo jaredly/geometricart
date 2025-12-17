@@ -100,6 +100,14 @@ const AdjustmentEditor = ({
                                 </button>
                             </li>
                         ))}
+                        <li className="flex flex-row">
+                            <button
+                                onClick={() => update.shapes.replace([])}
+                                className="btn btn-square flex-1"
+                            >
+                                Clear all
+                            </button>
+                        </li>
                     </ul>
                 </details>
                 <button

@@ -1,10 +1,12 @@
 import {eigenShapeTransform} from '../../../editor/eigenShapeTransform';
 import {tilingPoints, applyTilingTransformsG} from '../../../editor/tilingPoints';
+import {coordKey} from '../../../rendering/coordKey';
 import {isClockwise, reversePath} from '../../../rendering/pathToPoints';
 import {transformBarePath} from '../../../rendering/points';
 import {segmentKey} from '../../../rendering/segmentKey';
 import {Coord, Segment, BarePath} from '../../../types';
-import {simpleSize} from '../../getPatternData';
+import {centroid} from '../../findReflectionAxes';
+import {coordsFromBarePath, simpleSize} from '../../getPatternData';
 import {Patterns} from './evaluate';
 import {State} from './export-types';
 
@@ -40,7 +42,7 @@ export const expandShapes = (
 ) => {
     let changed = false;
 
-    const usedKeys = Object.values(shapes).map(barePathKey);
+    const usedKeys = Object.values(shapes).map((pt) => coordKey(centroid(coordsFromBarePath(pt))));
 
     Object.entries(shapes).forEach(([key, value]) => {
         if (value.multiply == null) return;
@@ -63,9 +65,9 @@ export const expandShapes = (
         );
         const transformedShapes = applyTilingTransformsG([value], ttt, transformBarePath);
         transformedShapes.forEach((shape, i) => {
-            const k = barePathKey(shape);
+            const k = coordKey(centroid(coordsFromBarePath(shape)));
             if (!usedKeys.includes(k)) {
-                shapes[key + `:${i}`] = shape;
+                shapes[key + `:${k}`] = shape;
                 usedKeys.push(k);
             }
         });
