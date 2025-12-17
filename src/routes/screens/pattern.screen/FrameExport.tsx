@@ -78,7 +78,9 @@ const runSVGExport = (
         <svg
             xmlns="http://www.w3.org/2000/svg"
             viewBox={`${box.x.toFixed(7)} ${box.y.toFixed(7)} ${box.width.toFixed(7)} ${box.height.toFixed(7)}`}
-            style={{background: colorToString(bg), width: ex.size, height: ex.size}}
+            style={{background: colorToString(bg)}}
+            width={ex.size}
+            height={ex.size}
         >
             {svgItems}
         </svg>,
