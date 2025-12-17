@@ -35,16 +35,6 @@ export function VideoExport({
                     className={'btn'}
                     disabled={status !== null}
                     onClick={() => {
-                        // recordVideo(
-                        //     state,
-                        //     exSize,
-                        //     box,
-                        //     patterns,
-                        //     duration,
-                        //     (percent) => statusRef.current!.textContent = (percent * 100).toFixed(0) + '%,
-                        //     cropCache,
-                        // ).then((url) => setVideo(url));
-
                         setStatus(0);
                         worker({type: 'video', state, patterns, size, box, duration}, (res) => {
                             if (res.type === 'status') {

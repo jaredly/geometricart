@@ -2,19 +2,20 @@ import React from 'react';
 import {BarePath, Coord} from '../../../../types';
 import {useEditState, usePendingState} from '../editState';
 import {JsonEditor} from './JsonEditor';
+import {Updater} from '../../../../json-diff/Updater';
 
 export const ShapeEditor = ({
     shape,
     id,
-    onChange,
+    update,
     onHover,
     onDup,
     onCrop,
 }: {
-    shape: BarePath;
+    shape: BarePath & {multiply?: boolean};
     id: string;
     onHover: (v: {type: 'shape'; id: string} | null) => void;
-    onChange: (v: BarePath | null) => void;
+    update: Updater<BarePath & {multiply?: boolean}>;
     onCrop(): void;
     onDup: (p: Coord) => void;
 }) => {
@@ -43,14 +44,20 @@ export const ShapeEditor = ({
             <button onClick={onCrop} className="btn">
                 Crop
             </button>
-            <button className="btn btn-sm" onClick={() => onChange(null)}>
-                &times;
-            </button>
-            <details>
-                <summary>JSON</summary>
-
-                <JsonEditor label="json" onChange={() => {}} value={shape} />
-            </details>
+            <div>
+                <label>
+                    Mulitply
+                    <input
+                        className="checkbox"
+                        checked={!!shape.multiply}
+                        type="checkbox"
+                        onChange={(evt) => update.multiply.replace(!shape.multiply)}
+                    />
+                </label>
+                <button className="btn btn-sm" onClick={() => update.remove()}>
+                    &times;
+                </button>
+            </div>
         </div>
     );
 };

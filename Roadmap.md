@@ -3,6 +3,7 @@
 
 - [x] Export pls
 - [x] export svg would be good toooo
+- [x] export video w/ worker
 - [ ] let's do shape auto-duplication. that should reduce storage size a fair bit
 - [ ] Q: should I truncate numbers when I store them? 🤔 eh maybe not
 - [ ] how about video render in a worker?

@@ -108,14 +108,7 @@ export const StateEditor = ({value, update}: StateEditorProps) => {
                             id={id}
                             key={id}
                             shape={shape}
-                            onChange={(shape) => {
-                                const shapes = {...value.shapes};
-                                if (shape == null) {
-                                    update.shapes[id].remove();
-                                } else {
-                                    update.shapes[id](shape);
-                                }
-                            }}
+                            update={update.shapes[id]}
                             onCrop={() => {
                                 const cid = genid();
                                 update.crops[cid].add({id: cid, shape: id});
@@ -134,11 +127,6 @@ export const StateEditor = ({value, update}: StateEditorProps) => {
                             onHover={onHover}
                         />
                     ))}
-                    {/* <JsonEditor
-                        value={value.shapes}
-                        onChange={(shapes) => onChange({...value, shapes})}
-                        label="Shapes"
-                    /> */}
                 </div>
             </Section>
 

@@ -7,7 +7,7 @@ import {WorkerSend} from './render-client';
 import {MessageToWorker, MessageResponse} from './render-worker';
 import {renderShape} from './RenderExport';
 import {Hover} from './resolveMods';
-import {Canvas} from './SVGCanvas';
+import {Canvas, SVGCanvas} from './SVGCanvas';
 import {ZoomProps} from './useSVGZoom';
 
 export const renderShapes = (
@@ -98,6 +98,22 @@ export const DeferredRender = ({
         [remoteData?.items, shapesItems],
     );
     if (!remoteData) return <div>Loading..</div>;
+
+    if (pending) {
+        return (
+            <SVGCanvas
+                zoomProps={zoomProps}
+                state={state}
+                mouse={mouse}
+                keyPoints={remoteData.keyPoints}
+                setMouse={setMouse}
+                items={both}
+                size={size}
+                byKey={remoteData.byKey}
+                bg={remoteData.bg}
+            />
+        );
+    }
 
     return (
         <Canvas

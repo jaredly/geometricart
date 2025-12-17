@@ -64,7 +64,7 @@ const rgbFromArr = (c: [number, number, number]) => ({r: c[0], g: c[1], b: c[2]}
 
 export type Crop = {id: string; shape: string; mods?: PMods[]};
 export type State = {
-    shapes: Record<string, BarePath>;
+    shapes: Record<string, BarePath & {multiply?: boolean}>;
     layers: Record<string, Layer>;
     crops: Record<string, Crop>;
     view: {
