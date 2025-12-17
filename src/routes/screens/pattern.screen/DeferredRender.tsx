@@ -31,6 +31,7 @@ export const DeferredRender = ({
     t,
     zoomProps,
     size,
+    onFPS,
 }: {
     setWarnings(v: string[]): void;
     size: number;
@@ -39,6 +40,7 @@ export const DeferredRender = ({
     patterns: Patterns;
     worker: WorkerSend;
     zoomProps: ZoomProps;
+    onFPS: (v: number) => void;
 }) => {
     const [mouse, setMouse] = useState(null as null | Coord);
 
@@ -62,13 +64,16 @@ export const DeferredRender = ({
             return;
         }
 
+        let start = Date.now();
         const got = (res: MessageResponse) => {
             if (res.type !== 'frame') return;
+            onFPS(1000 / (Date.now() - start));
             setRemoteData(res);
             setWarnings(res.warnings);
             if (bouncy.current && typeof bouncy.current === 'object') {
                 const msg = bouncy.current;
                 bouncy.current = true;
+                start = Date.now();
                 worker(msg, got);
             } else {
                 bouncy.current = false;
@@ -77,7 +82,7 @@ export const DeferredRender = ({
 
         bouncy.current = true;
         worker(msg, got);
-    }, [state, patterns, t, worker, setWarnings]);
+    }, [state, patterns, t, worker, setWarnings, onFPS]);
 
     const pendingState = usePendingState();
     const pending = pendingState.use((v) => v.pending);

@@ -28,7 +28,7 @@ export function useAnimate(
             if (times.length > 2) {
                 const some = times.slice(-5);
                 const sum = some.reduce((a, b) => a + b, 0);
-                fpsref.current!.textContent = (1000 / (sum / some.length)).toFixed(2) + 'fps';
+                // fpsref.current!.textContent = (1000 / (sum / some.length)).toFixed(2) + 'fps';
             }
             const diff = (now - st) / 1000;
             setT(Math.min(1, diff / duration));
@@ -43,6 +43,6 @@ export function useAnimate(
         };
         step();
         return () => cancelAnimationFrame(af);
-    }, [animate, duration, setAnimate, setT]);
+    }, [animate, duration, setT]);
     return fpsref;
 }

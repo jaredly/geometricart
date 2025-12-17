@@ -98,10 +98,8 @@ export const adjustShapes2 = (
                 })),
             });
 
-            // console.time('onshape');
             modified = true;
             segments = segments.filter((pair) => !coordPairOnShape(pair, shapeLines, eps));
-            // console.timeEnd('onshape');
 
             outerDebug?.push({
                 type: 'items',
@@ -151,9 +149,7 @@ export const adjustShapes2 = (
     }
 
     if (!modified) return {shapes: uniqueShapes, debug: outerDebug ?? []};
-    console.time('cut');
     segments = cutSegments(segments, prec);
-    console.timeEnd('cut');
 
     outerDebug?.push({
         type: 'items',
@@ -163,21 +159,11 @@ export const adjustShapes2 = (
         })),
     });
 
-    console.time('by endpoint');
     const byEndPoint = edgesByEndpoint(segments, prec);
     const one = unique(segments.flat(), (m) => coordKey(m, prec));
-    console.timeEnd('by endpoint');
 
-    console.time('the shapes');
-    // const cmoved = centroid(moved.flatMap((m) => m.shape));
     const fromSegments = shapesFromSegments(byEndPoint, one, prec);
-    console.timeEnd('the shapes');
-    // const [centerShapes, reconstructed] = unzip(
-    //     fromSegments.shapes,
-    //     (c) => !matchesBounds(boundsForCoords(...c), cmoved),
-    // );
-    console.timeEnd();
-    return {shapes: fromSegments.shapes, debug: outerDebug ?? []};
+    return {shapes: sortShapesByPolar(fromSegments.shapes), debug: outerDebug ?? []};
 };
 
 export const adjustShapes = (

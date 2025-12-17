@@ -1,4 +1,4 @@
-import {useMemo, useRef, useState} from 'react';
+import {useCallback, useMemo, useRef, useState} from 'react';
 import {AddIcon, BaselineFilterCenterFocus, BaselineZoomInMap} from '../../../icons/Icon';
 import {closeEnough} from '../../../rendering/epsilonToZero';
 import {BarePath} from '../../../types';
@@ -46,6 +46,12 @@ export const RenderExport = ({
     const statusRef = useRef<HTMLDivElement>(null);
 
     const worker = useWorker();
+    const onFPS = useCallback(
+        (v: number) => {
+            if (fpsref.current) fpsref.current.textContent = v.toFixed(2) + 'fps';
+        },
+        [fpsref],
+    );
 
     return (
         <div className="flex">
@@ -53,6 +59,7 @@ export const RenderExport = ({
                 <DeferredRender
                     worker={worker}
                     setWarnings={setWarnings}
+                    onFPS={onFPS}
                     t={t}
                     state={state}
                     patterns={patterns}
