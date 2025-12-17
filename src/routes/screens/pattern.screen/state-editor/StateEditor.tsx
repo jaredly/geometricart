@@ -106,6 +106,7 @@ export const StateEditor = ({value, update}: StateEditorProps) => {
                     {Object.entries(value.shapes).map(([id, shape]) => (
                         <ShapeEditor
                             id={id}
+                            key={id}
                             shape={shape}
                             onChange={(shape) => {
                                 const shapes = {...value.shapes};

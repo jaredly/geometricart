@@ -83,6 +83,7 @@ const runExport = (
         ...images,
         {url: URL.createObjectURL(blob), title: id + '-' + new Date().toISOString() + '.png'},
     ]);
+    surface.delete();
 };
 
 const ExportSettingsForm = ({
@@ -106,17 +107,18 @@ const ExportSettingsForm = ({
     const [images, setImages] = useState<ExImage[]>([]);
 
     return (
-        <div>
+        <div className="p-2">
             <label>
                 Size:
                 <BlurInt
                     value={settings.size}
                     onChange={(v) => (v != null ? update.size(v) : null)}
-                    className="input w-20"
+                    className="input w-20 mx-4"
                 />
             </label>
             {(['png', 'svg', 'mp4'] as const).map((name) => (
                 <button
+                    key={name}
                     className={'btn ' + (name === settings.kind ? 'btn-accent' : '')}
                     // disabled={name === settings.kind}
                     onClick={() => update.kind(name)}
@@ -125,7 +127,7 @@ const ExportSettingsForm = ({
                 </button>
             ))}
             <button
-                className="btn btn-accent"
+                className="btn btn-accent ml-4"
                 onClick={() => {
                     runExport(id, settings, state, box, t, cropCache, patterns, setImages);
                 }}

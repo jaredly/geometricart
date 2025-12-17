@@ -1,12 +1,17 @@
 
 #
 
-- [ ] Export pls
+- [x] Export pls
+- [ ] export svg would be good toooo
 - [ ] let's do shape auto-duplication. that should reduce storage size a fair bit
 - [ ] Q: should I truncate numbers when I store them? 🤔 eh maybe not
 - [ ] how about video render in a worker?
 - [ ] the /patterns/ should be inlined
   -> "thinTiling" is the thing
+
+how about alsooo
+we store snapshot images tho
+-> 
 
 #
 

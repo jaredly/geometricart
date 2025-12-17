@@ -57,7 +57,7 @@ export const RenderExport = ({
 
     const editContext = useEditState();
     const hover = editContext.use((v) => v.hover);
-    const eShowShapes = editContext.use((v) => v.showShapes); // || v.pending?.type === 'select-shapes');
+    const eShowShapes = editContext.use((v) => v.showShapes);
 
     const {items, warnings, keyPoints, byKey, bg} = useMemo(
         () => svgItems(state, animCache, cropCache, patterns, t),

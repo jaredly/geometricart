@@ -139,6 +139,7 @@ const TimePreview = ({s}: {s: string}) => {
             const max = pts.reduce((a, b) => Math.max(a, b.y), -Infinity);
             items.push(
                 <path
+                    key="time-preview"
                     d={shapeD(
                         pts.map(({x, y}) => ({
                             x: m + x * w,
