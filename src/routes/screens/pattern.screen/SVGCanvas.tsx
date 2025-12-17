@@ -6,7 +6,7 @@ import {colorToString} from './colors';
 import {RenderItem, RenderShadow} from './evaluate';
 import {Box, Color, ConcreteShadow, shadowKey, State} from './export-types';
 import {renderItems} from './renderItems';
-import {percentToWorld, worldToPercent, svgCoord} from './useSVGZoom';
+import {percentToWorld, worldToPercent, svgCoord, ZoomProps} from './useSVGZoom';
 import {coordKey} from '../../../rendering/coordKey';
 import {useEditState, usePendingState} from './editState';
 import {coordsEqual} from '../../../rendering/pathsAreIdentical';
@@ -18,15 +18,12 @@ import {coordPairKey, sortCoordPair} from './adjustShapes';
 import {pathsFromSegments} from '../../pathsFromSegments';
 import {outerBoundary} from '../../outerBoundary';
 import {followPath} from '../../weaveIntersections';
-import {usePromise} from './usePromise';
 
 export const Canvas = ({
     items,
     size,
     setMouse,
-    box,
-    innerRef,
-    // byKey,
+    zoomProps: {innerRef, box},
     bg,
     t,
 }: {
@@ -35,21 +32,25 @@ export const Canvas = ({
     state: State;
     mouse: Coord | null;
     size: number;
-    box: Box;
-    innerRef: React.RefObject<SVGElement | HTMLElement | null>;
+    zoomProps: ZoomProps;
     setMouse: (m: Coord | null) => void;
     byKey: Record<string, string[]>;
     t: number;
 }) => {
     // const font = usePromise(() => fetch('/assets/Roboto-Regular.ttf').then((r) => r.arrayBuffer()));
     useEffect(() => {
-        const surface = pk.MakeWebGLCanvasSurface(innerRef.current! as HTMLCanvasElement)!;
+        const surface = pk.MakeWebGLCanvasSurface(innerRef.current.node! as HTMLCanvasElement)!;
         renderItems(surface, box, items, bg);
     }, [box, items, innerRef, bg]);
 
     return (
         <canvas
-            ref={innerRef as React.RefObject<HTMLCanvasElement>}
+            ref={(node) => {
+                if (node && innerRef.current.node !== node) {
+                    innerRef.current.node = node;
+                    innerRef.current.tick();
+                }
+            }}
             style={{background: 'black', width: size, height: size}}
             width={size * 2}
             height={size * 2}

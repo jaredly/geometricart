@@ -8,6 +8,7 @@ import {MessageToWorker, MessageResponse} from './render-worker';
 import {renderShape} from './RenderExport';
 import {Hover} from './resolveMods';
 import {Canvas} from './SVGCanvas';
+import {ZoomProps} from './useSVGZoom';
 
 export const renderShapes = (
     shapes: State['shapes'],
@@ -36,7 +37,7 @@ export const DeferredRender = ({
     state: State;
     patterns: Patterns;
     worker: WorkerSend;
-    zoomProps: {innerRef: RefObject<SVGElement | HTMLElement | null>; box: Box};
+    zoomProps: ZoomProps;
 }) => {
     const [mouse, setMouse] = useState(null as null | Coord);
 
@@ -100,7 +101,7 @@ export const DeferredRender = ({
 
     return (
         <Canvas
-            {...zoomProps}
+            zoomProps={zoomProps}
             state={state}
             mouse={mouse}
             // keyPoints={keyPoints}

@@ -38,40 +38,44 @@ export const useElementZoom = (initialBox: Box) => {
     }, [initialBox, lbox]);
 
     const latest = useLatest(box);
-    const ref = useRef<HTMLElement | SVGElement>(null);
-    useEffect(() => {
-        if (!ref.current) return;
-        const fn = function (this: HTMLElement | SVGElement, evt: WheelEvent) {
-            evt.preventDefault();
+    const ref = useRef<{node: HTMLElement | SVGElement | null; tick(): void}>({
+        node: null,
+        tick() {
+            if (!ref.current.node) return;
+            const fn = function (this: HTMLElement | SVGElement, evt: WheelEvent) {
+                evt.preventDefault();
 
-            const nbox = {...latest.current};
+                const nbox = {...latest.current};
 
-            if (evt.shiftKey) {
-                nbox.x += nbox.width * 0.003 * evt.deltaX;
-                nbox.y += nbox.height * 0.003 * evt.deltaY;
+                if (evt.shiftKey) {
+                    nbox.x += nbox.width * 0.003 * evt.deltaX;
+                    nbox.y += nbox.height * 0.003 * evt.deltaY;
+                    latest.current = nbox;
+                    return setBox(nbox);
+                }
+
+                nbox.width *= 1 + evt.deltaY * 0.01;
+                nbox.height *= 1 + evt.deltaY * 0.01;
+
+                const percent = worldToPercent(
+                    {x: evt.clientX, y: evt.clientY},
+                    this.getBoundingClientRect(),
+                );
+                const pre = percentToWorld(percent, latest.current);
+                const post = percentToWorld(percent, nbox);
+
+                nbox.x -= post.x - pre.x;
+                nbox.y -= post.y - pre.y;
+
                 latest.current = nbox;
-                return setBox(nbox);
-            }
-
-            nbox.width *= 1 + evt.deltaY * 0.01;
-            nbox.height *= 1 + evt.deltaY * 0.01;
-
-            const percent = worldToPercent(
-                {x: evt.clientX, y: evt.clientY},
-                this.getBoundingClientRect(),
-            );
-            const pre = percentToWorld(percent, latest.current);
-            const post = percentToWorld(percent, nbox);
-
-            nbox.x -= post.x - pre.x;
-            nbox.y -= post.y - pre.y;
-
-            latest.current = nbox;
-            setBox(nbox);
-        } as EventListenerOrEventListenerObject;
-        ref.current.addEventListener('wheel', fn, {passive: false});
-        return () => ref.current?.removeEventListener('wheel', fn);
-    }, [latest]);
+                setBox(nbox);
+            } as EventListenerOrEventListenerObject;
+            ref.current.node.addEventListener('wheel', fn, {passive: false});
+        },
+    });
+    // useEffect(() => {
+    //     return () => ref.current?.removeEventListener('wheel', fn);
+    // }, [latest]);
 
     const reset = useCallback(
         (keepZoom = false) =>
@@ -100,3 +104,5 @@ export const useElementZoom = (initialBox: Box) => {
         reset: canReset ? reset : null,
     };
 };
+
+export type ZoomProps = ReturnType<typeof useElementZoom>['zoomProps'];
