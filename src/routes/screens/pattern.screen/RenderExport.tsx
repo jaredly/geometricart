@@ -1,4 +1,4 @@
-import {useMemo, useRef, useState} from 'react';
+import {RefObject, useEffect, useMemo, useRef, useState} from 'react';
 import {AddIcon, BaselineFilterCenterFocus, BaselineZoomInMap} from '../../../icons/Icon';
 import {closeEnough} from '../../../rendering/epsilonToZero';
 import {BarePath, Coord} from '../../../types';
@@ -10,8 +10,8 @@ import {
     useEditState,
     usePendingState,
 } from './editState';
-import {AnimCtx, Patterns, RenderItem} from './evaluate';
-import {colorToRgb, State} from './export-types';
+import {AnimCtx, Ctx, Patterns, RenderItem} from './evaluate';
+import {Box, Color, colorToRgb, State} from './export-types';
 import {Hover, svgItems} from './resolveMods';
 import {Canvas, SVGCanvas} from './SVGCanvas';
 import {useAnimate} from './useAnimate';
@@ -20,7 +20,7 @@ import {useElementZoom} from './useSVGZoom';
 import {VideoExport} from './VideoExport';
 import {Updater} from '../../../json-diff/Updater';
 import {FrameExport} from './FrameExport';
-import {useWorker} from './render-client';
+import {useWorker, WorkerSend} from './render-client';
 
 export const renderShapes = (
     shapes: State['shapes'],
@@ -31,6 +31,84 @@ export const renderShapes = (
 ): RenderItem[] => {
     return Object.entries(shapes).flatMap(([key, shape]) =>
         renderShape(key, shape, hover, selectedShapes, pending, update),
+    );
+};
+
+export const DeferredRender = ({
+    worker,
+    state,
+    patterns,
+    t,
+    zoomProps,
+    size,
+}: {
+    size: number;
+    t: number;
+    state: State;
+    patterns: Patterns;
+    worker: WorkerSend;
+    zoomProps: {innerRef: RefObject<SVGElement | HTMLElement | null>; box: Box};
+}) => {
+    const [mouse, setMouse] = useState(null as null | Coord);
+
+    const editContext = useEditState();
+    const hover = editContext.use((v) => v.hover);
+    const eShowShapes = editContext.use((v) => v.showShapes);
+
+    const [remoteData, setRemoteData] = useState<null | {
+        items: RenderItem[];
+        bg: Color;
+        byKey: Record<string, string[]>;
+    }>(null);
+
+    useEffect(() => {
+        console.log('sending');
+        worker({type: 'frame', patterns, state, t}, (res) => {
+            console.log('got', res);
+            if (res.type !== 'frame') return;
+            setRemoteData(res);
+        });
+    }, [state, patterns, t, worker]);
+
+    // const {items, warnings, keyPoints, byKey, bg} = useMemo(
+    //     () => svgItems(state, animCache, cropCache, patterns, t),
+    //     [state, patterns, cropCache, animCache, t],
+    // );
+
+    const pendingState = usePendingState();
+    const pending = pendingState.use((v) => v.pending);
+    const selectedShapes = pending?.type === 'select-shapes' ? pending.shapes : [];
+
+    const showShapes =
+        eShowShapes || pending?.type === 'select-shapes' || pending?.type === 'select-shape';
+
+    const shapesItems = useMemo(
+        (): RenderItem[] =>
+            showShapes
+                ? renderShapes(state.shapes, hover, selectedShapes, pendingState.update, pending)
+                : [],
+        [showShapes, state.shapes, hover, selectedShapes, pendingState.update, pending],
+    );
+
+    const both = useMemo(
+        () => (remoteData?.items ? [...remoteData.items, ...shapesItems] : []),
+        [remoteData?.items, shapesItems],
+    );
+    if (!remoteData) return <div>Loading..</div>;
+
+    return (
+        <Canvas
+            {...zoomProps}
+            state={state}
+            mouse={mouse}
+            // keyPoints={keyPoints}
+            setMouse={setMouse}
+            items={both}
+            size={size}
+            byKey={remoteData.byKey}
+            bg={remoteData.bg}
+            t={t}
+        />
     );
 };
 
@@ -56,33 +134,7 @@ export const RenderExport = ({
     // well this is exciting
     const cropCache = useCropCache(state, t, animCache);
 
-    const editContext = useEditState();
-    const hover = editContext.use((v) => v.hover);
-    const eShowShapes = editContext.use((v) => v.showShapes);
-
-    const {items, warnings, keyPoints, byKey, bg} = useMemo(
-        () => svgItems(state, animCache, cropCache, patterns, t),
-        [state, patterns, cropCache, animCache, t],
-    );
-
-    const pendingState = usePendingState();
-    const pending = pendingState.use((v) => v.pending);
-    const selectedShapes = pending?.type === 'select-shapes' ? pending.shapes : [];
-
-    const showShapes =
-        eShowShapes || pending?.type === 'select-shapes' || pending?.type === 'select-shape';
-    const shapesItems = useMemo(
-        (): RenderItem[] =>
-            showShapes
-                ? renderShapes(state.shapes, hover, selectedShapes, pendingState.update, pending)
-                : [],
-        [showShapes, state.shapes, hover, selectedShapes, pendingState.update, pending],
-    );
-
-    const both = useMemo(() => [...items, ...shapesItems], [items, shapesItems]);
-
     const {zoomProps, box, reset: resetZoom} = useElementZoom(state.view.box);
-    const [mouse, setMouse] = useState(null as null | Coord);
     const size = 500;
 
     const statusRef = useRef<HTMLDivElement>(null);
@@ -92,17 +144,13 @@ export const RenderExport = ({
     return (
         <div className="flex">
             <div className="relative overflow-hidden">
-                <Canvas
-                    {...zoomProps}
-                    state={state}
-                    mouse={mouse}
-                    // keyPoints={keyPoints}
-                    setMouse={setMouse}
-                    items={both}
-                    size={size}
-                    byKey={byKey}
-                    bg={bg}
+                <DeferredRender
+                    worker={worker}
                     t={t}
+                    state={state}
+                    patterns={patterns}
+                    size={size}
+                    zoomProps={zoomProps}
                 />
                 <div ref={fpsref} className="absolute top-0 right-0 hidden px-2 py-1 bg-base-100" />
                 {resetZoom ? (
@@ -179,11 +227,11 @@ export const RenderExport = ({
                     cropCache={cropCache}
                 />
                 <div className="flex flex-col gap-2 p-2">
-                    {warnings.map((w, i) => (
+                    {/*{warnings.map((w, i) => (
                         <div key={i} className="px-4 py-2 rounded bg-base-100">
                             {w}
                         </div>
-                    ))}
+                    ))}*/}
                 </div>
             </div>
         </div>

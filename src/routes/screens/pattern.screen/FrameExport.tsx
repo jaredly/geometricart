@@ -188,7 +188,6 @@ const ExportSettingsForm = ({
                             runSVGExport(id, settings, box, items, bg, setImages);
                         }
                     });
-                    // const {items, bg} = svgItems(state, animCache, cropCache, patterns, t);
                 }}
             >
                 Export
