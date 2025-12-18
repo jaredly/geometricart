@@ -86,7 +86,7 @@ export const PModEditor = ({
                     toggle={() => update.variant(value.type).disabled((v, u) => u(!v))}
                     remove={update.remove}
                 >
-                    {value.type}:{value.id}
+                    {value.type}
                     <select
                         value={value.id}
                         onChange={(evt) => update.variant('crop').id(evt.target.value)}

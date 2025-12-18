@@ -15,6 +15,7 @@ I alsoooo want to STORE SNAPSHOT ANNOTATIONS
 yeah let's do that.
 
 - [ ] I kinda want to convert the AnimatableNumber stuff into tagged unions
+  -> also non-primitive nullables should probably stop
 
 
 ###

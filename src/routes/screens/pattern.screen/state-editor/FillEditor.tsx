@@ -84,7 +84,10 @@ export const ModsEditor = ({
                 className="select select-sm w-50"
                 value=""
                 onChange={(evt) => {
-                    update.push(addMod(evt.target.value));
+                    (update as Updater<PMods[] | undefined>)((a, u) =>
+                        a ? u.push(addMod(evt.target.value)) : u([addMod(evt.target.value)]),
+                    );
+                    // update.push(addMod(evt.target.value));
                 }}
             >
                 <option disabled value="">

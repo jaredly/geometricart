@@ -270,8 +270,8 @@ const renderObject = (ctx: Ctx, crops: CropsAndMatrices, object: EObject) => {
 
 export const pathMod = (cropCache: Ctx['cropCache'], mod: CropsAndMatrices[0], path: PKPath) => {
     if (Array.isArray(mod)) {
-        mod.forEach(([a, b, c, d, e, f]) => {
-            path.transform(a, b, c, d, e, f, 0, 0, 1);
+        mod.forEach(([[a, b, c], [d, e, f]]) => {
+            path.transform([a, b, c, d, e, f]);
         });
     } else if (mod.type === 'crop') {
         const crop = cropCache.get(mod.id)!.path;

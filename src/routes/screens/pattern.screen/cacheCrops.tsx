@@ -3,6 +3,7 @@ import {pkPathWithCmds} from '../animator.screen/cropPath';
 import {AnimCtx} from './evaluate';
 import {State, Crop} from './export-types';
 import {resolveEnabledPMods, pathMod} from './resolveMods';
+import {globals} from './eval-globals';
 
 export function cacheCrops(
     crops: State['crops'],
@@ -23,12 +24,12 @@ export function cacheCrops(
         } else {
             const actx: AnimCtx = {
                 accessedValues: new Set(),
-                values: {t},
+                values: {t, ...globals},
                 cache: animCache,
                 palette: [],
                 warn: (v) => console.warn(v),
             };
-            const cropmods = resolveEnabledPMods(actx, crop.mods ?? []);
+            const cropmods = resolveEnabledPMods(actx, crop.mods);
 
             const path = pkPathWithCmds(shape.origin, shape.segments);
 
