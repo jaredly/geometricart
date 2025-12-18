@@ -17,6 +17,10 @@ yeah let's do that.
 - [ ] I kinda want to convert the AnimatableNumber stuff into tagged unions
   -> also non-primitive nullables should probably stop
 
+->><<->><<-
+
+- [ ] whenever you do an export, make that a snapshot
+- [ ] load up latest snapshot in the whatsit screen
 
 ###
 

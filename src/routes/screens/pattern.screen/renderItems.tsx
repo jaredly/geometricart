@@ -29,7 +29,15 @@ export const renderItems = (
                 item.shapes.flatMap((shape) =>
                     segmentsCmds(shape.origin, shape.segments, shape.open),
                 ),
-            )!;
+            );
+        if (!pkp) {
+            console.log('bad path somehow');
+            return;
+        }
+        if (!(pkp instanceof pk.Path)) {
+            console.log('not instance', pkp);
+            return;
+        }
         const paint = new pk.Paint();
         paint.setAntiAlias(true);
         if (item.strokeWidth == null) {
@@ -96,7 +104,12 @@ export const renderItems = (
 
             shadowPaint.delete();
         } else {
-            ctx.drawPath(pkp, paint);
+            try {
+                ctx.drawPath(pkp, paint);
+            } catch (err) {
+                console.log('failed to draw', pkp);
+                console.error(err);
+            }
         }
         paint.delete();
         if (!item.pk) {

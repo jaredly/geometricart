@@ -14,11 +14,22 @@ export async function loader({params}: Route.LoaderArgs) {
         return new Response('Does not exist', {status: 404});
     }
     if (fs.statSync(full).isDirectory()) {
-        return new Response(JSON.stringify(fs.readdirSync(full)), {
-            headers: {
-                'Content-type': 'application/json',
+        return new Response(
+            JSON.stringify(
+                fs
+                    .readdirSync(full)
+                    .sort()
+                    .map((name) => {
+                        const stat = fs.statSync(join(full, name));
+                        return {name, created: stat.birthtimeMs, modified: stat.mtimeMs};
+                    }),
+            ),
+            {
+                headers: {
+                    'Content-type': 'application/json',
+                },
             },
-        });
+        );
     }
     return new Response(Bun.file(full));
 }

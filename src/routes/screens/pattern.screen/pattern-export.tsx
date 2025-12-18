@@ -215,7 +215,11 @@ const Page = ({
                 <ul>
                     {breadcrumbs.map((item, i) => (
                         <li key={i}>
-                            <a href={item.href}>{item.title}</a>
+                            {i === breadcrumbs.length - 1 ? (
+                                item.title
+                            ) : (
+                                <a href={item.href}>{item.title}</a>
+                            )}
                         </li>
                     ))}
                 </ul>
@@ -226,25 +230,54 @@ const Page = ({
 );
 
 const ListExports = () => {
-    const all = usePromise<string[]>((signal) =>
-        fetch('/fs/exports', {signal}).then((r) => r.json()),
+    const all = usePromise((signal) =>
+        fetch('/fs/exports', {signal})
+            .then((r) => r.json())
+            .then((v: {name: string; created: number; modified: number}[]) => {
+                const patterns: Record<
+                    string,
+                    {id: string; icon?: {id: string; created: number}; modified: number}
+                > = {};
+                v.forEach(({name, created, modified}) => {
+                    if (name.endsWith('.json')) {
+                        const id = name.slice(0, -'.json'.length);
+                        if (!patterns[id]) {
+                            patterns[id] = {id, modified};
+                        } else {
+                            patterns[id].modified = modified;
+                        }
+                    } else if (name.endsWith('.png')) {
+                        const parts = name.slice(0, -'.png'.length).split('-');
+                        const iid = parts.pop()!;
+                        const id = parts.join('-');
+                        if (!patterns[id]) {
+                            patterns[id] = {id, modified: created, icon: {id: iid, created}};
+                        } else if (!patterns[id].icon || patterns[id].icon.created < created) {
+                            patterns[id].icon = {id: iid, created};
+                        }
+                    }
+                });
+                return Object.values(patterns).sort((a, b) => b.modified - a.modified);
+            }),
     );
     if (!all) return 'Loading...';
     return (
-        <div>
-            <h1>Exports</h1>
-            <ul className="list">
-                {all
-                    .filter((n) => n.endsWith('.json'))
-                    .map((name) => (
-                        <li className="list-item">
-                            <a className="link" href={`/export/${name.slice(0, -'.json'.length)}`}>
-                                {name}
-                            </a>
-                        </li>
-                    ))}
-            </ul>
-        </div>
+        <Page
+            breadcrumbs={[
+                {title: 'Geometric Art', href: '/'},
+                {title: 'Exports', href: '/export/'},
+            ]}
+        >
+            <div className="flex flex-row flex-wrap gap-4 p-4">
+                {all.map(({id, icon}) => (
+                    <div>
+                        <a className="link" href={`/export/${id}`}>
+                            {icon ? <img src={`/assets/exports/${id}-${icon.id}.png`} /> : id}
+                        </a>
+                    </div>
+                ))}
+            </div>
+        </Page>
     );
 };
 

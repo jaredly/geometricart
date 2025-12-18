@@ -64,7 +64,12 @@ export const drawPaths = (
             paint.setStrokeCap(pk.StrokeCap.Round);
         }
 
-        ctx.drawPath(path, paint);
+        try {
+            ctx.drawPath(path, paint);
+        } catch (err) {
+            console.log('failed to draw', path);
+            console.error(err);
+        }
     });
 };
 
