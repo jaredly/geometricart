@@ -140,7 +140,7 @@ export function diffBuilderApply<T, Extra, Tag extends string = 'type', R = void
     const cache: Record<string, (v: any, b: any) => R> = {};
     // biome-ignore lint: this one is fine
     const proxyCache: Record<string, any> = {};
-    const ghost = {} as {_t: T}; // a phantom type kinda thing
+    const ghost = {}; // {_t: T} a phantom type kinda thing
     // biome-ignore lint: this one is fine
     function makeProxy(path: Array<PathSegment>): any {
         const pathString = JSON.stringify(path);
@@ -288,21 +288,20 @@ export function diffBuilderApply<T, Extra, Tag extends string = 'type', R = void
 
 export type Path = PathSegment[];
 
-export type AddOp<T> = {op: 'add'; path: Path; value: unknown; _t: T};
+export type AddOp<T> = {op: 'add'; path: Path; value: unknown};
 
 export type ReplaceOp<T> = {
     op: 'replace';
     path: Path;
     value: unknown;
     previous: unknown;
-    _t: T;
 };
 
-export type RemoveOp<T> = {op: 'remove'; path: Path; value: unknown; _t: T};
+export type RemoveOp<T> = {op: 'remove'; path: Path; value: unknown};
 
-export type MoveOp<T> = {op: 'move'; from: Path; path: Path; _t: T};
+export type MoveOp<T> = {op: 'move'; from: Path; path: Path};
 
-export type CopyOp<T> = {op: 'copy'; from: Path; path: Path; _t: T};
+export type CopyOp<T> = {op: 'copy'; from: Path; path: Path};
 
 export type JsonPatchOp<T> = AddOp<T> | ReplaceOp<T> | RemoveOp<T> | MoveOp<T> | CopyOp<T>;
 
@@ -310,16 +309,14 @@ export type PendingReplaceOp<T> = {
     op: 'replace';
     path: Path;
     value: unknown;
-    _t: T;
 };
 
-export type PendingRemoveOp<T> = {op: 'remove'; path: Path; _t: T};
+export type PendingRemoveOp<T> = {op: 'remove'; path: Path};
 
 export type PendingPushOp<T> = {
     op: 'push';
     path: Path;
     value: unknown;
-    _t: T;
 };
 
 export type NestedPendingOp<T, Inner, Tag extends PropertyKey, Extra = unknown> = {
@@ -329,7 +326,6 @@ export type NestedPendingOp<T, Inner, Tag extends PropertyKey, Extra = unknown> 
         v: Inner,
         update: DiffNodeA<Inner, Inner, Tag, PendingJsonPatchOp<Inner, Tag, Extra>, Extra>,
     ) => PendingJsonPatchOp<Inner, Tag, Extra> | PendingJsonPatchOp<Inner, Tag, Extra>[];
-    _t: T;
 };
 
 export type PendingJsonPatchOp<T, Tag extends PropertyKey = 'type', Extra = unknown> =

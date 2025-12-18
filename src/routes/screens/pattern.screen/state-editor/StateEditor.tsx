@@ -332,11 +332,11 @@ const SnapshotAnnotations = ({
         <div>
             {Object.entries(history.annotations).map(([key, ans]) => (
                 <div key={key}>
-                    {ans.map((an) =>
+                    {ans.map((an, i) =>
                         an.type === 'img' ? (
-                            <img src={`/assets/exports/${id}-${an.id}.png`} />
+                            <img key={i} src={`/assets/exports/${id}-${an.id}.png`} />
                         ) : (
-                            <video src={`/assets/exports/${id}-${an.id}.mp4`} />
+                            <video key={i} src={`/assets/exports/${id}-${an.id}.mp4`} />
                         ),
                     )}
                 </div>

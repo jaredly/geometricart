@@ -28,6 +28,7 @@ import {usePromise} from './usePromise';
 import {thinTiling} from './renderPattern';
 import {ExportHistory, ProvideExportState, useExportState} from './ExportHistory';
 import {useWorker} from './render-client';
+import typia from 'typia';
 
 const PatternPicker = () => {
     const all = usePromise((signal) => fetch('/gallery.json', {signal}).then((r) => r.json()));
@@ -122,16 +123,24 @@ const CreateAndRedirect = ({id}: {id: string}) => {
     return <div>Loading pattern...</div>;
 };
 
+const isValidHistory = typia.createIs<ExportHistory>();
+const isValidState = typia.createIs<State>();
+const validateHistory = typia.createValidate<ExportHistory>();
+
 const LoadPattern = ({id}: {id: string}) => {
-    const preNormalized = usePromise<State | ExportHistory>((signal) =>
-        fetch(`/fs/exports/${id}.json`, {signal}).then((r) => r.json()),
-    );
-    const state = useMemo(
-        () =>
-            preNormalized && !('version' in preNormalized)
-                ? blankHistory(preNormalized)
-                : preNormalized,
-        [preNormalized],
+    const state = usePromise<ExportHistory>((signal) =>
+        fetch(`/fs/exports/${id}.json`, {signal})
+            .then((r) => r.json())
+            .then((value): ExportHistory => {
+                if (isValidState(value)) {
+                    return blankHistory(value);
+                }
+                if (isValidHistory(value)) {
+                    return value;
+                }
+                console.log(validateHistory(value));
+                throw new Error(`Unable to parse export state`);
+            }),
     );
 
     const onSave = useCallback(
