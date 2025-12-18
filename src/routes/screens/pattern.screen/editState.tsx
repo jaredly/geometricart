@@ -21,7 +21,12 @@ export type PendingStateUpdate = DiffBuilderA<PendingState, 'type'>;
 
 export type PendingState = {
     pending:
-        | {type: 'shape'; points: Coord[]; onDone(points: Coord[], open: boolean): void}
+        | {
+              type: 'shape';
+              points: Coord[];
+              onDone(points: Coord[], open: boolean): void;
+              asShape?: (pts: Coord[]) => Coord[];
+          }
         | {type: 'dup-shape'; id: string; onDone(point: Coord): void}
         | {type: 'select-shapes'; key: string; shapes: string[]; onDone(shapes: string[]): void}
         | {type: 'select-shape'; onDone(shape: string): void}

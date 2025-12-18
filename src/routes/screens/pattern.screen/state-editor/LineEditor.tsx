@@ -65,7 +65,7 @@ export const LineEditor = ({
             <div>
                 <ShadowEditor
                     value={value.shadow ?? null}
-                    onChange={(shadow) => update.shadow(shadow ?? undefined)}
+                    update={update.shadow}
                     palette={palette}
                 />
             </div>

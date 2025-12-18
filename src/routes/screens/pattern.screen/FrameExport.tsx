@@ -7,7 +7,7 @@ import {BlurInput} from './state-editor/BlurInput';
 import {BlurInt} from '../../../editor/Forms';
 import {makeContext} from '../../../json-diff/react';
 import {useExportState} from './ExportHistory';
-import {svgItems} from './resolveMods';
+import {svgItems} from './svgItems';
 import {useCropCache} from './useCropCache';
 import {BaselineDownload} from '../../../icons/Icon';
 import {WorkerSend} from './render-client';
@@ -132,7 +132,8 @@ const ExportSettingsForm = ({
                                 ...images,
                                 {
                                     url: URL.createObjectURL(blob),
-                                    title: id + '-' + new Date().toISOString() + '.svg',
+                                    title:
+                                        id + '-' + new Date().toISOString() + '.' + settings.kind,
                                 },
                             ]);
                         }

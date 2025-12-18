@@ -328,6 +328,7 @@ export type Shadow =
           color?: AnimatableColor;
           offset?: AnimatableCoord | AnimatableNumber;
           blur?: AnimatableCoord | AnimatableNumber;
+          inner?: AnimatableBoolean;
       }
     | string;
 

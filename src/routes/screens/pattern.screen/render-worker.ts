@@ -4,7 +4,7 @@ import {cacheCrops} from './cacheCrops';
 import {Patterns, RenderItem} from './evaluate';
 import {Box, Color, Crop, State} from './export-types';
 import {recordVideo} from './recordVideo';
-import {svgItems} from './resolveMods';
+import {svgItems} from './svgItems';
 
 export type MessageToWorker =
     | {
@@ -35,7 +35,7 @@ export type MessageResponse =
           items: RenderItem[];
           byKey: Record<string, string[]>;
           warnings: string[];
-          keyPoints: [Coord, Coord][];
+          keyPoints: ([Coord, Coord] | Coord)[];
           bg: Color;
       }
     | {type: 'video'; id: string; url?: string}
@@ -47,6 +47,10 @@ export type MessageResponse =
 
 const animCache = new Map();
 const cropCache = new Map<string, {path: PKPath; crop: Crop; t?: number}>();
+
+const post = (msg: MessageResponse) => {
+    postMessage(msg);
+};
 
 self.onmessage = (evt: MessageEvent<MessageToWorker & {id: string}>) => {
     try {
@@ -63,7 +67,7 @@ self.onmessage = (evt: MessageEvent<MessageToWorker & {id: string}>) => {
                     t,
                 );
 
-                const msg: MessageResponse = {
+                return post({
                     type: 'frame',
                     items,
                     keyPoints,
@@ -71,8 +75,7 @@ self.onmessage = (evt: MessageEvent<MessageToWorker & {id: string}>) => {
                     id: evt.data.id,
                     byKey,
                     warnings,
-                };
-                return postMessage(msg);
+                });
             }
             case 'video': {
                 recordVideo(
@@ -81,9 +84,9 @@ self.onmessage = (evt: MessageEvent<MessageToWorker & {id: string}>) => {
                     evt.data.box,
                     evt.data.patterns,
                     evt.data.duration,
-                    (progress) => postMessage({type: 'status', progress, id: evt.data.id}),
+                    (progress) => post({type: 'status', progress, id: evt.data.id}),
                     cropCache,
-                ).then((url) => postMessage({type: 'video', id: evt.data.id, url}));
+                ).then((url) => post({type: 'video', id: evt.data.id, url: url ?? undefined}));
                 return;
             }
             case 'animate':

@@ -43,27 +43,61 @@ export const renderItems = (
             return;
         }
 
-        let imf: null | ImageFilter = null;
-        if (item.shadow) {
-            imf = pk.ImageFilter.MakeDropShadow(
-                // 0,
-                // 0,
-                item.shadow.offset.x,
-                item.shadow.offset.y,
-                item.shadow.blur.x,
-                item.shadow.blur.y,
-                // 0.01,
-                // 0.01,
-                pk.Color(item.shadow.color.r, item.shadow.color.g, item.shadow.color.b),
-                null,
-            );
-            paint.setImageFilter(imf);
-        }
+        // let imf: null | ImageFilter = null;
+        // if (item.shadow) {
+        //     imf = pk.ImageFilter.MakeDropShadow(
+        //         // 0,
+        //         // 0,
+        //         item.shadow.offset.x,
+        //         item.shadow.offset.y,
+        //         item.shadow.blur.x,
+        //         item.shadow.blur.y,
+        //         // 0.01,
+        //         // 0.01,
+        //         pk.Color(item.shadow.color.r, item.shadow.color.g, item.shadow.color.b),
+        //         null,
+        //     );
+        //     paint.setImageFilter(imf);
+        // }
 
         if (item.opacity != null) {
             paint.setAlphaf(item.opacity);
         }
-        ctx.drawPath(pkp, paint);
+
+        if (item.shadow) {
+            const amt = Math.max(item.shadow.blur.x, item.shadow.blur.y);
+            const shadowPaint = paint.copy();
+            shadowPaint.setMaskFilter(
+                pk.MaskFilter.MakeBlur(pk.BlurStyle.Normal, Math.abs(amt), true),
+            );
+
+            if (item.shadow.inner) {
+                paint.setColor(
+                    pk.Color(item.shadow.color.r, item.shadow.color.g, item.shadow.color.b),
+                );
+                ctx.saveLayer();
+                ctx.drawPath(pkp, paint);
+                ctx.clipPath(pkp, pk.ClipOp.Intersect, true);
+                ctx.save();
+                ctx.translate(item.shadow.offset.x, item.shadow.offset.y);
+                ctx.drawPath(pkp, shadowPaint);
+                ctx.restore();
+                ctx.restore();
+            } else {
+                shadowPaint.setColor(
+                    pk.Color(item.shadow.color.r, item.shadow.color.g, item.shadow.color.b),
+                );
+                ctx.save();
+                ctx.translate(item.shadow.offset.x, item.shadow.offset.y);
+                ctx.drawPath(pkp, shadowPaint);
+                ctx.restore();
+                ctx.drawPath(pkp, paint);
+            }
+
+            shadowPaint.delete();
+        } else {
+            ctx.drawPath(pkp, paint);
+        }
         paint.delete();
         if (!item.pk) {
             pkp.delete();

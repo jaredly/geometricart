@@ -78,7 +78,7 @@ export const SVGCanvas = ({
 }: {
     state: State;
     mouse: Coord | null;
-    keyPoints: [Coord, Coord][];
+    keyPoints: ([Coord, Coord] | Coord)[];
     bg: Color;
     items: RenderItem[];
     size: number;
@@ -89,7 +89,10 @@ export const SVGCanvas = ({
     const [focus, setFocus] = useState(null as null | string);
 
     const points = useMemo(() => unique(keyPoints.flat(), coordKey), [keyPoints]);
-    const segs = useMemo(() => unique(keyPoints.map(sortCoordPair), coordPairKey), [keyPoints]);
+    const segs = useMemo(
+        () => unique(keyPoints.filter((p) => Array.isArray(p)).map(sortCoordPair), coordPairKey),
+        [keyPoints],
+    );
 
     const editContext = usePendingState();
 
@@ -115,6 +118,15 @@ export const SVGCanvas = ({
     const rpoints = items.filter((p) => p.type === 'point') as (RenderItem & {type: 'point'})[];
 
     const svgItems = generateSvgItems(paths, focus, lw);
+
+    const pendingShape =
+        pending?.type === 'shape' && pending.points.length > (mouse ? 0 : 1)
+            ? pending.asShape
+                ? pending.asShape(mouse ? [...pending.points, mouse] : pending.points)
+                : mouse
+                  ? [...pending.points, mouse]
+                  : pending.points
+            : null;
 
     return (
         // <div>
@@ -187,10 +199,10 @@ export const SVGCanvas = ({
                         cursor={'pointer'}
                     />
                 ))}
-            {pending?.type === 'shape' && pending.points.length > (mouse ? 0 : 1) && (
+            {pendingShape && (
                 <>
                     <path
-                        d={shapeD(pending.points.concat(mouse ? [mouse] : []), false, 5)}
+                        d={shapeD(pendingShape, false, 5)}
                         stroke="#000"
                         strokeWidth={0.05}
                         pointerEvents={'none'}
@@ -199,7 +211,7 @@ export const SVGCanvas = ({
                         strokeLinejoin="round"
                     />
                     <path
-                        d={shapeD(pending.points.concat(mouse ? [mouse] : []), false, 5)}
+                        d={shapeD(pendingShape, false, 5)}
                         stroke="#0f7"
                         strokeWidth={0.03}
                         pointerEvents={'none'}

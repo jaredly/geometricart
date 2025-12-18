@@ -47,6 +47,7 @@ export const renderPattern = (ctx: Ctx, _outer: CropsAndMatrices, pattern: Patte
     const simple = getSimplePatternData(tiling, pattern.psize);
     let baseShapes = simple.uniqueShapes;
     ctx.keyPoints.push(...baseShapes.flatMap(coordPairs));
+    ctx.keyPoints.push(...simple.eigenCorners.flat());
 
     const modsBeforeAdjusts = true;
     if (modsBeforeAdjusts) {
@@ -319,6 +320,7 @@ export const resolveShadow = (anim: Ctx['anim'], shadow?: Shadow): RenderShadow 
                 offset: scalePos(v.offset, 0.1),
                 blur: scalePos(v.blur, 0.1),
                 color: colorToRgb(v.color),
+                inner: !!v.inner,
             });
         }
         return;
@@ -332,6 +334,7 @@ export const resolveShadow = (anim: Ctx['anim'], shadow?: Shadow): RenderShadow 
             ? scalePos(numToCoord(a.coordOrNumber(anim, shadow.offset)), 0.1)
             : {x: 0, y: 0},
         color: shadow.color ? colorToRgb(a.color(anim, shadow.color)) : {r: 0, g: 0, b: 0},
+        inner: shadow.inner ? a.boolean(anim, shadow.inner) : undefined,
     });
 };
 const removeNullShadow = (sh: RenderShadow) => {

@@ -24,7 +24,7 @@ export type AnimCtx = {
     palette: Color[];
 };
 
-export type RenderShadow = {blur: Coord; offset: Coord; color: Rgb};
+export type RenderShadow = {blur: Coord; offset: Coord; color: Rgb; inner?: boolean};
 
 export type RenderItem =
     | {
@@ -59,7 +59,7 @@ export type Ctx = {
     layer: Layer;
     patterns: Patterns;
     items: RenderItem[];
-    keyPoints: [Coord, Coord][];
+    keyPoints: ([Coord, Coord] | Coord)[];
     byKey: Record<string, string[]>;
     log?: RenderLog[];
 };

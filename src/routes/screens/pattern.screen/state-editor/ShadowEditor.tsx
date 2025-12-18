@@ -3,15 +3,16 @@ import {Color, Shadow, AnimatableCoord, AnimatableColor} from '../export-types';
 import {AnimColor} from './AnimColor';
 import {AnimCoordOrNumberInput} from './AnimCoordOrNumberInput';
 import {BlurInput} from './BlurInput';
+import {Updater} from '../../../../json-diff/Updater';
 
 export const ShadowEditor = ({
     palette,
     value,
-    onChange,
+    update,
 }: {
     palette: Color[];
     value: Shadow | null;
-    onChange: (next: Shadow | null) => void;
+    update: Updater<Shadow>;
 }) => {
     if (!value) {
         return (
@@ -19,7 +20,7 @@ export const ShadowEditor = ({
                 <button
                     className="btn btn-sm"
                     onClick={() =>
-                        onChange({
+                        update({
                             blur: {x: 0, y: 0},
                             offset: {x: 3, y: 3},
                             color: {r: 0, g: 0, b: 0},
@@ -37,19 +38,19 @@ export const ShadowEditor = ({
                 <div className="flex flex-col md:flex-row gap-2 md:items-center">
                     <button
                         className="btn btn-ghost btn-xs text-error"
-                        onClick={() => onChange(null)}
+                        onClick={() => update.remove()}
                     >
                         Remove
                     </button>
                 </div>
-                <BlurInput value={value} onChange={(value) => onChange(value)} />
+                <BlurInput value={value} onChange={(value) => update(value)} />
             </div>
         );
     }
     return (
         <div className="space-y-2">
             <div className="flex flex-col md:flex-row gap-2 md:items-center">
-                <button className="btn btn-ghost btn-xs text-error" onClick={() => onChange(null)}>
+                <button className="btn btn-ghost btn-xs text-error" onClick={() => update.remove()}>
                     Remove
                 </button>
             </div>
@@ -57,19 +58,30 @@ export const ShadowEditor = ({
                 <AnimCoordOrNumberInput
                     label="blur"
                     value={value.blur}
-                    onChange={(blur) => onChange({...value, blur: blur as AnimatableCoord})}
+                    onChange={(blur) => update({...value, blur: blur as AnimatableCoord})}
                 />
                 <AnimCoordOrNumberInput
                     label="offset"
                     value={value.offset}
-                    onChange={(offset) => onChange({...value, offset: offset as AnimatableCoord})}
+                    onChange={(offset) => update({...value, offset: offset as AnimatableCoord})}
                 />
                 <AnimColor
                     palette={palette}
                     label="Color"
                     value={value.color}
-                    onChange={(color) => onChange({...value, color: color as AnimatableColor})}
+                    onChange={(color, when) =>
+                        update({...value, color: color as AnimatableColor}, when)
+                    }
                 />
+                <label>
+                    Inner
+                    <input
+                        type="checkbox"
+                        checked={!!value.inner}
+                        className="checkbox"
+                        onChange={(evt) => update({...value, inner: evt.target.checked})}
+                    />
+                </label>
             </div>
         </div>
     );

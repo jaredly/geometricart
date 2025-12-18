@@ -51,7 +51,7 @@ export const DeferredRender = ({
     const [remoteData, setRemoteData] = useState<null | {
         bg: Color;
         items: RenderItem[];
-        keyPoints: [Coord, Coord][];
+        keyPoints: ([Coord, Coord] | Coord)[];
         byKey: Record<string, string[]>;
     }>(null);
 

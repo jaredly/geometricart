@@ -23,6 +23,7 @@ import {History} from '../../../../json-diff/history';
 import {WorkerSend} from '../render-client';
 import {Patterns} from '../evaluate';
 import {runPNGExport} from '../runPNGExport';
+import {Coord} from '../../../../types';
 
 type StateEditorProps = {
     value: State;
@@ -86,26 +87,91 @@ export const StateEditor = ({value, worker, patterns, update, id}: StateEditorPr
                 open={showShapes}
                 onOpen={(open) => editState.update.showShapes.replace(open)}
                 actions={
-                    <button
-                        className="btn btn-outline btn-sm"
-                        onClick={(evt) => {
-                            evt.stopPropagation();
-                            pendingState.update.pending.replace({
-                                type: 'shape',
-                                onDone(points, open) {
-                                    const nextId = genid();
-                                    update.shapes[nextId].add({
-                                        origin: points[0],
-                                        segments: points.slice(1).map((to) => ({type: 'Line', to})),
-                                        open,
-                                    });
-                                },
-                                points: [],
-                            });
-                        }}
-                    >
-                        Add Shape
-                    </button>
+                    <>
+                        <button
+                            className="btn btn-outline btn-sm"
+                            popoverTarget="popover-add-shapes"
+                            // @ts-ignore
+                            style={{anchorName: '--anchor-add-shapes'}}
+                            onClick={(evt) => evt.stopPropagation()}
+                        >
+                            Add Shape
+                        </button>
+                        <ul
+                            popover={'auto'}
+                            className="dropdown dropdown-end menu shadow-sm border border-base-300 rounded-box bg-base-100"
+                            id={`popover-add-shapes`}
+                            onClick={(evt) => evt.stopPropagation()}
+                            // @ts-ignore
+                            style={{positionAnchor: `--anchor-add-shapes`}}
+                        >
+                            <li>
+                                <button
+                                    onClick={(evt) => {
+                                        pendingState.update.pending.replace({
+                                            type: 'shape',
+                                            onDone(points, open) {
+                                                const nextId = genid();
+                                                update.shapes[nextId].add({
+                                                    origin: points[0],
+                                                    segments: points
+                                                        .slice(1)
+                                                        .map((to) => ({type: 'Line', to})),
+                                                    open,
+                                                });
+                                            },
+                                            points: [],
+                                        });
+                                    }}
+                                >
+                                    Polygon
+                                </button>
+                            </li>
+                            <li>
+                                <button
+                                    onClick={() => {
+                                        const asRect = (pts: Coord[]) => {
+                                            const [c, a, b] = pts;
+                                            let dx = Math.abs(a.x - c.x);
+                                            let dy = Math.abs(a.y - c.y);
+                                            if (b) {
+                                                dx = Math.max(dx, Math.abs(b.x - c.x));
+                                                dy = Math.max(dy, Math.abs(b.y - c.y));
+                                            }
+                                            return [
+                                                {x: c.x - dx, y: c.y - dy},
+                                                {x: c.x + dx, y: c.y - dy},
+                                                {x: c.x + dx, y: c.y + dy},
+                                                {x: c.x - dx, y: c.y + dy},
+                                                {x: c.x - dx, y: c.y - dy},
+                                            ];
+                                        };
+                                        pendingState.update.pending.replace({
+                                            type: 'shape',
+                                            onDone(points, open) {
+                                                points = asRect(points);
+                                                const nextId = genid();
+                                                update.shapes[nextId].add({
+                                                    origin: points[0],
+                                                    segments: points
+                                                        .slice(1)
+                                                        .map((to) => ({type: 'Line', to})),
+                                                    open,
+                                                });
+                                            },
+                                            points: [],
+                                            asShape: asRect,
+                                        });
+                                    }}
+                                >
+                                    Rect [center and 2 points]
+                                </button>
+                            </li>
+                            <li>
+                                <button>Rect [2 points]</button>
+                            </li>
+                        </ul>
+                    </>
                 }
             >
                 <div className="flex flex-row flex-wrap">

@@ -3,7 +3,7 @@ import {pk} from '../../pk';
 import {generateVideo} from '../animator.screen/muxer';
 import {Patterns, Ctx} from './evaluate';
 import {State, Box} from './export-types';
-import {svgItems} from './resolveMods';
+import {svgItems} from './svgItems';
 import {pkPathWithCmds} from '../animator.screen/cropPath';
 import {renderItems} from './renderItems';
 

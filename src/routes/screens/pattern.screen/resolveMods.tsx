@@ -10,9 +10,8 @@ import {centroid} from '../../findReflectionAxes';
 import {calcPolygonArea, coordsFromBarePath, pkPathFromCoords} from '../../getPatternData';
 import {pk} from '../../pk';
 import {segmentsCmds} from '../animator.screen/cropPath';
-import {globals, mulberry32} from './eval-globals';
-import {easeFn, evalTimeline} from './evalEase';
-import {a, AnimCtx, Ctx, Patterns, RenderItem} from './evaluate';
+import {easeFn} from './evalEase';
+import {a, AnimCtx, Ctx, RenderItem} from './evaluate';
 import {
     AnimatableValue,
     Color,
@@ -23,7 +22,6 @@ import {
     insetPkPath,
     modMatrix,
     PMods,
-    State,
 } from './export-types';
 import {
     dropNully,
@@ -33,7 +31,6 @@ import {
     resolveLine,
     resolveShadow,
 } from './renderPattern';
-import {expandShapes} from './expandShapes';
 
 type CCrop = {type: 'crop'; id: string; mode?: CropMode; hole?: boolean};
 type CInset = {type: 'inset'; v: number};
@@ -308,7 +305,7 @@ export const pathMod = (cropCache: Ctx['cropCache'], mod: CropsAndMatrices[0], p
     return false;
 };
 
-const renderGroup = (ctx: Ctx, crops: CropsAndMatrices, group: Group) => {
+export const renderGroup = (ctx: Ctx, crops: CropsAndMatrices, group: Group) => {
     if (group.type !== 'Group') throw new Error('not a group');
     for (let [id] of Object.entries(group.entities).sort((a, b) => a[1] - b[1])) {
         const entity = ctx.layer.entities[id];
@@ -340,72 +337,6 @@ export type RenderLog =
       }
     | {type: 'group'; children: RenderLog[]; title: string};
 
-export const svgItems = (
-    state: State,
-    animCache: AnimCtx['cache'],
-    cropCache: Ctx['cropCache'],
-    patterns: Patterns,
-    t: number,
-    debug = false,
-) => {
-    const warnings: string[] = [];
-    const warn = (v: string) => warnings.push(v);
-    const items: RenderItem[] = [];
-    const keyPoints: [Coord, Coord][] = [];
-    const byKey: Record<string, string[]> = {};
-    const fromtl = evalTimeline(state.styleConfig.timeline, t);
-    // biome-ignore lint: this one is fine
-    const values: Record<string, any> = {...globals, t, ...fromtl};
-    const seed = a.number(
-        {cache: animCache, values, palette: state.styleConfig.palette, warn},
-        state.styleConfig.seed,
-    );
-    values.rand = mulberry32(seed);
-    const log: RenderLog[] | undefined = debug ? [] : undefined;
-
-    for (let layer of Object.values(state.layers)) {
-        const group = layer.entities[layer.rootGroup];
-        if (group.type !== 'Group') {
-            throw new Error(`root not a group`);
-        }
-        const anim = {
-            cache: animCache,
-            values,
-            palette: state.styleConfig.palette,
-            warn,
-        };
-        Object.entries(layer.shared).forEach(([name, value]) => {
-            values[name] = a.value(anim, value);
-        });
-
-        renderGroup(
-            {
-                state,
-                anim,
-                layer,
-                patterns,
-                items,
-                keyPoints,
-                cropCache,
-                byKey,
-                log,
-                shapes: expandShapes(state.shapes, state.layers, patterns),
-            },
-            [],
-            group,
-        );
-    }
-
-    handleShadowAndZSorting(items);
-
-    const bg = a.color(
-        {cache: animCache, values, palette: state.styleConfig.palette, warn() {}},
-        state.view.background ?? '#000',
-    );
-
-    return {items, warnings, byKey, keyPoints, bg, log};
-};
-
 export type Hover = {type: 'shape'; id: string} | {type: 'shapes'; ids: string[]};
 
 export const barePathFromCoords = (coords: Coord[]): BarePath => ({
@@ -413,11 +344,11 @@ export const barePathFromCoords = (coords: Coord[]): BarePath => ({
     origin: coords[coords.length - 1],
 });
 
-function handleShadowAndZSorting(items: RenderItem[]) {
+export function handleShadowAndZSorting(items: RenderItem[]) {
     const len = items.length;
     for (let i = 0; i < len; i++) {
         const item = items[i];
-        if (item.type === 'path' && item.shadow) {
+        if (item.type === 'path' && item.shadow && !item.shadow.inner) {
             items.push({...item, shadow: undefined});
         }
     }
