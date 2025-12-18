@@ -4,6 +4,8 @@ import {AnimCtx} from './evaluate';
 import {State, Crop} from './export-types';
 import {resolveEnabledPMods, pathMod} from './resolveMods';
 import {globals} from './eval-globals';
+import {centroid} from '../../findReflectionAxes';
+import {coordsFromBarePath} from '../../getPatternData';
 
 export function cacheCrops(
     crops: State['crops'],
@@ -22,9 +24,10 @@ export function cacheCrops(
             const path = pkPathWithCmds(shape.origin, shape.segments);
             cropCache.set(crop.id, {path, crop});
         } else {
+            const shapeCenter = centroid(coordsFromBarePath(shape));
             const actx: AnimCtx = {
                 accessedValues: new Set(),
-                values: {t, ...globals},
+                values: {...globals, t, center: shapeCenter},
                 cache: animCache,
                 palette: [],
                 warn: (v) => console.warn(v),
