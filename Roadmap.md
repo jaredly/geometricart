@@ -14,6 +14,8 @@ I alsoooo want to STORE SNAPSHOT ANNOTATIONS
 -> and when viewing all exports, just load the most recent .png, it's fine. or load all of them idk
 yeah let's do that.
 
+- [ ] I kinda want to convert the AnimatableNumber stuff into tagged unions
+
 
 ###
 
