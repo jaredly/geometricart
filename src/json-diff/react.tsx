@@ -184,48 +184,48 @@ const makeProvider = <T, An, Tag extends string = 'type'>(Ctx: React.Context<CH<
     };
 };
 
-const MakeContext = <T, An, Tag extends string = 'type'>(ctx: CH<T, An, Tag>, tag: Tag) => {
-    const {dispatch, update} = makeDispatch(ctx, tag);
+// const MakeContext = <T, An, Tag extends string = 'type'>(ctx: CH<T, An, Tag>, tag: Tag) => {
+//     const {dispatch, update} = makeDispatch(ctx, tag);
 
-    return {
-        onHistoryChange(f: () => void, includeUndo: boolean) {
-            if (includeUndo) {
-                ctx.historyUp.push(f);
-                return () => {
-                    const at = ctx.historyUp.indexOf(f);
-                    if (at !== -1) ctx.historyUp.splice(at, 1);
-                };
-            }
-            ctx.historyListeners.push(f);
-            return () => {
-                const at = ctx.historyListeners.indexOf(f);
-                if (at !== -1) ctx.historyListeners.splice(at, 1);
-            };
-        },
-        latest() {
-            return ctx.state.current;
-        },
-        clearHistory() {
-            ctx.state = clearHistory(ctx.state);
-            ctx.historyListeners.forEach((f) => f());
-            ctx.historyUp.forEach((f) => f());
-        },
-        canRedo() {
-            return ctx.state.undoTrail.length > 0;
-        },
-        canUndo() {
-            return ctx.state.tip !== ctx.state.root;
-        },
-        undo() {
-            dispatch({op: 'undo'});
-        },
-        redo() {
-            dispatch({op: 'redo'});
-        },
-        update,
-        dispatch,
-    };
-};
+//     return {
+//         onHistoryChange(f: () => void, includeUndo: boolean) {
+//             if (includeUndo) {
+//                 ctx.historyUp.push(f);
+//                 return () => {
+//                     const at = ctx.historyUp.indexOf(f);
+//                     if (at !== -1) ctx.historyUp.splice(at, 1);
+//                 };
+//             }
+//             ctx.historyListeners.push(f);
+//             return () => {
+//                 const at = ctx.historyListeners.indexOf(f);
+//                 if (at !== -1) ctx.historyListeners.splice(at, 1);
+//             };
+//         },
+//         latest() {
+//             return ctx.state.current;
+//         },
+//         clearHistory() {
+//             ctx.state = clearHistory(ctx.state);
+//             ctx.historyListeners.forEach((f) => f());
+//             ctx.historyUp.forEach((f) => f());
+//         },
+//         canRedo() {
+//             return ctx.state.undoTrail.length > 0;
+//         },
+//         canUndo() {
+//             return ctx.state.tip !== ctx.state.root;
+//         },
+//         undo() {
+//             dispatch({op: 'undo'});
+//         },
+//         redo() {
+//             dispatch({op: 'redo'});
+//         },
+//         update,
+//         dispatch,
+//     };
+// };
 
 export const makeHistoryContext = <T, An, Tag extends string = 'type'>(tag: Tag) => {
     const Ctx = createContext<CH<T, An, Tag>>(null as any);
@@ -241,7 +241,7 @@ export const makeHistoryContext = <T, An, Tag extends string = 'type'>(tag: Tag)
             }
 
             return useMemo(() => {
-                const {dispatch, update} = makeDispatch(ctx, tag);
+                const {dispatch, update, updateAnnotations} = makeDispatch(ctx, tag);
 
                 return {
                     use<B>(sel: (t: T) => B, exact = true): B {
@@ -314,6 +314,7 @@ export const makeHistoryContext = <T, An, Tag extends string = 'type'>(tag: Tag)
                         dispatch({op: 'redo'});
                     },
                     update,
+                    updateAnnotations,
                     dispatch,
                 };
             }, [ctx, tag]);
@@ -380,7 +381,27 @@ const makeDispatch = <T, An, Tag extends string = 'type'>(ctx: CH<T, An, Tag>, t
         ctx.historyUp.forEach((f) => f());
     };
 
-    return {dispatch: go, update: diffBuilderApply<T, Extra, Tag>(go, extra, tag)};
+    const updateAnnotations = diffBuilderApply<History<T, An>['annotations'], null, Tag>(
+        (v: MaybeNested<PendingJsonPatchOp<History<T, An>['annotations'], Tag, null>>) => {
+            const {current: next} = resolveAndApply<History<T, An>['annotations'], null, Tag>(
+                ctx.state.annotations,
+                v,
+                null,
+                tag,
+            );
+            ctx.state.annotations = next;
+            ctx.save(ctx.state);
+            ctx.historyUp.forEach((f) => f());
+        },
+        null,
+        tag,
+    );
+
+    return {
+        dispatch: go,
+        update: diffBuilderApply<T, Extra, Tag>(go, extra, tag),
+        updateAnnotations,
+    };
 };
 
 const clearHistory = <T, An>(h: History<T, An>): History<T, An> => ({

@@ -1,5 +1,5 @@
-import React, {useEffect, useMemo, useRef} from 'react';
-import {State} from '../export-types';
+import React, {useEffect, useMemo, useRef, useState} from 'react';
+import {Box, State} from '../export-types';
 import {genid} from '../genid';
 import {useEditState, usePendingState} from '../editState';
 import {transformBarePath} from '../../../../rendering/points';
@@ -18,15 +18,21 @@ import {createLayerTemplate, parseAnimatable} from './createLayerTemplate';
 import {JsonPatchOp, Path} from '../../../../json-diff/helper2';
 import {Updater} from '../../../../json-diff/Updater';
 import {ModsEditor} from './FillEditor';
-import {useExportState} from '../ExportHistory';
+import {ExportAnnotation, useExportState} from '../ExportHistory';
 import {History} from '../../../../json-diff/history';
+import {WorkerSend} from '../render-client';
+import {Patterns} from '../evaluate';
+import {runPNGExport} from '../runPNGExport';
 
 type StateEditorProps = {
     value: State;
     update: Updater<State>;
+    id: string;
+    worker: WorkerSend;
+    patterns: Patterns;
 };
 
-export const StateEditor = ({value, update}: StateEditorProps) => {
+export const StateEditor = ({value, worker, patterns, update, id}: StateEditorProps) => {
     const layers = useMemo(
         () => Object.entries(value.layers).sort(([, a], [, b]) => a.order - b.order),
         [value.layers],
@@ -235,9 +241,63 @@ export const StateEditor = ({value, update}: StateEditorProps) => {
                     onChange={update.styleConfig.timeline}
                 />
             </Section>
-            <Section title="History">
+            <Section title="History & Snapshots">
+                <SnapshotAnnotations id={id} worker={worker} patterns={patterns} />
                 <HistoryView />
             </Section>
+        </div>
+    );
+};
+
+const SnapshotAnnotations = ({
+    id,
+    worker,
+    patterns,
+}: {
+    id: string;
+    worker: WorkerSend;
+    patterns: Patterns;
+}) => {
+    const ctx = useExportState();
+    const history = ctx.useHistory();
+    const [loading, setLoading] = useState(false);
+
+    return (
+        <div>
+            {Object.entries(history.annotations).map(([key, ans]) => (
+                <div key={key}>
+                    {ans.map((an) =>
+                        an.type === 'img' ? (
+                            <img src={`/assets/exports/${id}-${an.id}.png`} />
+                        ) : (
+                            <video src={`/assets/exports/${id}-${an.id}.mp4`} />
+                        ),
+                    )}
+                </div>
+            ))}
+            <button
+                className="btn"
+                onClick={() => {
+                    const aid = genid();
+                    worker({type: 'frame', patterns, state: ctx.latest(), t: 0}, (res) => {
+                        if (res.type !== 'frame') return setLoading(false);
+                        const blob = runPNGExport(100, ctx.latest().view.box, res.items, res.bg);
+                        fetch(`/fs/exports/${id}-${aid}.png`, {
+                            method: 'POST',
+                            body: blob,
+                            headers: {'Content-type': 'application/binary'},
+                        }).then((res) => {
+                            setLoading(false);
+                            const an: ExportAnnotation = {type: 'img', id: aid};
+                            ctx.updateAnnotations[history.tip]((v, up) =>
+                                v ? up.push(an) : up([an]),
+                            );
+                        });
+                    });
+                }}
+            >
+                Take Snapshot
+            </button>
         </div>
     );
 };

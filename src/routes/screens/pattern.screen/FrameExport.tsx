@@ -1,21 +1,17 @@
 import {useState} from 'react';
-import {Patterns, Ctx, RenderItem} from './evaluate';
-import {State, Box, Color} from './export-types';
+import {Patterns, Ctx} from './evaluate';
+import {State, Box} from './export-types';
 import {recordVideo} from './recordVideo';
 import {Updater} from '../../../json-diff/Updater';
 import {BlurInput} from './state-editor/BlurInput';
 import {BlurInt} from '../../../editor/Forms';
 import {makeContext} from '../../../json-diff/react';
 import {useExportState} from './ExportHistory';
-import {pk} from '../../pk';
 import {svgItems} from './resolveMods';
 import {useCropCache} from './useCropCache';
-import {renderItems} from './renderItems';
 import {BaselineDownload} from '../../../icons/Icon';
-import {renderToStaticMarkup} from 'react-dom/server';
-import {colorToString} from './colors';
-import {generateSvgItems} from './SVGCanvas';
 import {WorkerSend} from './render-client';
+import {runPNGExport, runSVGExport} from './runPNGExport';
 
 /*
 ExportSettings:
@@ -25,7 +21,7 @@ ExportSettings:
 - crop to bounds?
 */
 
-type ExportSettings = {
+export type ExportSettings = {
     size: number;
     kind: 'png' | 'svg' | 'mp4';
     svg: {
@@ -59,64 +55,6 @@ const [ProvideExportCtx, useExportCtx] = makeContext<ExportSettings>('type');
 // Or ... hmm .... idk I odnt need it.
 
 type ExImage = {url: string; title: string};
-
-const runSVGExport = (
-    id: string,
-    ex: ExportSettings,
-    box: Box,
-    items: RenderItem[],
-    bg: Color,
-    setImages: (up: (v: ExImage[]) => ExImage[]) => void,
-) => {
-    const lw = box.width / 10;
-    const svgItems = generateSvgItems(
-        items.filter((i) => i.type === 'path'),
-        null,
-        lw,
-    );
-
-    const text = renderToStaticMarkup(
-        <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox={`${box.x.toFixed(7)} ${box.y.toFixed(7)} ${box.width.toFixed(7)} ${box.height.toFixed(7)}`}
-            style={{background: colorToString(bg)}}
-            width={ex.size}
-            height={ex.size}
-        >
-            {svgItems}
-        </svg>,
-    );
-
-    const blob = new Blob([text], {type: 'image/svg+xml'});
-
-    setImages((images) => [
-        ...images,
-        {url: URL.createObjectURL(blob), title: id + '-' + new Date().toISOString() + '.svg'},
-    ]);
-};
-
-const runPNGExport = (
-    id: string,
-    ex: ExportSettings,
-    box: Box,
-    items: RenderItem[],
-    bg: Color,
-    setImages: (up: (v: ExImage[]) => ExImage[]) => void,
-) => {
-    const canvas = new OffscreenCanvas(ex.size, ex.size);
-    const surface = pk.MakeWebGLCanvasSurface(canvas)!;
-
-    renderItems(surface, box, items, bg);
-    const img = surface.makeImageSnapshot();
-    const bytes = img.encodeToBytes(pk.ImageFormat.PNG)!;
-    const blob = new Blob([bytes as BlobPart], {type: 'image/png'});
-
-    setImages((images) => [
-        ...images,
-        {url: URL.createObjectURL(blob), title: id + '-' + new Date().toISOString() + '.png'},
-    ]);
-    surface.delete();
-};
 
 const ButtonSwitch = <T extends string>({
     value,
@@ -182,10 +120,21 @@ const ExportSettingsForm = ({
                             return;
                         }
                         const {items, bg} = res;
-                        if (settings.kind === 'png') {
-                            runPNGExport(id, settings, box, items, bg, setImages);
-                        } else if (settings.kind === 'svg') {
-                            runSVGExport(id, settings, box, items, bg, setImages);
+                        const blob =
+                            settings.kind === 'png'
+                                ? runPNGExport(settings.size, box, items, bg)
+                                : settings.kind === 'svg'
+                                  ? runSVGExport(settings, box, items, bg)
+                                  : null;
+
+                        if (blob) {
+                            setImages((images) => [
+                                ...images,
+                                {
+                                    url: URL.createObjectURL(blob),
+                                    title: id + '-' + new Date().toISOString() + '.svg',
+                                },
+                            ]);
                         }
                     });
                 }}

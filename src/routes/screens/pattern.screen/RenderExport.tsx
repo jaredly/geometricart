@@ -14,7 +14,7 @@ import {useElementZoom} from './useSVGZoom';
 import {VideoExport} from './VideoExport';
 import {Updater} from '../../../json-diff/Updater';
 import {FrameExport} from './FrameExport';
-import {useWorker} from './render-client';
+import {useWorker, WorkerSend} from './render-client';
 import {DeferredRender} from './DeferredRender';
 
 export const RenderExport = ({
@@ -22,7 +22,9 @@ export const RenderExport = ({
     state,
     patterns,
     onChange,
+    worker,
 }: {
+    worker: WorkerSend;
     id: string;
     state: State;
     patterns: Patterns;
@@ -45,7 +47,6 @@ export const RenderExport = ({
 
     const statusRef = useRef<HTMLDivElement>(null);
 
-    const worker = useWorker();
     const onFPS = useCallback(
         (v: number) => {
             if (fpsref.current) fpsref.current.textContent = v.toFixed(2) + 'fps';

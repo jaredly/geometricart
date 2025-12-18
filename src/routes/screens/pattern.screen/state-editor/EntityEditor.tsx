@@ -35,7 +35,7 @@ export const EntityEditor = ({
             <a
               className="link text-sm mx-4"
               target="_blank"
-              href={`/gallery/pattern/${value.tiling}`}
+              href={`/gallery/pattern/${typeof value.tiling === 'string' ? value.tiling : value.tiling.id}`}
             >
               <ExternalLinkIcon />
             </a>

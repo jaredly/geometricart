@@ -27,6 +27,7 @@ import {makeContext} from '../../../json-diff/react';
 import {usePromise} from './usePromise';
 import {thinTiling} from './renderPattern';
 import {ExportHistory, ProvideExportState, useExportState} from './ExportHistory';
+import {useWorker} from './render-client';
 
 const PatternPicker = () => {
     const all = usePromise((signal) => fetch('/gallery.json', {signal}).then((r) => r.json()));
@@ -315,6 +316,7 @@ const Inner = ({initialPatterns}: {initialPatterns: Patterns}) => {
         document.addEventListener('keydown', fn);
         return () => document.removeEventListener('keydown', fn);
     }, [sctx, pctx]);
+    const worker = useWorker();
 
     return (
         <div className="flex">
@@ -322,6 +324,7 @@ const Inner = ({initialPatterns}: {initialPatterns: Patterns}) => {
                 <RenderDebug state={state} update={sctx.update} patterns={patternCache} />
             ) : (
                 <RenderExport
+                    worker={worker}
                     id={params.id!}
                     state={state}
                     patterns={patternCache}
@@ -329,7 +332,13 @@ const Inner = ({initialPatterns}: {initialPatterns: Patterns}) => {
                 />
             )}
             <div className="max-h-250 overflow-auto flex-1">
-                <StateEditor value={state} update={sctx.update} />
+                <StateEditor
+                    id={params.id!}
+                    value={state}
+                    patterns={patternCache}
+                    update={sctx.update}
+                    worker={worker}
+                />
             </div>
         </div>
     );

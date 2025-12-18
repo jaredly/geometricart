@@ -1,3 +1,21 @@
+#
+
+- [ ] rerchitect the whole visial thing. Turn it into a "studio"
+  - history along the bottom (toggleable)
+  - right side a full tree view
+    - shape editor pops in / out bottom right
+  - export is also a pane
+  - instead of viewBox do "center + ppi"
+  - export needs an "export box" that is determined separately. like a "camera" honestly.
+
+I alsoooo want to STORE SNAPSHOT ANNOTATIONS
+-> I think it's files
+-> assets/exports/some-id.json.other-id.png
+-> and when viewing all exports, just load the most recent .png, it's fine. or load all of them idk
+yeah let's do that.
+
+
+###
 
 Ok I tried the dumber adjustShapes and it took like 10x as long.
 30s to 220s 😭
