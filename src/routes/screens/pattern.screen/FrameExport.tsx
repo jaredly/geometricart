@@ -12,6 +12,7 @@ import {useCropCache} from './useCropCache';
 import {BaselineDownload} from '../../../icons/Icon';
 import {WorkerSend} from './render-client';
 import {runPNGExport, runSVGExport} from './runPNGExport';
+import {saveAnnotation} from './state-editor/saveAnnotation';
 
 /*
 ExportSettings:
@@ -47,7 +48,7 @@ const defaultExportSettings: ExportSettings = {
     },
 };
 
-const [ProvideExportCtx, useExportCtx] = makeContext<ExportSettings>('type');
+const [ProvideExportConfig, useExportConfig] = makeContext<ExportSettings>('type');
 
 // I want like a global undo/redo hook
 // with "priority" and stuff.
@@ -92,10 +93,12 @@ const ExportSettingsForm = ({
     box: Box;
     t: number;
 }) => {
-    const ectx = useExportCtx();
+    const ectx = useExportConfig();
     const settings = ectx.use((v) => v);
     const update = ectx.update;
     const [images, setImages] = useState<ExImage[]>([]);
+
+    const ctx = useExportState();
 
     return (
         <div className="p-2">
@@ -126,6 +129,12 @@ const ExportSettingsForm = ({
                                 : settings.kind === 'svg'
                                   ? runSVGExport(settings, box, items, bg)
                                   : null;
+
+                        if (settings.kind === 'png') {
+                            // make a small one
+                            const small = runPNGExport(100, box, items, bg);
+                            saveAnnotation(id, small, ctx.tip(), ctx.updateAnnotations);
+                        }
 
                         if (blob) {
                             setImages((images) => [
@@ -207,7 +216,7 @@ export function FrameExport({
     cropCache: Ctx['cropCache'];
 }) {
     return (
-        <ProvideExportCtx initial={defaultExportSettings}>
+        <ProvideExportConfig initial={defaultExportSettings}>
             <div>
                 <ExportSettingsForm
                     id={id}
@@ -219,6 +228,6 @@ export function FrameExport({
                     cropCache={cropCache}
                 />
             </div>
-        </ProvideExportCtx>
+        </ProvideExportConfig>
     );
 }

@@ -150,7 +150,7 @@ export const renderPattern = (ctx: Ctx, _outer: CropsAndMatrices, pattern: Patte
                 }
                 const localAnim = {...anim, values: {...anim.values, ...local}};
 
-                const smod = resolveEnabledPMods(anim, s.mods);
+                const smod = resolveEnabledPMods(localAnim, s.mods);
 
                 // hmmm need to align the ... style that it came from ... with animvalues
                 // like `styleCenter`

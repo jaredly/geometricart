@@ -30,6 +30,7 @@ export const EntityEditor = ({
       <summary className="cursor-pointer hover:text-accent">
         <div className="inline-flex items-center">
           {value.type}
+          {value.type === 'Object' ? <span className="px-4">{value.shape}</span> : null}
           <div className="flex-1" />
           {value.type === "Pattern" && (
             <a

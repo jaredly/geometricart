@@ -229,7 +229,7 @@ const renderObject = (ctx: Ctx, crops: CropsAndMatrices, object: EObject) => {
 
         ctx.items.push({
             type: 'path',
-            pk: thisPath,
+            // pk: thisPath,
             key: '',
             color: colorToRgb(f.color),
             opacity: f.opacity,
@@ -237,6 +237,7 @@ const renderObject = (ctx: Ctx, crops: CropsAndMatrices, object: EObject) => {
             shapes: cmdsToSegments([...thisPath.toCmds()]),
             zIndex: f.zIndex,
         });
+        thisPath.delete();
     });
 
     Object.values(object.style.lines).map((fr, fi) => {
@@ -252,7 +253,7 @@ const renderObject = (ctx: Ctx, crops: CropsAndMatrices, object: EObject) => {
 
         ctx.items.push({
             type: 'path',
-            pk: thisPath,
+            // pk: thisPath,
             key: fi + '',
             color: colorToRgb(f.color),
             strokeWidth: a.number(anim, f.width ?? 0) / 100,
@@ -262,6 +263,7 @@ const renderObject = (ctx: Ctx, crops: CropsAndMatrices, object: EObject) => {
             sharp: f.sharp,
             zIndex: f.zIndex,
         });
+        thisPath.delete();
     });
 
     path.delete();

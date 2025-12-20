@@ -298,6 +298,9 @@ export const makeHistoryContext = <T, An, Tag extends string = 'type'>(tag: Tag)
                         }, []);
                         return ctx.state;
                     },
+                    tip() {
+                        return ctx.state.tip;
+                    },
                     clearHistory() {
                         ctx.state = clearHistory(ctx.state);
                     },

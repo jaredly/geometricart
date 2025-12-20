@@ -1,29 +1,29 @@
-import React, {useEffect, useMemo, useRef, useState} from 'react';
-import {Box, State} from '../export-types';
-import {genid} from '../genid';
-import {useEditState, usePendingState} from '../editState';
-import {transformBarePath} from '../../../../rendering/points';
-import {translationMatrix} from '../../../../rendering/getMirrorTransforms';
-import {ShapeEditor} from './ShapeEditor';
-import {JsonEditor} from './JsonEditor';
-import {AnimColor} from './AnimColor';
-import {TimelineEditor} from './TimelineEditor';
-import {Section} from './Section';
-import {NumberField} from './NumberField';
-import {TextField} from './TextField';
-import {BoxField} from './BoxField';
-import {PaletteEditor} from './PaletteEditor';
-import {LayerEditor} from './LayerEditor';
-import {createLayerTemplate, parseAnimatable} from './createLayerTemplate';
+import {useEffect, useMemo, useRef, useState} from 'react';
 import {JsonPatchOp, Path} from '../../../../json-diff/helper2';
-import {Updater} from '../../../../json-diff/Updater';
-import {ModsEditor} from './FillEditor';
-import {ExportAnnotation, useExportState} from '../ExportHistory';
 import {History} from '../../../../json-diff/history';
-import {WorkerSend} from '../render-client';
-import {Patterns} from '../evaluate';
-import {runPNGExport} from '../runPNGExport';
+import {Updater} from '../../../../json-diff/Updater';
+import {translationMatrix} from '../../../../rendering/getMirrorTransforms';
+import {transformBarePath} from '../../../../rendering/points';
 import {Coord} from '../../../../types';
+import {useEditState, usePendingState} from '../editState';
+import {Patterns} from '../evaluate';
+import {State} from '../export-types';
+import {useExportState} from '../ExportHistory';
+import {genid} from '../genid';
+import {WorkerSend} from '../render-client';
+import {runPNGExport} from '../runPNGExport';
+import {AnimColor} from './AnimColor';
+import {BoxField} from './BoxField';
+import {createLayerTemplate, parseAnimatable} from './createLayerTemplate';
+import {ModsEditor} from './FillEditor';
+import {LayerEditor} from './LayerEditor';
+import {NumberField} from './NumberField';
+import {PaletteEditor} from './PaletteEditor';
+import {saveAnnotation} from './saveAnnotation';
+import {Section} from './Section';
+import {ShapeEditor} from './ShapeEditor';
+import {TextField} from './TextField';
+import {TimelineEditor} from './TimelineEditor';
 
 type StateEditorProps = {
     value: State;
@@ -148,7 +148,7 @@ export const StateEditor = ({value, worker, patterns, update, id}: StateEditorPr
                                         };
                                         pendingState.update.pending.replace({
                                             type: 'shape',
-                                            onDone(points, open) {
+                                            onDone(points) {
                                                 points = asRect(points);
                                                 const nextId = genid();
                                                 update.shapes[nextId].add({
@@ -156,7 +156,7 @@ export const StateEditor = ({value, worker, patterns, update, id}: StateEditorPr
                                                     segments: points
                                                         .slice(1)
                                                         .map((to) => ({type: 'Line', to})),
-                                                    open,
+                                                    open: false,
                                                 });
                                             },
                                             points: [],
@@ -330,40 +330,33 @@ const SnapshotAnnotations = ({
 
     return (
         <div>
-            {Object.entries(history.annotations).map(([key, ans]) => (
-                <div key={key}>
-                    {ans.map((an, i) =>
-                        an.type === 'img' ? (
-                            <img key={i} src={`/assets/exports/${id}-${an.id}.png`} />
-                        ) : (
-                            <video key={i} src={`/assets/exports/${id}-${an.id}.mp4`} />
-                        ),
-                    )}
-                </div>
-            ))}
             <button
                 className="btn"
                 onClick={() => {
-                    const aid = genid();
                     worker({type: 'frame', patterns, state: ctx.latest(), t: 0}, (res) => {
                         if (res.type !== 'frame') return setLoading(false);
                         const blob = runPNGExport(100, ctx.latest().view.box, res.items, res.bg);
-                        fetch(`/fs/exports/${id}-${aid}.png`, {
-                            method: 'POST',
-                            body: blob,
-                            headers: {'Content-type': 'application/binary'},
-                        }).then((res) => {
+                        saveAnnotation(id, blob, history.tip, ctx.updateAnnotations).then(() => {
                             setLoading(false);
-                            const an: ExportAnnotation = {type: 'img', id: aid};
-                            ctx.updateAnnotations[history.tip]((v, up) =>
-                                v ? up.push(an) : up([an]),
-                            );
                         });
                     });
                 }}
             >
                 Take Snapshot
             </button>
+            <div className="flex flex-row flex-wrap p-4 gap-4">
+                {Object.entries(history.annotations).map(([key, ans]) => (
+                    <div key={key} className="contents">
+                        {ans.map((an, i) =>
+                            an.type === 'img' ? (
+                                <img key={i} src={`/assets/exports/${id}-${an.id}.png`} />
+                            ) : (
+                                <video key={i} src={`/assets/exports/${id}-${an.id}.mp4`} />
+                            ),
+                        )}
+                    </div>
+                ))}
+            </div>
         </div>
     );
 };
