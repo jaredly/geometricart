@@ -18,6 +18,7 @@ import {coordPairKey, sortCoordPair} from './adjustShapes';
 import {pathsFromSegments} from '../../pathsFromSegments';
 import {outerBoundary} from '../../outerBoundary';
 import {followPath} from '../../weaveIntersections';
+import {barePathFromCoords} from './resolveMods';
 
 export const Canvas = ({
     items,
@@ -123,9 +124,7 @@ export const SVGCanvas = ({
         pending?.type === 'shape' && pending.points.length > (mouse ? 0 : 1)
             ? pending.asShape
                 ? pending.asShape(mouse ? [...pending.points, mouse] : pending.points)
-                : mouse
-                  ? [...pending.points, mouse]
-                  : pending.points
+                : barePathFromCoords(mouse ? [...pending.points, mouse] : pending.points)
             : null;
 
     return (
@@ -202,7 +201,7 @@ export const SVGCanvas = ({
             {pendingShape && (
                 <>
                     <path
-                        d={shapeD(pendingShape, false, 5)}
+                        d={calcPathD(pendingShape, undefined, 5)}
                         stroke="#000"
                         strokeWidth={0.05}
                         pointerEvents={'none'}
@@ -211,7 +210,7 @@ export const SVGCanvas = ({
                         strokeLinejoin="round"
                     />
                     <path
-                        d={shapeD(pendingShape, false, 5)}
+                        d={calcPathD(pendingShape, undefined, 5)}
                         stroke="#0f7"
                         strokeWidth={0.03}
                         pointerEvents={'none'}

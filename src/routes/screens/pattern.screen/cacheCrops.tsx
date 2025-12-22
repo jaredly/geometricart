@@ -44,4 +44,5 @@ export function cacheCrops(
             cropCache.set(crop.id, {path, crop, t: actx.accessedValues?.size ? t : undefined});
         }
     }
+    console.log('cached crops', cropCache);
 }

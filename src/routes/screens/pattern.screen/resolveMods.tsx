@@ -80,7 +80,7 @@ const insetShape = (shape: Coord[], inset: number) => {
 const clipShape = (shape: Coord[], mod: CCrop, crop: PKPath) => {
     if (mod.mode === 'rough') {
         const center = centroid(shape);
-        if (!crop.contains(center.x, center.y)) {
+        if (crop.contains(center.x, center.y) === !!mod.hole) {
             return [];
         }
         return [shape];
@@ -135,6 +135,7 @@ export const modsToShapes = (
 
         const crop = cropCache.get(mod.id)!;
         if (!crop) {
+            console.log(`No crop cache for ${mod.id}`);
             return shapes;
             // throw new Error(`No crop? ${mod.id} : ${[...cropCache.keys()]}`);
         }

@@ -2,9 +2,9 @@ import {useEffect, useMemo, useRef, useState} from 'react';
 import {JsonPatchOp, Path} from '../../../../json-diff/helper2';
 import {History} from '../../../../json-diff/history';
 import {Updater} from '../../../../json-diff/Updater';
-import {translationMatrix} from '../../../../rendering/getMirrorTransforms';
+import {angleTo, dist, push, translationMatrix} from '../../../../rendering/getMirrorTransforms';
 import {transformBarePath} from '../../../../rendering/points';
-import {Coord} from '../../../../types';
+import {BarePath, Coord} from '../../../../types';
 import {useEditState, usePendingState} from '../editState';
 import {Patterns} from '../evaluate';
 import {State} from '../export-types';
@@ -24,6 +24,7 @@ import {Section} from './Section';
 import {ShapeEditor} from './ShapeEditor';
 import {TextField} from './TextField';
 import {TimelineEditor} from './TimelineEditor';
+import {barePathFromCoords} from '../resolveMods';
 
 type StateEditorProps = {
     value: State;
@@ -130,7 +131,52 @@ export const StateEditor = ({value, worker, patterns, update, id}: StateEditorPr
                             <li>
                                 <button
                                     onClick={() => {
-                                        const asRect = (pts: Coord[]) => {
+                                        const asCircle = (pts: Coord[]): BarePath => {
+                                            const [c, r] = pts;
+                                            // const d = dist(c, r);
+                                            // const t = angleTo(c, r);
+                                            // const res = [r];
+                                            // const num = 20;
+                                            // for (let i = 1; i < num; i++) {
+                                            //     res.push(push(c, t + ((Math.PI * 2) / num) * i, d));
+                                            // }
+                                            const opp = {x: c.x * 2 - r.x, y: c.y * 2 - r.y};
+                                            return {
+                                                origin: r,
+                                                segments: [
+                                                    {
+                                                        type: 'Arc',
+                                                        center: c,
+                                                        clockwise: true,
+                                                        to: opp,
+                                                    },
+                                                    {
+                                                        type: 'Arc',
+                                                        center: c,
+                                                        clockwise: true,
+                                                        to: r,
+                                                    },
+                                                ],
+                                            };
+                                        };
+                                        pendingState.update.pending.replace({
+                                            type: 'shape',
+                                            onDone(points) {
+                                                const nextId = genid();
+                                                update.shapes[nextId].add(asCircle(points));
+                                            },
+                                            points: [],
+                                            asShape: asCircle,
+                                        });
+                                    }}
+                                >
+                                    Circle [center and radius]
+                                </button>
+                            </li>
+                            <li>
+                                <button
+                                    onClick={() => {
+                                        const asRect = (pts: Coord[]): BarePath => {
                                             const [c, a, b] = pts;
                                             let dx = Math.abs(a.x - c.x);
                                             let dy = Math.abs(a.y - c.y);
@@ -138,26 +184,18 @@ export const StateEditor = ({value, worker, patterns, update, id}: StateEditorPr
                                                 dx = Math.max(dx, Math.abs(b.x - c.x));
                                                 dy = Math.max(dy, Math.abs(b.y - c.y));
                                             }
-                                            return [
+                                            return barePathFromCoords([
                                                 {x: c.x - dx, y: c.y - dy},
                                                 {x: c.x + dx, y: c.y - dy},
                                                 {x: c.x + dx, y: c.y + dy},
                                                 {x: c.x - dx, y: c.y + dy},
                                                 {x: c.x - dx, y: c.y - dy},
-                                            ];
+                                            ]);
                                         };
                                         pendingState.update.pending.replace({
                                             type: 'shape',
                                             onDone(points) {
-                                                points = asRect(points);
-                                                const nextId = genid();
-                                                update.shapes[nextId].add({
-                                                    origin: points[0],
-                                                    segments: points
-                                                        .slice(1)
-                                                        .map((to) => ({type: 'Line', to})),
-                                                    open: false,
-                                                });
+                                                update.shapes[genid()].add(asRect(points));
                                             },
                                             points: [],
                                             asShape: asRect,

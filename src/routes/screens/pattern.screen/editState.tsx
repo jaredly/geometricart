@@ -1,5 +1,5 @@
 import {useRef} from 'react';
-import {Coord} from '../../../types';
+import {BarePath, Coord} from '../../../types';
 // import {makeContext} from './diffStateManager';
 import {Hover} from './resolveMods';
 import {DiffBuilderA} from '../../../json-diff/helper2';
@@ -25,7 +25,7 @@ export type PendingState = {
               type: 'shape';
               points: Coord[];
               onDone(points: Coord[], open: boolean): void;
-              asShape?: (pts: Coord[]) => Coord[];
+              asShape?: (pts: Coord[]) => BarePath;
           }
         | {type: 'dup-shape'; id: string; onDone(point: Coord): void}
         | {type: 'select-shapes'; key: string; shapes: string[]; onDone(shapes: string[]): void}

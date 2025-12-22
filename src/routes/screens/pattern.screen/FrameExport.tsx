@@ -130,9 +130,9 @@ const ExportSettingsForm = ({
                                   ? runSVGExport(settings, box, items, bg)
                                   : null;
 
-                        if (settings.kind === 'png') {
+                        if (settings.kind === 'png' || settings.kind === 'svg') {
                             // make a small one
-                            const small = runPNGExport(100, box, items, bg);
+                            const small = runPNGExport(200, box, items, bg);
                             saveAnnotation(id, small, ctx.tip(), ctx.updateAnnotations);
                         }
 
