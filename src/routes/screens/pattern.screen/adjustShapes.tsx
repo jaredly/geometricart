@@ -45,7 +45,7 @@ export const adjustShapes2 = (
     const prec = 3;
     const eps = Math.pow(10, -prec);
     const outerDebug: RenderLog[] | undefined = log ? [] : undefined;
-    console.time();
+    // console.time();
 
     let segments = unique(
         uniqueShapes.map((shape) => truncateShape(shape, amt)).flatMap(coordPairs),
@@ -181,7 +181,7 @@ export const adjustShapes = (
     const amt = 1000;
     uniqueShapes = uniqueShapes.map((shape) => truncateShape(shape, amt));
 
-    console.time();
+    // console.time();
 
     let modified = false;
     const outerDebug: RenderLog[] = [];
@@ -396,7 +396,7 @@ export const adjustShapes = (
         outerDebug.push({type: 'group', title: 'Adjust Shape Group', children: midDebug});
     }
 
-    console.timeEnd();
+    // console.timeEnd();
 
     return {shapes: modified ? sortShapesByPolar(uniqueShapes) : uniqueShapes, debug: outerDebug};
 };

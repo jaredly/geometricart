@@ -272,7 +272,15 @@ const ListExports = () => {
                 {all.map(({id, icon}) => (
                     <div>
                         <a className="link" href={`/export/${id}`}>
-                            {icon ? <img src={`/assets/exports/${id}-${icon.id}.png`} /> : id}
+                            {icon ? (
+                                <img
+                                    width={200}
+                                    height={200}
+                                    src={`/assets/exports/${id}-${icon.id}.png`}
+                                />
+                            ) : (
+                                id
+                            )}
                         </a>
                     </div>
                 ))}
