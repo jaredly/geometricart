@@ -1,6 +1,6 @@
 import {Path as PKPath} from 'canvaskit-wasm';
 import {scalePos} from '../../../editor/scalePos';
-import {transformShape} from '../../../editor/tilingPoints';
+import {transformPKPath, transformShape} from '../../../editor/tilingPoints';
 import {cmdsToCoords, cmdsToSegments} from '../../../gcode/cmdsToSegments';
 import {epsilon} from '../../../rendering/epsilonToZero';
 import {Matrix} from '../../../rendering/getMirrorTransforms';
@@ -108,6 +108,126 @@ const clipShape = (shape: Coord[], mod: CCrop, crop: PKPath) => {
         path.delete();
         return items.map(coordsFromBarePath);
     }
+};
+
+const pkCentroid = (path: PKPath) => {
+    return centroid(pkCoords(path));
+}
+
+const pkCoords = (path: PKPath) => {
+    const segments = cmdsToSegments([...path.toCmds()]);
+    return segments.flatMap(coordsFromBarePath);
+}
+
+const clipShape2 = (shape: PKPath, mod: CCrop, crop: PKPath):PKPath => {
+    if (mod.mode === 'rough') {
+        const center = pkCentroid(shape);
+        if (crop.contains(center.x, center.y) === !!mod.hole) {
+            shape.reset()
+            return shape;
+        }
+        return shape;
+    } else if (mod.mode === 'half') {
+        const other = shape.copy();
+        other.op(crop, mod.hole ? pk.PathOp.Difference : pk.PathOp.Intersect);
+        other.simplify();
+        const size = pkPathToSegments(other)
+            .map(coordsFromBarePath)
+            .map(calcPolygonArea)
+            .reduce((a, b) => a + b, 0);
+        other.delete();
+        const area = calcPolygonArea(pkCoords(shape));
+        if (size < area / 2 + epsilon) {
+            shape.reset()
+        }
+        return shape;
+    } else {
+        console.log('clipping here')
+        shape.op(crop, mod.hole ? pk.PathOp.Difference : pk.PathOp.Intersect);
+        shape.simplify();
+        return shape
+    }
+};
+
+const intoCmds = (path: PKPath) => {
+    const cmds = [...path.toCmds()]
+    path.delete()
+    return cmds
+}
+
+// export const clipShape2 = (shape: Coord[], mod: CCrop, crop: PKPath) => {
+//     if (mod.mode === 'rough') {
+//         const center = centroid(shape);
+//         if (crop.contains(center.x, center.y) === !!mod.hole) {
+//             return [];
+//         }
+//         return intoCmds(pkPathFromCoords(shape)!)
+//     } else if (mod.mode === 'half') {
+//         // const path = pkPathFromCoords(shape)!;
+//         // const other = path.copy();
+//         // other.op(crop, mod.hole ? pk.PathOp.Difference : pk.PathOp.Intersect);
+//         // other.simplify();
+//         // const size = pkPathToSegments(other)
+//         //     .map(coordsFromBarePath)
+//         //     .map(calcPolygonArea)
+//         //     .reduce((a, b) => a + b, 0);
+//         // other.delete();
+//         // path.delete();
+//         // const area = calcPolygonArea(shape);
+//         // if (size < area / 2 + epsilon) {
+//         //     return [];
+//         // }
+//         // return [shape];
+//         throw new Error('not now')
+//     } else {
+//         // console.log(`clip a shape`, shape)
+//         const path = pkPathFromCoords(shape)!;
+//         path.op(crop, mod.hole ? pk.PathOp.Difference : pk.PathOp.Intersect);
+//         path.simplify();
+//         // const cmds = path.toCmds()
+//         // const items = pkPathToSegments(path);
+//         // console.log('clipped', items)
+//         // path.delete();
+//         // return items.map(coordsFromBarePath);
+//         return intoCmds(path)
+//     }
+// };
+
+// NOTE: I do think I should be splitting paths up after
+// clipping, and treating each subpath separately.
+// I don't know how to deal with holes though,
+// which presumably I want to be able to support
+// at some point.
+export const modsToShapes2 = (
+    cropCache: Ctx['cropCache'],
+    mods: CropsAndMatrices,
+    shapes: {shape: Coord[]; i: number}[],
+) => {
+    return mods.reduce((shapes, mod) => {
+        if (Array.isArray(mod)) {
+            return shapes.map((shape) => (
+                transformPKPath(shape, mod)
+            ));
+        }
+
+        if (mod.type === 'inset') {
+            if (Math.abs(mod.v) <= 0.01) return shapes;
+            return shapes.map((shape) => {
+                insetPkPath(shape, mod.v);
+                return shape
+            });
+        }
+
+        const crop = cropCache.get(mod.id)!;
+        if (!crop) {
+            console.log(`No crop cache for ${mod.id}`);
+            return shapes;
+            // throw new Error(`No crop? ${mod.id} : ${[...cropCache.keys()]}`);
+        }
+        return shapes.map((shape) => {
+            return clipShape2(shape, mod, crop.path);
+        });
+    }, shapes.map(({shape}) => (pkPathFromCoords(shape)!)));
 };
 
 export const modsToShapes = (

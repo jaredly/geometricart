@@ -1,5 +1,13 @@
 #
 
+A shape should be able to be compound. with boolean ops. So that we could have a crop that is the + of two shapes, -'d another shape. Instead of having three separate crops.
+
+-> debug circular holes
+
+-> clipShape, just return the cmds
+
+
+
 - [ ] rerchitect the whole visial thing. Turn it into a "studio"
   - history along the bottom (toggleable)
   - right side a full tree view
