@@ -148,7 +148,7 @@ export const adjustShapes2 = (
     }
 
     if (!modified) return {shapes: uniqueShapes, debug: outerDebug ?? []};
-    segments = cutSegments(segments, prec);
+    segments = cutSegments(segments, prec).map((seg) => truncatePair(seg, amt));
 
     outerDebug?.push({
         type: 'items',
@@ -161,7 +161,21 @@ export const adjustShapes2 = (
     const byEndPoint = edgesByEndpoint(segments, prec);
     const one = unique(segments.flat(), (m) => coordKey(m, prec));
 
+    // outerDebug?.push({
+    //     type: 'items',
+    //     title: 'By Endpoint'
+    // })
+
     const fromSegments = shapesFromSegments(byEndPoint, one, prec);
+
+    outerDebug?.push({
+        type: 'items',
+        title: 'Shapes detected',
+        items: fromSegments.shapes.map((shape) => ({
+            item: {type: 'shape', shape: barePathFromCoords(shape)},
+        })),
+    });
+
     return {shapes: sortShapesByPolar(fromSegments.shapes), debug: outerDebug ?? []};
 };
 
