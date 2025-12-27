@@ -1,8 +1,33 @@
+
+um I broke some things
+
+`use-it` has dxxvh2fuahw-debug2 rendering almost correctly.
+
+and my latest branch has it very broken
+
+also, ajustShapes2 leaves residuals outside of the relevant shapes, that I wish it wouldn't.
+
+Also, "psize" should just give the "make ttt" function a target width & height, and it should keep expanding
+until the eigenshape totally covers the target width and height. That would be really straightforward.
+
+#
+
+ok folks, let's start over
+
+like `renderPatterns` needs to start over
+ugh.
+ok so what is the problem.
+and how do I ... make tests for it.
+
+-> "removed pre shape" isn't working right.
+
+
 #
 
 A shape should be able to be compound. with boolean ops. So that we could have a crop that is the + of two shapes, -'d another shape. Instead of having three separate crops.
 
 -> debug circular holes
+  -> lol ok it was coordsFromBarePath (arcToCoords) not knowing about counter clockwises.
 
 -> clipShape, just return the cmds
 

@@ -35,7 +35,7 @@ export const arcToCoords = (prev: Coord, next: ArcSegment, diff = Math.PI / 50) 
     const count = btw / diff;
     const res: Coord[] = [];
     for (let i = 0; i < count; i++) {
-        res.push(push(next.center, t0 + i * diff, rad));
+        res.push(push(next.center, t0 + i * diff * (next.clockwise ? 1 : -1), rad));
     }
     res.push(next.to);
     return res;

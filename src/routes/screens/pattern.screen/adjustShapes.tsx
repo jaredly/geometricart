@@ -41,11 +41,10 @@ export const adjustShapes2 = (
     }[],
     log = false,
 ) => {
-    const amt = 1000;
-    const prec = 3;
+    const amt = 10000;
+    const prec = Math.log10(amt) - 1;
     const eps = Math.pow(10, -prec);
     const outerDebug: RenderLog[] | undefined = log ? [] : undefined;
-    // console.time();
 
     let segments = unique(
         uniqueShapes.map((shape) => truncateShape(shape, amt)).flatMap(coordPairs),
@@ -135,13 +134,13 @@ export const adjustShapes2 = (
             // console.time('cut');
             // console.timeEnd('cut');
 
-            outerDebug?.push({
-                type: 'items',
-                title: 'Cut segments',
-                items: segments.map((seg) => ({
-                    item: {type: 'seg', prev: seg[0], seg: {type: 'Line', to: seg[1]}},
-                })),
-            });
+            // outerDebug?.push({
+            //     type: 'items',
+            //     title: 'Cut segments',
+            //     items: segments.map((seg) => ({
+            //         item: {type: 'seg', prev: seg[0], seg: {type: 'Line', to: seg[1]}},
+            //     })),
+            // });
             // console.timeEnd('shape');
 
             // segments = unique(segments.map(truncatePair), (p) => coordPairKey(p, prec));
@@ -153,7 +152,7 @@ export const adjustShapes2 = (
 
     outerDebug?.push({
         type: 'items',
-        title: 'Post Adjustment Segments',
+        title: 'Post Cut Segments',
         items: segments.map((seg) => ({
             item: {type: 'seg', prev: seg[0], seg: {type: 'Line', to: seg[1]}},
         })),

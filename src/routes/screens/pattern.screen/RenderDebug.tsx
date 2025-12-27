@@ -10,7 +10,7 @@ import {closeEnough} from '../../../rendering/epsilonToZero';
 import {push} from '../../../rendering/getMirrorTransforms';
 import {BarePath, Coord} from '../../../types';
 import {AnimCtx, Patterns, RenderItem} from './evaluate';
-import {State} from './export-types';
+import {colorToRgb, State} from './export-types';
 import {LogItem, RenderLog} from './resolveMods';
 import {svgItems} from './svgItems';
 import {SVGCanvas} from './SVGCanvas';
@@ -70,7 +70,7 @@ const renderLogSelection = (
                 return [
                     {
                         type: 'path',
-                        color: {r: 255, g: 0, b: 0},
+                        color: item.color ? colorToRgb(item.color) : {r: 255, g: 0, b: 0},
                         strokeWidth: 0.02,
                         adjustForZoom: true,
                         shapes: [{origin: item.prev, segments: [item.seg], open: true}],
@@ -111,7 +111,7 @@ const renderLogSelection = (
                 return [
                     {
                         type: 'path',
-                        color: {r: 255, g: 0, b: 0},
+                        color: item.color ? colorToRgb(item.color) : {r: 255, g: 0, b: 0},
                         opacity: detectOverlaps ? 0.3 : undefined,
                         adjustForZoom: true,
                         shapes: [item.shape],
