@@ -336,12 +336,15 @@ const makeDispatch = <T, An, Tag extends string = 'type'>(ctx: CH<T, An, Tag>, t
         },
     };
     const go = (
-        v: {op: 'undo' | 'redo'} | MaybeNested<PendingJsonPatchOp<T, Tag, Extra>>,
+        v:
+            | {op: 'undo' | 'redo'}
+            | {op: 'jump'; id: string}
+            | MaybeNested<PendingJsonPatchOp<T, Tag, Extra>>,
         when?: ApplyTiming,
     ) => {
         let hChanged = false;
         if (when === 'preview') {
-            if (!Array.isArray(v) && (v.op === 'undo' || v.op === 'redo')) {
+            if (!Array.isArray(v) && (v.op === 'undo' || v.op === 'redo' || v.op === 'jump')) {
                 return; // not previewing those
             }
             ctx.queuedChanges.push(...(asFlat(v) as PendingJsonPatchOp<T, Tag, Extra>[]));

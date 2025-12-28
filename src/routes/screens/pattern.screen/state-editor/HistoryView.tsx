@@ -1,4 +1,4 @@
-import {useMemo, useState} from 'react';
+import {useCallback, useMemo, useState} from 'react';
 import {addToMap} from '../../../shapesFromSegments';
 import {useOnOpen} from '../../../useOnOpen';
 import {useExportState, ExportHistory} from '../ExportHistory';
@@ -8,6 +8,8 @@ export const HistoryView = ({id}: {id: string}) => {
     const history = ctx.useHistory();
     const [showDialog, setShowDialog] = useState(false);
     const dialogRef = useOnOpen(setShowDialog);
+
+    const jump = useCallback((id: string) => ctx.dispatch({op: 'jump', id}), [ctx]);
 
     return (
         <div className="p-4">
@@ -22,7 +24,7 @@ export const HistoryView = ({id}: {id: string}) => {
                 Show History
             </button>
             <dialog id="history-modal" className="modal" ref={dialogRef}>
-                {showDialog ? <HistoryViewDialog history={history} eid={id} /> : null}
+                {showDialog ? <HistoryViewDialog history={history} jump={jump} eid={id} /> : null}
                 <form method="dialog" className="modal-backdrop">
                     <button>close</button>
                 </form>
@@ -32,7 +34,15 @@ export const HistoryView = ({id}: {id: string}) => {
 };
 
 type SizeInfo = {size: number; height: number; skipTo?: {id: string; count: number}};
-const HistoryViewDialog = ({history, eid}: {history: ExportHistory; eid: string}) => {
+const HistoryViewDialog = ({
+    history,
+    eid,
+    jump,
+}: {
+    jump: (id: string) => void;
+    history: ExportHistory;
+    eid: string;
+}) => {
     // const ref = useRef<HTMLCanvasElement>(null);
     const {byParent, sizes} = useMemo(() => {
         const byParent: Record<string, string[]> = {};
@@ -70,18 +80,20 @@ const HistoryViewDialog = ({history, eid}: {history: ExportHistory; eid: string}
             <h3 className="font-bold text-lg">History</h3>
             <div className="overflow-auto p-5">
                 <div style={{position: 'relative'}}>
-                    {renderNode(history.root, history, byParent, sizes, eid)}
+                    {renderNode(history.root, history, byParent, sizes, eid, jump)}
                 </div>
             </div>
         </div>
     );
 };
+
 const renderNode = (
     id: string,
     history: ExportHistory,
     byParent: Record<string, string[]>,
     sizes: Record<string, SizeInfo>,
     eid: string,
+    jump: (id: string) => void,
 ) => {
     const oneHeight = 22;
 
@@ -105,7 +117,7 @@ const renderNode = (
                 }}
                 interestfor={`annotation-` + id}
                 onClick={() => {
-                    // do the jump pls
+                    jump(id);
                 }}
                 style={{
                     // @ts-expect-error this is fine
@@ -158,7 +170,7 @@ const renderNode = (
                         {sizes[id].skipTo.count}
                     </div>
                 </div>
-                {renderNode(sizes[id].skipTo.id, history, byParent, sizes, eid)}
+                {renderNode(sizes[id].skipTo.id, history, byParent, sizes, eid, jump)}
             </div>
         );
     }
@@ -187,7 +199,7 @@ const renderNode = (
                 ></div>
             </div>
             <div className="flex flex-col">
-                {byParent[id].map((cid) => renderNode(cid, history, byParent, sizes, eid))}
+                {byParent[id].map((cid) => renderNode(cid, history, byParent, sizes, eid, jump))}
             </div>
         </div>
     );

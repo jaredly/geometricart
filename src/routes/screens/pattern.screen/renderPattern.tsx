@@ -49,7 +49,7 @@ export const renderPattern = (ctx: Ctx, _outer: CropsAndMatrices, pattern: Patte
     ctx.keyPoints.push(...baseShapes.flatMap(coordPairs));
     ctx.keyPoints.push(...simple.eigenCorners.flat());
 
-    const modsBeforeAdjusts = true;
+    const modsBeforeAdjusts = false;
     if (modsBeforeAdjusts) {
         baseShapes = modsToShapes(
             ctx.cropCache,

@@ -89,6 +89,7 @@ function redo<T, An>(state: History<T, An>) {
 }
 
 export const jump = <T, An>(state: History<T, An>, to: string): History<T, An> => {
+    if (!state.nodes[to]) throw new Error(`invalid history node id ${to}`);
     const split = splitPathToDestination(state, to);
     let current = split.up
         .flatMap((id) => state.nodes[id].changes.map(ops.invert).toReversed())
@@ -99,7 +100,10 @@ export const jump = <T, An>(state: History<T, An>, to: string): History<T, An> =
 
 export const dispatch = <T, An, Extra, Tag extends string = 'type'>(
     state: History<T, An>,
-    nested: {op: 'undo' | 'redo'} | MaybeNested<PendingJsonPatchOp<T, Tag, Extra>>,
+    nested:
+        | {op: 'undo' | 'redo'}
+        | {op: 'jump'; id: string}
+        | MaybeNested<PendingJsonPatchOp<T, Tag, Extra>>,
     extra: Extra,
     tag: Tag,
     genId = randId,
@@ -109,6 +113,8 @@ export const dispatch = <T, An, Extra, Tag extends string = 'type'>(
             return undo(state);
         } else if (nested.op === 'redo') {
             return redo(state);
+        } else if (nested.op === 'jump') {
+            return jump(state, nested.id);
         }
     }
 
