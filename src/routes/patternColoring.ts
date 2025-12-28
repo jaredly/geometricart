@@ -102,7 +102,9 @@ export const colorShapes = (
     debug = false,
     log?: RenderLog[],
 ) => {
-    log?.push({
+    const childLog: undefined | RenderLog[] = log ? [] : undefined;
+    log?.push({type: 'group', title: 'Color Shapes', children: childLog!});
+    childLog?.push({
         type: 'items',
         title: 'Color Shapes',
         items: shapes.map((shape, i) => ({
@@ -134,7 +136,7 @@ export const colorShapes = (
         });
     }
     const edgePairs = Object.values(byEdge).filter((e) => e.shapes.length === 2);
-    log?.push({
+    childLog?.push({
         type: 'items',
         title: 'Color Edge Pairs',
         items: Object.entries(byEdge).map(([k, {shapes: idxs, edge}]) => ({
@@ -152,7 +154,7 @@ export const colorShapes = (
         edgePairs.map((pair) => pair.shapes.toSorted() as [number, number]),
         ([a, b]) => `${a},${b}`,
     );
-    log?.push({
+    childLog?.push({
         type: 'items',
         title: 'Unique Shape Pairs',
         items: uniqueShapePairs.map((idxs) => ({
@@ -162,14 +164,14 @@ export const colorShapes = (
             })),
         })),
     });
-    if (log) {
+    if (childLog) {
         const byShape: Record<number, number[]> = {};
         uniqueShapePairs.forEach(([a, b]) => {
             addToMap(byShape, a, b);
             addToMap(byShape, b, a);
         });
 
-        log?.push({
+        childLog.push({
             type: 'items',
             title: 'Shape Neighbors',
             items: Object.entries(byShape).map(([main, neigh]) => ({
@@ -187,7 +189,25 @@ export const colorShapes = (
             })),
         });
     }
-    return colorGraph(uniqueShapePairs, debug, log);
+    const colors = colorGraph(uniqueShapePairs, debug, childLog);
+    if (childLog) {
+        const byColor: number[][] = [];
+        colors.forEach((color, i) => {
+            if (!byColor[color]) byColor[color] = [];
+            byColor[color].push(i);
+        });
+        childLog?.push({
+            type: 'items',
+            title: 'Colored',
+            items: byColor.map((idx, i) => ({
+                item: idx.map((i) => ({
+                    type: 'shape',
+                    shape: barePathFromCoords(shapes[i]),
+                })),
+            })),
+        });
+    }
+    return colors;
 };
 
 // V = 4

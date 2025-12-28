@@ -1,4 +1,5 @@
 import {Bounds} from '../editor/Bounds';
+import {RenderWebGL} from '../editor/RenderWebGL';
 import {coordKey} from '../rendering/coordKey';
 import {closeEnough, closeEnoughAngle, epsilon} from '../rendering/epsilonToZero';
 import {
@@ -15,8 +16,14 @@ import {Coord, ThinTiling, Tiling} from '../types';
 import {discoverShape} from './discoverShape';
 import {centroid} from './findReflectionAxes';
 import {getNewPatternData, getPatternData} from './getPatternData';
-import {coordPairKey, sortCoordPair} from './screens/pattern.screen/adjustShapes';
-import {RenderLog} from './screens/pattern.screen/resolveMods';
+import {
+    coordPairKey,
+    coordsTruncateSame,
+    sortCoordPair,
+    truncateCoordKey,
+    truncateSame,
+} from './screens/pattern.screen/adjustShapes';
+import {LogItem, LogItems, RenderLog} from './screens/pattern.screen/resolveMods';
 
 const gte = (a: number, b: number) => a >= b - epsilon;
 const lte = (a: number, b: number) => a <= b + epsilon;
@@ -117,7 +124,7 @@ export const splitOverlappingSegs = (segs: [Coord, Coord][], prec: number, marks
                 if (!shareMidPoint(segs[i], segs[j])) {
                     const got = splitByPoints(
                         unique([...segs[i], ...segs[j]], (m) => coordKey(m, prec)),
-                        prec,
+                        Math.pow(10, prec),
                     );
                     toAdd.push(...got);
                     toRemove.push(i, j);
@@ -139,7 +146,7 @@ const shareMidPoint = ([a1, a2]: [Coord, Coord], [b1, b2]: [Coord, Coord]) => {
     return coordsEqual(sorted[1], sorted[2]);
 };
 
-const findSplitPoints = (segs: [Coord, Coord][], prec: number) => {
+const findSplitPoints = (segs: [Coord, Coord][], amt: number) => {
     const splitPoints: Record<number, Coord[]> = {};
 
     const bounds = segs.map(segToBounds);
@@ -154,10 +161,16 @@ const findSplitPoints = (segs: [Coord, Coord][], prec: number) => {
             // TODO: maybe check bounding box collision first?
             const int = lineLine(slopes[i], slopes[j]);
             if (!int) continue;
-            if (!coordsEqual(segs[i][0], int, prec) && !coordsEqual(segs[i][1], int, prec)) {
+            if (
+                !coordsTruncateSame(segs[i][0], int, amt) &&
+                !coordsTruncateSame(segs[i][1], int, amt)
+            ) {
                 addToMap(splitPoints, i, int);
             }
-            if (!coordsEqual(segs[j][0], int, prec) && !coordsEqual(segs[j][1], int, prec)) {
+            if (
+                !coordsTruncateSame(segs[j][0], int, amt) &&
+                !coordsTruncateSame(segs[j][1], int, amt)
+            ) {
                 addToMap(splitPoints, j, int);
             }
         }
@@ -165,9 +178,9 @@ const findSplitPoints = (segs: [Coord, Coord][], prec: number) => {
     return splitPoints;
 };
 
-const splitByPoints = (splits: Coord[], prec: number): [Coord, Coord][] => {
+const splitByPoints = (splits: Coord[], amt: number): [Coord, Coord][] => {
     // sort by x or y
-    if (closeEnough(splits[0].x, splits[1].x, Math.pow(10, -prec))) {
+    if (truncateSame(splits[0].x, splits[1].x, amt)) {
         // sort by y
         splits.sort((a, b) => a.y - b.y);
     } else {
@@ -178,7 +191,7 @@ const splitByPoints = (splits: Coord[], prec: number): [Coord, Coord][] => {
     for (let i = 1; i < splits.length; i++) {
         const prev = splits[i - 1];
         const next = splits[i];
-        if (coordsEqual(prev, next, prec)) {
+        if (coordsTruncateSame(prev, next, amt)) {
             throw new Error(`shouldn't get duplicate points here`);
         }
         res.push([prev, next]);
@@ -186,7 +199,7 @@ const splitByPoints = (splits: Coord[], prec: number): [Coord, Coord][] => {
     return res;
 };
 
-export const cutSegments = (segs: [Coord, Coord][], prec = 3) => {
+export const cutSegments = (segs: [Coord, Coord][], amt: number, prec = 3, log?: RenderLog[]) => {
     /*
     1. convert everything to SlopeIntercept form
     2. do line/line collisions with everything. each collision knows the seg indices
@@ -194,20 +207,38 @@ export const cutSegments = (segs: [Coord, Coord][], prec = 3) => {
         2b. could also first check for shared endpoints
     3. go through each seg, splitting on any collisions
     */
-    const splitPoints = findSplitPoints(segs, prec);
+    const splitPoints = findSplitPoints(segs, amt);
     const result: [Coord, Coord][] = [];
+    const splits: LogItems[] | undefined = log ? [] : undefined;
     segs.forEach(([a, b], i) => {
         if (splitPoints[i]) {
+            // if (log) {
+
+            // console.log('splitting', i, a, b, splitPoints[i]);
+            // }
+            splits?.push({
+                item: [
+                    {
+                        type: 'seg',
+                        prev: a,
+                        seg: {type: 'Line', to: b},
+                    },
+                    ...splitPoints[i].map((p) => ({type: 'point' as const, p})),
+                ],
+            });
             result.push(
                 ...splitByPoints(
-                    unique([a, b, ...splitPoints[i]], (m) => coordKey(m, prec)),
-                    prec,
+                    unique([a, b, ...splitPoints[i]], (m) => truncateCoordKey(m, amt)),
+                    amt,
                 ),
             );
         } else {
             result.push([a, b]);
         }
     });
+    if (splits) {
+        log?.push({type: 'items', title: 'Splits', items: splits});
+    }
     return result;
 };
 

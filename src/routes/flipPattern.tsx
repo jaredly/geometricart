@@ -34,7 +34,7 @@ export const cutTilingSegments = (tiling: Tiling): Tiling => {
     const max = Math.max(...lens);
     const perc = lens.map((l) => Math.round((l / max) * 100));
     // console.log(perc.sort((a, b) => a - b).join(', '));
-    segs = cutSegments(segs);
+    segs = cutSegments(segs, 1000);
     segs = splitOverlappingSegs(segs, 3);
     return {
         ...tiling,

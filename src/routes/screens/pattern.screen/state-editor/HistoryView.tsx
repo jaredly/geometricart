@@ -59,7 +59,7 @@ const HistoryViewDialog = ({
                 walk(id);
                 size += sizes[id].size;
                 height = Math.max(height, 1 + sizes[id].height);
-                if (sizes[id].skipTo && !history.annotations[id]) {
+                if (sizes[id].skipTo && !history.annotations[id] && id !== history.tip) {
                     skipTo = {...sizes[id].skipTo};
                     skipTo.count++;
                 } else {
@@ -75,27 +75,32 @@ const HistoryViewDialog = ({
         return {byParent, sizes};
     }, [history]);
 
+    const nctx = useMemo(
+        () => ({history, byParent, sizes, eid, jump}),
+        [history, byParent, sizes, eid, jump],
+    );
+
     return (
         <div className="modal-box flex flex-col w-11/12 max-w-full">
             <h3 className="font-bold text-lg">History</h3>
             <div className="overflow-auto p-5">
-                <div style={{position: 'relative'}}>
-                    {renderNode(history.root, history, byParent, sizes, eid, jump)}
-                </div>
+                <div style={{position: 'relative'}}>{renderNode(history.root, nctx)}</div>
             </div>
         </div>
     );
 };
 
-const renderNode = (
-    id: string,
-    history: ExportHistory,
-    byParent: Record<string, string[]>,
-    sizes: Record<string, SizeInfo>,
-    eid: string,
-    jump: (id: string) => void,
-) => {
+type NCtx = {
+    history: ExportHistory;
+    byParent: Record<string, string[]>;
+    sizes: Record<string, SizeInfo>;
+    eid: string;
+    jump: (id: string) => void;
+};
+
+const renderNode = (id: string, ctx: NCtx) => {
     const oneHeight = 22;
+    const {history, byParent, sizes, eid, jump} = ctx;
 
     const self = (
         <div className="flex flex-row items-center">
@@ -170,7 +175,7 @@ const renderNode = (
                         {sizes[id].skipTo.count}
                     </div>
                 </div>
-                {renderNode(sizes[id].skipTo.id, history, byParent, sizes, eid, jump)}
+                {renderNode(sizes[id].skipTo.id, ctx)}
             </div>
         );
     }
@@ -198,9 +203,7 @@ const renderNode = (
                     }}
                 ></div>
             </div>
-            <div className="flex flex-col">
-                {byParent[id].map((cid) => renderNode(cid, history, byParent, sizes, eid, jump))}
-            </div>
+            <div className="flex flex-col">{byParent[id].map((cid) => renderNode(cid, ctx))}</div>
         </div>
     );
 };

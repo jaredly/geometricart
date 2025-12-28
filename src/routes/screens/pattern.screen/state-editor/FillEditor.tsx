@@ -42,6 +42,11 @@ export const FillEditor = ({
                     onChange={(enabled) => update.enabled(enabled as AnimatableBoolean)}
                 />
                 <AnimInput
+                    label="opacity"
+                    value={value.opacity}
+                    onChange={(opacity) => update.opacity(opacity as AnimatableNumber)}
+                />
+                <AnimInput
                     label="zIndex"
                     value={value.zIndex}
                     onChange={(zIndex) => update.zIndex(zIndex as AnimatableNumber)}

@@ -452,10 +452,11 @@ export type LogItem =
     | {type: 'point'; p: Coord, color?: Color}
     | {type: 'shape'; shape: BarePath, color?: Color};
 
+export type LogItems = {item: LogItem | LogItem[]; text?: string; color?: Color}
 export type RenderLog =
     | {
           type: 'items';
-          items: {item: LogItem | LogItem[]; text?: string; color?: Color}[];
+          items: LogItems[];
           title: string;
       }
     | {type: 'group'; children: RenderLog[]; title: string};

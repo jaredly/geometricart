@@ -18,14 +18,23 @@ import {
 } from './resolveMods';
 
 export const truncateValue = (v: number, amt: number) => Math.round(v * amt) / amt;
+export const truncateSame = (a: number, b: number, amt: number) =>
+    Math.round(a * amt) === Math.round(b * amt);
+
 export const truncatePair = (v: [Coord, Coord], amt: number): [Coord, Coord] => [
     truncateCoord(v[0], amt),
     truncateCoord(v[1], amt),
 ];
+
+export const truncateCoordKey = (v: Coord, amt: number): string =>
+    `${Math.round(v.x * amt)},${Math.round(v.y * amt)}`;
 export const truncateCoord = (v: Coord, amt: number): Coord => ({
     x: truncateValue(v.x, amt),
     y: truncateValue(v.y, amt),
 });
+export const coordsTruncateSame = (a: Coord, b: Coord, amt: number) =>
+    truncateSame(a.x, b.x, amt) && truncateSame(a.y, b.y, amt);
+
 export const truncateShape = (v: Coord[], amt: number): Coord[] =>
     v.map((c) => truncateCoord(c, amt));
 
@@ -41,7 +50,7 @@ export const adjustShapes2 = (
     }[],
     log = false,
 ) => {
-    const amt = 10000;
+    const amt = 1000;
     const prec = Math.log10(amt) - 1;
     const eps = Math.pow(10, -prec);
     const outerDebug: RenderLog[] | undefined = log ? [] : undefined;
@@ -50,6 +59,7 @@ export const adjustShapes2 = (
         uniqueShapes.map((shape) => truncateShape(shape, amt)).flatMap(coordPairs),
         (p) => coordPairKey(p, prec),
     );
+    // let segments = unique(uniqueShapes.flatMap(coordPairs), (p) => coordPairKey(p, prec));
 
     outerDebug?.push({
         type: 'items',
@@ -98,7 +108,7 @@ export const adjustShapes2 = (
             });
 
             modified = true;
-            segments = segments.filter((pair) => !coordPairOnShape(pair, shapeLines, eps));
+            segments = segments.filter((pair) => !coordPairOnShape(pair, shapeLines, eps * 10));
 
             outerDebug?.push({
                 type: 'items',
@@ -148,7 +158,12 @@ export const adjustShapes2 = (
     }
 
     if (!modified) return {shapes: uniqueShapes, debug: outerDebug ?? []};
-    segments = cutSegments(segments, prec).map((seg) => truncatePair(seg, amt));
+    segments = cutSegments(
+        segments.map((seg) => truncatePair(seg, amt)),
+        amt,
+        prec,
+        outerDebug,
+    ).map((seg) => truncatePair(seg, amt));
 
     outerDebug?.push({
         type: 'items',
@@ -314,7 +329,7 @@ export const adjustShapes = (
 
             // const prec = 5;
 
-            segs = cutSegments(segs, prec);
+            segs = cutSegments(segs, amt, prec);
             const norms = normPoints(segs.flat(), prec);
             segs = normSegs(segs, norms, prec);
             // segs = segs.map(([a, b]) => [truncateCoord(a, amt), truncateCoord(b, amt)] as const);
