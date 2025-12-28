@@ -25,6 +25,7 @@ import {ShapeEditor} from './ShapeEditor';
 import {TextField} from './TextField';
 import {TimelineEditor} from './TimelineEditor';
 import {barePathFromCoords} from '../resolveMods';
+import {HistoryView} from './HistoryView';
 
 type StateEditorProps = {
     value: State;
@@ -347,7 +348,7 @@ export const StateEditor = ({value, worker, patterns, update, id}: StateEditorPr
             </Section>
             <Section title="History & Snapshots">
                 <SnapshotAnnotations id={id} worker={worker} patterns={patterns} />
-                <HistoryView />
+                <HistoryView id={id} />
             </Section>
         </div>
     );
@@ -399,7 +400,7 @@ const SnapshotAnnotations = ({
     );
 };
 
-const linearHistory = (v: History<State, unknown>) => {
+export const linearHistory = (v: History<State, unknown>) => {
     let res: JsonPatchOp<State>[] = [];
     let id = v.tip;
     while (id !== v.root) {
@@ -436,21 +437,4 @@ const showOp = (op: JsonPatchOp<State>) => {
         case 'copy':
             return `copy`;
     }
-};
-
-const HistoryView = () => {
-    const ctx = useExportState();
-    const history = ctx.useHistory();
-    const res = useMemo(() => (history ? linearHistory(history) : []), [history]);
-
-    return (
-        <div>
-            {history.root} - {history.tip}
-            {res.map((item, i) => (
-                <div key={i}>
-                    <pre>{showOp(item)}</pre>
-                </div>
-            ))}
-        </div>
-    );
 };

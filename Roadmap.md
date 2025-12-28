@@ -1,4 +1,19 @@
 
+
+
+Some things are better.
+I need to be able to jump between snapshots.
+
+Which means I also want to be able to visualize history.
+
+##
+
+AdjustShapes -> what if the "isLineOnLine" were more forgiving? Or rather, had better approximations?
+Like mx+b comparing pairwise works well if the (x) limits are close to zero, but if they're way large or small,
+then it's much worse. So I'd maybe want to transpose the lines to be near the origin before comparing them.
+
+##
+
 um I broke some things
 
 `use-it` has dxxvh2fuahw-debug2 rendering almost correctly.
