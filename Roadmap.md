@@ -1,4 +1,13 @@
 
+# Data Format changes:
+
+- history annotations should be a map [id] instead of a list.
+- shouldn't allow non-tagged unions to include non-primitives (other than nullable)
+
+
+
+#
+
 Ok, I want a way to designate a given snapshot as the "main one"
 or also, a way to delete a snapshot.
 

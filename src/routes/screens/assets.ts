@@ -1,4 +1,4 @@
-import fs from 'fs';
+import fs, {unlinkSync} from 'fs';
 import {join} from 'path';
 import type {Route} from './+types/assets';
 
@@ -35,8 +35,12 @@ export async function loader({params}: Route.LoaderArgs) {
 }
 
 export async function action({params, request}: Route.LoaderArgs) {
-    console.log('sAVINGGGG');
     const {'*': fname} = params;
-    const data = await request.arrayBuffer();
-    await Bun.write(Bun.file(join(assetsDir, fname)), data);
+    if (fname.includes('..')) throw new Error(`invalid file name`);
+    if (request.method === 'POST') {
+        const data = await request.arrayBuffer();
+        await Bun.write(Bun.file(join(assetsDir, fname)), data);
+    } else if (request.method === 'DELETE') {
+        unlinkSync(join(assetsDir, fname));
+    }
 }
