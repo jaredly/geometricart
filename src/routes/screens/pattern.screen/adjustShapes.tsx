@@ -1,6 +1,6 @@
 import {Bounds, boundsForCoords} from '../../../editor/Bounds';
 import {coordKey} from '../../../rendering/coordKey';
-import {closeEnough, withinLimit} from '../../../rendering/epsilonToZero';
+import {closeEnough} from '../../../rendering/epsilonToZero';
 import {lineLine, lineToSlope, SlopeIntercept, slopeKey} from '../../../rendering/intersect';
 import {Coord, BarePath} from '../../../types';
 import {centroid} from '../../findReflectionAxes';
@@ -12,6 +12,7 @@ import {
     shapesFromSegments,
     EndPointMap,
 } from '../../shapesFromSegments';
+import {coordPairOnShape, coordPairOnShape2, overlapping} from './coordPairOnShape';
 import {Ctx} from './evaluate';
 import {PMods, TChunk, AnimatableValue} from './export-types';
 import {
@@ -58,7 +59,7 @@ export const adjustShapes2 = (
     log = false,
 ) => {
     const amt = 1000;
-    const prec = Math.log10(amt) - 1;
+    const prec = Math.log10(amt);
     const eps = Math.pow(10, -prec);
     const outerDebug: RenderLog[] | undefined = log ? [] : undefined;
 
@@ -124,7 +125,8 @@ export const adjustShapes2 = (
             })),
     });
 
-    segments = segments.filter((pair) => !coordPairOnShape(pair, allShapeLines, eps));
+    // segments = segments.filter((pair) => !coordPairOnShape2(pair, allShapeLines, eps));
+    segments = segments.filter((pair) => !coordPairOnShape(pair, allShapeLines, eps * eps, eps));
 
     outerDebug?.push({
         type: 'items',
@@ -143,6 +145,14 @@ export const adjustShapes2 = (
         segments.map((seg) => truncatePair(seg, amt)),
         (seg) => coordTruncatePairKey(seg, amt),
     );
+
+    outerDebug?.push({
+        type: 'items',
+        title: 'Unique with Adjusted shapes added',
+        items: segments.map((seg) => ({
+            item: {type: 'seg', prev: seg[0], seg: {type: 'Line', to: seg[1]}},
+        })),
+    });
 
     segments = cutSegments(
         segments, //.map((seg) => truncatePair(seg, amt)),
@@ -163,6 +173,12 @@ export const adjustShapes2 = (
     const one = unique(segments.flat(), (m) => coordKey(m, prec));
 
     if (outerDebug) logByEndPoint(outerDebug, byEndPoint);
+
+    outerDebug?.push({
+        type: 'items',
+        title: 'Shape Detect Origin Points',
+        items: one.map((p) => ({item: {type: 'point', p}})),
+    });
 
     // outerDebug?.push({
     //     type: 'items',
@@ -281,7 +297,7 @@ export const adjustShapes = (
 
             let [removedSegs, segs] = unzip(
                 unique(right.flatMap(coordPairs), coordPairKey),
-                (pair) => !coordPairOnShape(pair, shapeLines, eps),
+                (pair) => !coordPairOnShape(pair, shapeLines, eps * eps, eps),
             );
 
             if (log) {
@@ -415,11 +431,6 @@ export const coordPairKey = (pair: [Coord, Coord], prec = 3) => {
 export const coordLines = (coords: Coord[]) =>
     coordPairs(coords).map((pair) => lineToSlope(pair[0], pair[1], true));
 
-export const coordPairOnShape = (pair: [Coord, Coord], shape: SlopeIntercept[], eps: number) => {
-    const line = lineToSlope(pair[0], pair[1], true);
-    return shape.some((sline) => overlapping(line, sline, eps));
-};
-
 export const allSameLines = (one: SlopeIntercept[], two: SlopeIntercept[]) => {
     if (one.length !== two.length) return false;
     const kone = one.map(slopeKey);
@@ -452,14 +463,6 @@ export const coordPairs = (coords: Coord[]) => {
     });
     return res;
 };
-
-export const overlapping = (one: SlopeIntercept, two: SlopeIntercept, eps: number) =>
-    closeEnough(one.m, two.m, eps) &&
-    closeEnough(one.b, two.b, eps) &&
-    (withinLimit(one.limit!, two.limit![0], eps) ||
-        withinLimit(one.limit!, two.limit![1], eps) ||
-        withinLimit(two.limit!, one.limit![0], eps) ||
-        withinLimit(two.limit!, one.limit![1], eps));
 
 export const coordsIntersectCoords = (one: Coord[], twos: SlopeIntercept[], eps: number) => {
     return coordLines(one).some((one) => twos.some((two) => lineHit(one, two, eps)));

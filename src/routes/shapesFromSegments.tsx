@@ -261,12 +261,12 @@ export const edgesByEndpoint = (segs: [Coord, Coord][], prec?: number) => {
     segs = unique(segs, (p) => coordPairKey(p, prec));
     const eps = Math.pow(10, -(prec ?? 3));
 
-    const coordsByKey: Record<string, Coord> = {};
-    const canon = (c: Coord) => {
-        const k = coordKey(c, prec);
-        return coordsByKey[k] ?? (coordsByKey[k] = c);
-    };
-    segs = segs.map(([a, b]) => [canon(a), canon(b)]);
+    // const coordsByKey: Record<string, Coord> = {};
+    // const canon = (c: Coord) => {
+    //     const k = coordKey(c, prec);
+    //     return coordsByKey[k] ?? (coordsByKey[k] = c);
+    // };
+    // segs = segs.map(([a, b]) => [canon(a), canon(b)]);
 
     segs.forEach((seg, i) => {
         if (coordsEqual(seg[0], seg[1], prec)) {

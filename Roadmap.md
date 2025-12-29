@@ -1,6 +1,18 @@
 
+Ok, I want a way to designate a given snapshot as the "main one"
+or also, a way to delete a snapshot.
+
+I kinda want to indicate on a history node whether there's anything that's animatable ...
+
+
+CONSIDER for graph coloring, ignoring neighboring sides that are very small.
+
+#
+
 Next up:
-- adjust -> remove all shapes at once.
+- [x] adjust -> remove all shapes at once.
+
+YAYYYY IT WORKED
 
 #
 
