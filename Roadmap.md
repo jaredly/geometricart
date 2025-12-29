@@ -1,4 +1,9 @@
 
+Next up:
+- adjust -> remove all shapes at once.
+
+#
+
 0.911 is weird in http://localhost:5173/export/dxxvh2fuahw-debug2
 
 agh ok so the "remove on same line" really does need to be mucked with.
