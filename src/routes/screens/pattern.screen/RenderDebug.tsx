@@ -98,7 +98,8 @@ const renderLogSelection = (
                 return [
                     {
                         type: 'point',
-                        color: {r: 255, g: 0, b: 0},
+                        // color:  {r: 255, g: 0, b: 0},
+                        color: item.color ? colorToRgb(item.color) : {r: 255, g: 0, b: 0},
                         // strokeWidth: 0.02,
                         opacity: detectOverlaps ? 0.3 : undefined,
                         // shapes: [circleSeg(item.p, 0.01)],

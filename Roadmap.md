@@ -1,4 +1,9 @@
 
+0.911 is weird in http://localhost:5173/export/dxxvh2fuahw-debug2
+
+agh ok so the "remove on same line" really does need to be mucked with.
+I think it's something like "project the segment onto the shape and see if the coords aren't too far off"
+
 
 
 Some things are better.

@@ -4,8 +4,14 @@ import {closeEnough, withinLimit} from '../../../rendering/epsilonToZero';
 import {lineLine, lineToSlope, SlopeIntercept, slopeKey} from '../../../rendering/intersect';
 import {Coord, BarePath} from '../../../types';
 import {centroid} from '../../findReflectionAxes';
-import {coordsFromBarePath, sortShapesByPolar} from '../../getPatternData';
-import {unique, cutSegments, edgesByEndpoint, shapesFromSegments} from '../../shapesFromSegments';
+import {coordsFromBarePath, coordToPolar, sortShapesByPolar} from '../../getPatternData';
+import {
+    unique,
+    cutSegments,
+    edgesByEndpoint,
+    shapesFromSegments,
+    EndPointMap,
+} from '../../shapesFromSegments';
 import {Ctx} from './evaluate';
 import {PMods, TChunk, AnimatableValue} from './export-types';
 import {
@@ -57,7 +63,7 @@ export const adjustShapes2 = (
 
     let segments = unique(
         uniqueShapes.map((shape) => truncateShape(shape, amt)).flatMap(coordPairs),
-        (p) => coordPairKey(p, prec),
+        (p) => coordTruncatePairKey(p, amt),
     );
     // let segments = unique(uniqueShapes.flatMap(coordPairs), (p) => coordPairKey(p, prec));
 
@@ -97,9 +103,21 @@ export const adjustShapes2 = (
             if (allSameLines(shapeLines, movedLines.flat())) {
                 continue;
             }
+            const innerDebug: RenderLog[] | undefined = log ? [] : undefined;
+            outerDebug?.push({
+                type: 'group',
+                children: innerDebug!,
+                title: `Shape ${id}`,
+            });
+
+            innerDebug?.push({
+                type: 'items',
+                title: 'Pre Shape',
+                items: [{item: {type: 'shape', shape: barePathFromCoords(shapeCoords)}}],
+            });
 
             // console.time('shape');
-            outerDebug?.push({
+            innerDebug?.push({
                 type: 'items',
                 title: 'Segments',
                 items: segments.map((seg) => ({
@@ -108,15 +126,9 @@ export const adjustShapes2 = (
             });
 
             modified = true;
-            segments = segments.filter((pair) => !coordPairOnShape(pair, shapeLines, eps * 10));
+            segments = segments.filter((pair) => !coordPairOnShape(pair, shapeLines, eps));
 
-            outerDebug?.push({
-                type: 'items',
-                title: 'Pre Shape',
-                items: [{item: {type: 'shape', shape: barePathFromCoords(shapeCoords)}}],
-            });
-
-            outerDebug?.push({
+            innerDebug?.push({
                 type: 'items',
                 title: 'Removed Pre Shape',
                 items: segments.map((seg) => ({
@@ -126,7 +138,7 @@ export const adjustShapes2 = (
 
             segments.push(...moved.flatMap((m) => coordPairs(m.shape)));
 
-            outerDebug?.push({
+            innerDebug?.push({
                 type: 'items',
                 title: 'Post Shape',
                 items: moved.map((moved) => ({
@@ -134,7 +146,7 @@ export const adjustShapes2 = (
                 })),
             });
 
-            outerDebug?.push({
+            innerDebug?.push({
                 type: 'items',
                 title: 'Added post Shape',
                 items: segments.map((seg) => ({
@@ -175,6 +187,8 @@ export const adjustShapes2 = (
 
     const byEndPoint = edgesByEndpoint(segments, prec);
     const one = unique(segments.flat(), (m) => coordKey(m, prec));
+
+    if (outerDebug) logByEndPoint(outerDebug, byEndPoint);
 
     // outerDebug?.push({
     //     type: 'items',
@@ -367,30 +381,8 @@ export const adjustShapes = (
                     type: 'items',
                     items: one.map((p) => ({item: {type: 'point', p}})),
                 });
-                debug.push({
-                    type: 'group',
-                    title: `By Endpoint`,
-                    children: [
-                        {
-                            type: 'items',
-                            title: 'All Points',
-                            items: Object.values(byEndPoint).map((v) => ({
-                                item: {type: 'point', p: v.pos},
-                            })),
-                        },
-                        ...Object.entries(byEndPoint).map(([key, value], i) => ({
-                            type: 'items' as const,
-                            title: `Point ${i} - ${key}`,
-                            items: [
-                                {item: {type: 'point' as const, p: value.pos}},
-                                ...value.exits.map((exit) => ({
-                                    item: {type: 'point' as const, p: exit.to},
-                                    title: `${exit.idx} - ${exit.theta}`,
-                                })),
-                            ],
-                        })),
-                    ],
-                });
+
+                logByEndPoint(debug, byEndPoint);
             }
             const cmoved = centroid(moved.flatMap((m) => m.shape));
             const fromSegments = shapesFromSegments(byEndPoint, one, prec, debug);
@@ -434,6 +426,11 @@ export const sortCoordPair = (pair: [Coord, Coord], eps?: number): [Coord, Coord
         return [pair[1], pair[0]];
     }
     return pair;
+};
+
+export const coordTruncatePairKey = (pair: [Coord, Coord], amt: number) => {
+    const [left, right] = sortCoordPair(pair, 1 / amt);
+    return `${truncateCoordKey(left, amt)}:${truncateCoordKey(right, amt)}`;
 };
 
 export const coordPairKey = (pair: [Coord, Coord], prec = 3) => {
@@ -511,3 +508,44 @@ const normSegs = (segs: [Coord, Coord][], norm: Record<string, Coord>, prec: num
     segs.map(
         ([a, b]): [Coord, Coord] => [norm[coordKey(a, prec)], norm[coordKey(b, prec)]] as const,
     );
+
+const sortBy = <T, B>(v: T[], a: (t: T) => B, c: (a: B, b: B) => number): T[] =>
+    v
+        .map((v) => ({v, a: a(v)}))
+        .sort((a, b) => c(a.a, b.a))
+        .map((a) => a.v);
+
+function logByEndPoint(debug: RenderLog[], byEndPoint: EndPointMap) {
+    debug.push({
+        type: 'group',
+        title: `By Endpoint`,
+        children: [
+            {
+                type: 'items',
+                title: 'All Points',
+                items: Object.values(byEndPoint).map((v) => ({
+                    item: {type: 'point', p: v.pos},
+                })),
+            },
+            {
+                type: 'items' as const,
+                title: `Points and such`,
+                items: [
+                    ...sortBy(
+                        Object.entries(byEndPoint),
+                        (a) => coordToPolar(a[1].pos),
+                        (a, b) => (closeEnough(a.m, b.m) ? a.t - b.t : a.m - b.m),
+                    ).map(([key, value], i) => ({
+                        item: [
+                            ...value.exits.map((exit) => ({
+                                type: 'point' as const,
+                                p: exit.to,
+                            })),
+                            {type: 'point' as const, p: value.pos, color: {r: 0, g: 0, b: 255}},
+                        ],
+                    })),
+                ],
+            },
+        ],
+    });
+}

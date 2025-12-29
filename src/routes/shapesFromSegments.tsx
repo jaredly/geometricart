@@ -261,7 +261,13 @@ export const edgesByEndpoint = (segs: [Coord, Coord][], prec?: number) => {
     segs = unique(segs, (p) => coordPairKey(p, prec));
     const eps = Math.pow(10, -(prec ?? 3));
 
-    // const coordsByKey: Record<string, Coord> = {}
+    const coordsByKey: Record<string, Coord> = {};
+    const canon = (c: Coord) => {
+        const k = coordKey(c, prec);
+        return coordsByKey[k] ?? (coordsByKey[k] = c);
+    };
+    segs = segs.map(([a, b]) => [canon(a), canon(b)]);
+
     segs.forEach((seg, i) => {
         if (coordsEqual(seg[0], seg[1], prec)) {
             return;
@@ -277,7 +283,8 @@ export const edgesByEndpoint = (segs: [Coord, Coord][], prec?: number) => {
         byEndPoint[k1].exits.push({idx: i, theta: from, to: seg[0]});
 
         // addToMap(byEndPoint, coordKey(seg[1]), {idx: i, theta: from, to: seg[0]});
-        // coordsByKey[coordKey(seg[0])] = seg[0] coordsByKey[coordKey(seg[1])] = seg[1]
+        // coordsByKey[coordKey(seg[0])] = seg[0];
+        // coordsByKey[coordKey(seg[1])] = seg[1];
     });
 
     let sup: string[] = [];
