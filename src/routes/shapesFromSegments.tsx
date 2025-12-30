@@ -201,6 +201,12 @@ type Line = {
     p2: Point;
 };
 
+function intOnLine({x, y}: Coord, [a1, a2]: [Coord, Coord], eps = epsilon) {
+    if ((x + eps < a1.x && x + eps < a2.x) || (x - eps > a1.x && x - eps > a2.x)) return false;
+    if ((y + eps < a1.y && y + eps < a2.y) || (y - eps > a1.y && y - eps > a2.y)) return false;
+    return true;
+}
+
 /**
  * Returns the intersection point of two infinite lines,
  * or null if the lines are parallel or coincident.
@@ -225,11 +231,8 @@ function intersectLines(
     const t = ((b1.x - a1.x) * dyB - (b1.y - a1.y) * dxB) / denominator;
 
     const x = a1.x + t * dxA;
-    if ((x + eps < b1.x && x + eps < b2.x) || (x - eps > b1.x && x - eps > b2.x)) return null;
-    if ((x + eps < a1.x && x + eps < a2.x) || (x - eps > a1.x && x - eps > a2.x)) return null;
     const y = a1.y + t * dyA;
-    if ((y + eps < b1.y && y + eps < b2.y) || (y - eps > b1.y && y - eps > b2.y)) return null;
-    if ((y + eps < a1.y && y + eps < a2.y) || (y - eps > a1.y && y - eps > a2.y)) return null;
+    if (!intOnLine({x, y}, [a1, a2]) || !intOnLine({x, y}, [b1, b2])) return null;
 
     return {x, y};
 }
