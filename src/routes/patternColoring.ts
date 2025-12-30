@@ -1,5 +1,6 @@
 import {coordKey} from '../rendering/coordKey';
 import {closeEnough} from '../rendering/epsilonToZero';
+import {dist} from '../rendering/getMirrorTransforms';
 import {Coord} from '../types';
 import {barePathFromCoords, LogItems, RenderLog} from './screens/pattern.screen/resolveMods';
 import {addToMap, unique} from './shapesFromSegments';
@@ -158,6 +159,8 @@ export const colorShapes = (
     shapes.forEach((shape, i) => {
         const edges = toEdges(shape);
         edges.forEach((edge) => {
+            const length = dist(edge[0], edge[1]);
+            if (length < 0.01) return; // ignore this one
             const p1 = pointNames[coordKey(edge[0])];
             const p2 = pointNames[coordKey(edge[1])];
             // const k = p1 < p2 ? p1 * 100000 + p2 : p2 * 100000 + p1;
