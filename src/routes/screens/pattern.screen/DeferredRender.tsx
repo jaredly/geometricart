@@ -5,7 +5,7 @@ import {Patterns, RenderItem} from './evaluate';
 import {Color, State} from './export-types';
 import {WorkerSend} from './render-client';
 import {MessageResponse, MessageToWorker} from './render-worker';
-import {renderShape} from './RenderExport';
+import {renderShape} from './renderShape';
 import {Hover} from './resolveMods';
 import {Canvas, SVGCanvas} from './SVGCanvas';
 import {ZoomProps} from './useSVGZoom';
@@ -100,7 +100,7 @@ export const DeferredRender = ({
                       selectedShapes,
                       pendingState.update,
                       pending,
-                  )
+                  ).sort((a, b) => (a.zIndex ?? 0) - (b.zIndex ?? 0))
                 : [],
         [
             showShapes,

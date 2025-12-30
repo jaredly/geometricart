@@ -16,26 +16,26 @@ export const pointLine = (coord: Coord, line: SlopeIntercept) => {
     return closeEnough(y, coord.y) && (!line.limit || withinLimit(line.limit, coord.x));
 };
 
-export const lineLine = (one: SlopeIntercept, two: SlopeIntercept) => {
+export const lineLine = (one: SlopeIntercept, two: SlopeIntercept, eps?: number) => {
     if (closeEnough(one.m, two.m)) {
         return null;
     }
     if (one.m === Infinity) {
         const y = two.m * one.b + two.b;
-        if (one.limit && !withinLimit(one.limit, y)) {
+        if (one.limit && !withinLimit(one.limit, y, eps)) {
             return null;
         }
-        if (two.limit && !withinLimit(two.limit, one.b)) {
+        if (two.limit && !withinLimit(two.limit, one.b, eps)) {
             return null;
         }
         return {x: one.b, y: y};
     }
     if (two.m === Infinity) {
         const y = one.m * two.b + one.b;
-        if (two.limit && !withinLimit(two.limit, y)) {
+        if (two.limit && !withinLimit(two.limit, y, eps)) {
             return null;
         }
-        if (one.limit && !withinLimit(one.limit, two.b)) {
+        if (one.limit && !withinLimit(one.limit, two.b, eps)) {
             return null;
         }
         return {x: two.b, y: y};
@@ -51,10 +51,10 @@ export const lineLine = (one: SlopeIntercept, two: SlopeIntercept) => {
     // x = (b2 - b1) / (m1 - m2)
     // y = mx + b
     const x = (two.b - one.b) / (one.m - two.m);
-    if (one.limit && !withinLimit(one.limit, x)) {
+    if (one.limit && !withinLimit(one.limit, x, eps)) {
         return null;
     }
-    if (two.limit && !withinLimit(two.limit, x)) {
+    if (two.limit && !withinLimit(two.limit, x, eps)) {
         return null;
     }
     return {

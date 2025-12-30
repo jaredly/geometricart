@@ -1,28 +1,46 @@
 import {useMemo, useRef, useState} from 'react';
-import {
-    AddIcon,
-    BaselineFilterCenterFocus,
-    BaselineZoomInMap,
-    CheckboxChecked,
-    CheckboxUnchecked,
-} from '../../../icons/Icon';
+import {AddIcon, BaselineFilterCenterFocus, BaselineZoomInMap} from '../../../icons/Icon';
 import {closeEnough} from '../../../rendering/epsilonToZero';
 import {push} from '../../../rendering/getMirrorTransforms';
 import {BarePath, Coord} from '../../../types';
 import {AnimCtx, Patterns, RenderItem} from './evaluate';
 import {colorToRgb, State} from './export-types';
-import {LogItem, RenderLog} from './resolveMods';
+import {LogItem, LogItems, RenderLog} from './resolveMods';
 import {svgItems} from './svgItems';
 import {SVGCanvas} from './SVGCanvas';
 import {useCropCache} from './useCropCache';
 import {useElementZoom} from './useSVGZoom';
 import {useEditState} from './editState';
-import {renderShape} from './RenderExport';
+import {renderShape} from './renderShape';
 import {Updater} from '../../../json-diff/Updater';
+import {ShowRenderLog} from './ShowRenderLog';
 
 const allItems = (log: RenderLog): LogItem[] => {
     if (log.type === 'items') return log.items.flatMap((l) => l.item);
     return log.children.length ? allItems(log.children[0]) : [];
+};
+
+const getLogData = (logSelection: number[], log: RenderLog): LogItems | null => {
+    const base = log;
+    for (let i = 0; i < logSelection.length - 1; i++) {
+        if (log.type !== 'group') return null;
+        log = log.children[logSelection[i]];
+        if (!log) return null;
+    }
+    if (!log) {
+        console.log(base, logSelection);
+        throw Error(`no item` + logSelection);
+    }
+    const last = logSelection[logSelection.length - 1];
+    if (last === -1) return null;
+    if (log.type === 'items') {
+        if (!log.items[last]) {
+            console.warn(`BAD NEWS`, log, last);
+            return null;
+        }
+        return log.items[last];
+    }
+    return null;
 };
 
 const getLogSelection = (logSelection: number[], log: RenderLog): LogItem[] => {
@@ -141,86 +159,12 @@ const renderLogSelection = (
     });
 };
 
-const matchPath = (one: number[], two: number[]) => {
+export const matchPath = (one: number[], two: number[]) => {
     if (one.length !== two.length - 1) {
         return null;
     }
     if (!one.every((n, i) => n === two[i])) return null;
     return two[two.length - 1];
-};
-
-const ShowRenderLog = ({
-    log,
-    path,
-    onSelect,
-    selection,
-}: {
-    selection: number[];
-    log: RenderLog;
-    path: number[];
-    onSelect: (n: number[]) => void;
-}) => {
-    if (log.type === 'items') {
-        const sel = matchPath(path, selection);
-        const v = sel != null && sel !== -1 ? log.items[sel] : null;
-        return (
-            <div className={sel != null ? 'bg-base-100' : ''}>
-                <div>
-                    {log.title}
-                    <button
-                        onClick={() => onSelect(sel === -1 ? [] : path.concat([-1]))}
-                        className={'btn btn-square '}
-                    >
-                        {sel === -1 ? <CheckboxChecked /> : <CheckboxUnchecked />}
-                    </button>
-                    {sel?.toString()} {v?.text ?? 'No text'}
-                </div>
-                <div>
-                    {log.items.length > 1 ? (
-                        <input
-                            type="range"
-                            className="range"
-                            value={sel ?? 0}
-                            min={0}
-                            max={log.items.length - 1}
-                            onClick={() =>
-                                sel === -1 || sel == null ? onSelect(path.concat([0])) : null
-                            }
-                            onChange={(evt) => onSelect(path.concat([+evt.target.value]))}
-                        />
-                    ) : null}
-                </div>
-            </div>
-        );
-    }
-    const sel = matchPath(path, selection);
-    return (
-        <details>
-            <summary className="cursor-pointer">
-                {log.title} ({log.children.length})
-                <button
-                    onClick={(evt) => {
-                        evt.preventDefault();
-                        onSelect(sel === -1 ? [] : path.concat([-1]));
-                    }}
-                    className={'btn btn-square '}
-                >
-                    {sel === -1 ? <CheckboxChecked /> : <CheckboxUnchecked />}
-                </button>
-            </summary>
-            <div className="p-2 ml-10">
-                {log.children.map((child, i) => (
-                    <ShowRenderLog
-                        key={i}
-                        log={child}
-                        path={path.concat([i])}
-                        onSelect={onSelect}
-                        selection={selection}
-                    />
-                ))}
-            </div>
-        </details>
-    );
 };
 
 export const RenderDebug = ({
@@ -265,6 +209,7 @@ export const RenderDebug = ({
         {type: 'group', children: log!, title: 'Log'},
         detectOverlaps,
     );
+    const selection = getLogData(logSelection, {type: 'group', children: log!, title: 'Log'});
 
     const shapesItems = useMemo(
         (): RenderItem[] =>
@@ -280,6 +225,8 @@ export const RenderDebug = ({
         () => (showMain || shapesItems.length ? [...items, ...logItems, ...shapesItems] : logItems),
         [showMain, items, logItems, shapesItems],
     );
+
+    const [filterByZoom, setFilterByZoom] = useState(false);
 
     return (
         <div className="p-4">
@@ -345,11 +292,23 @@ export const RenderDebug = ({
                 />
             </label>
             <div>{JSON.stringify(logSelection)}</div>
+            <label>
+                Filter By Zoom
+                <input
+                    checked={filterByZoom}
+                    type="checkbox"
+                    onChange={() => setFilterByZoom(!filterByZoom)}
+                />
+            </label>
+            {selection?.data != null ? (
+                <button onClick={() => console.log(selection.data)}>Log Data</button>
+            ) : null}
             <div className="overflow-auto" style={{maxHeight: 600}}>
                 <ShowRenderLog
                     log={{type: 'group', title: 'Debug Log', children: log!}}
                     onSelect={setLogSelection}
                     path={[]}
+                    filterBox={filterByZoom ? zoomProps.box : undefined}
                     selection={logSelection}
                 />
             </div>

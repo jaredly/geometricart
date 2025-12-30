@@ -23,6 +23,7 @@ import {
     truncateCoordKey,
     truncateSame,
 } from './screens/pattern.screen/adjustShapes';
+import {RenderItem} from './screens/pattern.screen/evaluate';
 import {LogItem, LogItems, RenderLog} from './screens/pattern.screen/resolveMods';
 
 const gte = (a: number, b: number) => a >= b - epsilon;
@@ -30,7 +31,11 @@ const lte = (a: number, b: number) => a <= b + epsilon;
 
 // const between = (a: number, b: number, x: number, y: number) =>
 
-function aabbIntersects(a: Bounds, b: Bounds) {
+export function aabbContains(a: Bounds, b: Coord) {
+    return !(b.x < a.x0 || b.x > a.x1 || b.y < a.y0 || b.y > a.y1);
+}
+
+export function aabbIntersects(a: Bounds, b: Bounds) {
     return !(a.x1 < b.x0 || a.x0 > b.x1 || a.y1 < b.y0 || a.y0 > b.y1);
 }
 
@@ -146,21 +151,29 @@ const shareMidPoint = ([a1, a2]: [Coord, Coord], [b1, b2]: [Coord, Coord]) => {
     return coordsEqual(sorted[1], sorted[2]);
 };
 
-const findSplitPoints = (segs: [Coord, Coord][], amt: number) => {
+const findSplitPoints = (segs: [Coord, Coord][], amt: number, log?: LogItems[]) => {
     const splitPoints: Record<number, Coord[]> = {};
 
     const bounds = segs.map(segToBounds);
-    const slopes = segs.map(([a, b]) => lineToSlope(a, b, true));
-    for (let i = 0; i < slopes.length; i++) {
-        for (let j = i + 1; j < slopes.length; j++) {
+    // const slopes = segs.map(([a, b]) => lineToSlope(a, b, true));
+    for (let i = 0; i < segs.length; i++) {
+        for (let j = i + 1; j < segs.length; j++) {
             // if (!boundsIntersect(segs[i], segs[j])) continue;
             if (!aabbIntersects(bounds[i], bounds[j])) {
                 continue;
             }
 
-            // TODO: maybe check bounding box collision first?
-            const int = lineLine(slopes[i], slopes[j]);
+            // const int = lineLine(slopes[i], slopes[j]);
+            const int = intersectLines(segs[i], segs[j]);
             if (!int) continue;
+            log?.push({
+                item: [
+                    {type: 'seg', prev: segs[i][0], seg: {type: 'Line', to: segs[i][1]}},
+                    {type: 'seg', prev: segs[j][0], seg: {type: 'Line', to: segs[j][1]}},
+                    {type: 'point', p: int},
+                ],
+                // data: {i: slopes[i], j: slopes[j], is: segs[i], js: segs[j]},
+            });
             if (
                 !coordsTruncateSame(segs[i][0], int, amt) &&
                 !coordsTruncateSame(segs[i][1], int, amt)
@@ -177,6 +190,49 @@ const findSplitPoints = (segs: [Coord, Coord][], amt: number) => {
     }
     return splitPoints;
 };
+
+type Point = {
+    x: number;
+    y: number;
+};
+
+type Line = {
+    p1: Point;
+    p2: Point;
+};
+
+/**
+ * Returns the intersection point of two infinite lines,
+ * or null if the lines are parallel or coincident.
+ */
+function intersectLines(
+    [a1, a2]: [Coord, Coord],
+    [b1, b2]: [Coord, Coord],
+    eps = epsilon,
+): Point | null {
+    const dxA = a2.x - a1.x;
+    const dyA = a2.y - a1.y;
+    const dxB = b2.x - b1.x;
+    const dyB = b2.y - b1.y;
+
+    const denominator = dxA * dyB - dyA * dxB;
+
+    // Lines are parallel or coincident
+    if (Math.abs(denominator) < epsilon) {
+        return null;
+    }
+
+    const t = ((b1.x - a1.x) * dyB - (b1.y - a1.y) * dxB) / denominator;
+
+    const x = a1.x + t * dxA;
+    if ((x + eps < b1.x && x + eps < b2.x) || (x - eps > b1.x && x - eps > b2.x)) return null;
+    if ((x + eps < a1.x && x + eps < a2.x) || (x - eps > a1.x && x - eps > a2.x)) return null;
+    const y = a1.y + t * dyA;
+    if ((y + eps < b1.y && y + eps < b2.y) || (y - eps > b1.y && y - eps > b2.y)) return null;
+    if ((y + eps < a1.y && y + eps < a2.y) || (y - eps > a1.y && y - eps > a2.y)) return null;
+
+    return {x, y};
+}
 
 const splitByPoints = (splits: Coord[], amt: number): [Coord, Coord][] => {
     // sort by x or y
@@ -207,15 +263,13 @@ export const cutSegments = (segs: [Coord, Coord][], amt: number, prec = 3, log?:
         2b. could also first check for shared endpoints
     3. go through each seg, splitting on any collisions
     */
-    const splitPoints = findSplitPoints(segs, amt);
+    const items: LogItems[] | undefined = log ? [] : undefined;
+    const splitPoints = findSplitPoints(segs, amt, items);
+    log?.push({type: 'items', title: 'Split Points', items: items!});
     const result: [Coord, Coord][] = [];
     const splits: LogItems[] | undefined = log ? [] : undefined;
     segs.forEach(([a, b], i) => {
         if (splitPoints[i]) {
-            // if (log) {
-
-            // console.log('splitting', i, a, b, splitPoints[i]);
-            // }
             splits?.push({
                 item: [
                     {

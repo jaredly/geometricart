@@ -1,10 +1,17 @@
 import {coordKey} from '../rendering/coordKey';
 import {closeEnough} from '../rendering/epsilonToZero';
 import {Coord} from '../types';
-import {barePathFromCoords, RenderLog} from './screens/pattern.screen/resolveMods';
+import {barePathFromCoords, LogItems, RenderLog} from './screens/pattern.screen/resolveMods';
 import {addToMap, unique} from './shapesFromSegments';
 
-const colorGraph = (edges: [number, number][], debug = false, log?: RenderLog[]) => {
+// const debugColors:
+
+const colorGraph = (
+    edges: [number, number][],
+    debug = false,
+    log?: RenderLog[],
+    shapes?: Coord[][],
+) => {
     const edgeMap: Record<number, number[]> = {};
     let max = 0;
     edges.forEach(([a, b]) => {
@@ -13,6 +20,11 @@ const colorGraph = (edges: [number, number][], debug = false, log?: RenderLog[])
         max = Math.max(max, a, b);
     });
     const colors: (null | number)[] = Array(max + 1).fill(null);
+
+    const items: LogItems[] = [];
+    if (shapes && log) {
+        log.push({type: 'items', title: 'Coloring Shapes', items});
+    }
 
     const single = (idx: number) => {
         if (!edgeMap[idx]) {
@@ -27,6 +39,34 @@ const colorGraph = (edges: [number, number][], debug = false, log?: RenderLog[])
         for (let i = 0; i < 10; i++) {
             if (!used.includes(i)) {
                 colors[idx] = i;
+                if (shapes && log) {
+                    items.push(
+                        {
+                            item: [
+                                {
+                                    type: 'shape',
+                                    shape: barePathFromCoords(shapes[idx]),
+                                    color: {r: 255, g: 255, b: 255},
+                                },
+                                ...edgeMap[idx].map((idx) => ({
+                                    type: 'shape' as const,
+                                    shape: barePathFromCoords(shapes[idx]),
+                                    color:
+                                        colors[idx] != null
+                                            ? {h: colors[idx] * 36, s: 100, l: 50}
+                                            : {r: 10, g: 10, b: 10},
+                                })),
+                            ],
+                        },
+                        {
+                            item: {
+                                type: 'shape',
+                                shape: barePathFromCoords(shapes[idx]),
+                                color: {h: i * 36, s: 100, l: 50},
+                            },
+                        },
+                    );
+                }
                 return;
             }
         }
@@ -189,7 +229,7 @@ export const colorShapes = (
             })),
         });
     }
-    const colors = colorGraph(uniqueShapePairs, debug, childLog);
+    const colors = colorGraph(uniqueShapePairs, debug, childLog, shapes);
     if (childLog) {
         const byColor: number[][] = [];
         colors.forEach((color, i) => {

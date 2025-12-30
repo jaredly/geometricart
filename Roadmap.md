@@ -4,7 +4,23 @@
 - history annotations should be a map [id] instead of a list.
 - shouldn't allow non-tagged unions to include non-primitives (other than nullable)
 
+# NEXT ERRROR
 
+We have a case where splits
+http://localhost:5173/export/5len8yytkvr?debug=.765
+are detecting an intersection where there should be none,
+producing an extra little triangle
+that throws off the coloring calculations.
+
+- [ ] renderlog -> filter to only things in view
+
+##
+
+AHHH THE SHAPE DEDUPLICATION BY CENTER IS OVERLAPPING BETWEEN THINGS
+
+# Make an 'archive' button
+
+so I don't accidentally delete things that are actually good
 
 #
 

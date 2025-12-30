@@ -1,12 +1,9 @@
 import {useCallback, useMemo, useRef, useState} from 'react';
 import {AddIcon, BaselineFilterCenterFocus, BaselineZoomInMap} from '../../../icons/Icon';
 import {closeEnough} from '../../../rendering/epsilonToZero';
-import {BarePath} from '../../../types';
-import {parseColor} from './colors';
-import {EditStateUpdate, PendingState, PendingStateUpdate} from './editState';
-import {AnimCtx, Ctx, Patterns, RenderItem} from './evaluate';
-import {colorToRgb, State} from './export-types';
-import {Hover} from './resolveMods';
+import {EditStateUpdate} from './editState';
+import {AnimCtx, Ctx, Patterns} from './evaluate';
+import {State} from './export-types';
 import {svgItems} from './svgItems';
 import {SVGCanvas} from './SVGCanvas';
 import {useAnimate} from './useAnimate';
@@ -156,56 +153,3 @@ export const RenderExport = ({
 
     // ok
 };
-
-export function renderShape(
-    key: string,
-    shape: BarePath,
-    hover: Hover | null,
-    selectedShapes: string[],
-    pending?: PendingState['pending'],
-    update?: PendingStateUpdate,
-): RenderItem[] {
-    return [
-        {
-            type: 'path',
-            color: {r: 255, g: 255, b: 255},
-            shadow: {
-                offset: {x: 0, y: 0},
-                blur: {x: 0.03, y: 0.03},
-                color: {r: 0, g: 0, b: 0},
-            },
-            key,
-            shapes: [shape],
-            strokeWidth: 0.03,
-            zIndex: 100,
-        },
-        {
-            type: 'path',
-            color:
-                (hover?.type === 'shape' && hover.id === key) ||
-                (hover?.type === 'shapes' && hover.ids.includes(key)) ||
-                selectedShapes.includes(key)
-                    ? colorToRgb(parseColor('gold')!)
-                    : {r: 255, g: 255, b: 255},
-            key,
-            onClick() {
-                if (!update || !pending) return;
-                if (pending?.type === 'select-shape') {
-                    update.pending.replace(null);
-                    pending.onDone(key);
-                    return;
-                }
-                if (pending?.type !== 'select-shapes') return;
-                if (!selectedShapes.includes(key)) {
-                    update.pending.variant('select-shapes').shapes.push(key);
-                } else {
-                    const idx = selectedShapes.indexOf(key);
-                    update.pending.variant('select-shapes').shapes[idx].remove();
-                }
-            },
-            shapes: [shape],
-            strokeWidth: 0.03,
-            zIndex: 100,
-        },
-    ];
-}

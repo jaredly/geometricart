@@ -42,12 +42,11 @@ export const expandShapes = (
 ) => {
     let changed = false;
 
-    const usedKeys = Object.values(shapes).map((pt) => coordKey(centroid(coordsFromBarePath(pt))));
-
     Object.entries(shapes).forEach(([key, value]) => {
         if (value.multiply == null) return;
         const pattern = findPattern(layers, value.multiply);
         if (!pattern) return;
+
         if (!changed) shapes = {...shapes};
         const shape =
             typeof pattern.tiling === 'string'
@@ -56,6 +55,8 @@ export const expandShapes = (
         const size = pattern.psize;
 
         const bounds = tilingPoints(shape);
+
+        const usedKeys = [coordKey(centroid(coordsFromBarePath(value)))];
 
         const ttt = eigenShapeTransform(
             shape,

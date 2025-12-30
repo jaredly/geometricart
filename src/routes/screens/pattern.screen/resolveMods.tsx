@@ -112,18 +112,18 @@ const clipShape = (shape: Coord[], mod: CCrop, crop: PKPath) => {
 
 const pkCentroid = (path: PKPath) => {
     return centroid(pkCoords(path));
-}
+};
 
 const pkCoords = (path: PKPath) => {
     const segments = cmdsToSegments([...path.toCmds()]);
     return segments.flatMap(coordsFromBarePath);
-}
+};
 
-const clipShape2 = (shape: PKPath, mod: CCrop, crop: PKPath):PKPath => {
+const clipShape2 = (shape: PKPath, mod: CCrop, crop: PKPath): PKPath => {
     if (mod.mode === 'rough') {
         const center = pkCentroid(shape);
         if (crop.contains(center.x, center.y) === !!mod.hole) {
-            shape.reset()
+            shape.reset();
             return shape;
         }
         return shape;
@@ -138,22 +138,22 @@ const clipShape2 = (shape: PKPath, mod: CCrop, crop: PKPath):PKPath => {
         other.delete();
         const area = calcPolygonArea(pkCoords(shape));
         if (size < area / 2 + epsilon) {
-            shape.reset()
+            shape.reset();
         }
         return shape;
     } else {
-        console.log('clipping here')
+        console.log('clipping here');
         shape.op(crop, mod.hole ? pk.PathOp.Difference : pk.PathOp.Intersect);
         shape.simplify();
-        return shape
+        return shape;
     }
 };
 
 const intoCmds = (path: PKPath) => {
-    const cmds = [...path.toCmds()]
-    path.delete()
-    return cmds
-}
+    const cmds = [...path.toCmds()];
+    path.delete();
+    return cmds;
+};
 
 // export const clipShape2 = (shape: Coord[], mod: CCrop, crop: PKPath) => {
 //     if (mod.mode === 'rough') {
@@ -203,31 +203,32 @@ export const modsToShapes2 = (
     mods: CropsAndMatrices,
     shapes: {shape: Coord[]; i: number}[],
 ) => {
-    return mods.reduce((shapes, mod) => {
-        if (Array.isArray(mod)) {
-            return shapes.map((shape) => (
-                transformPKPath(shape, mod)
-            ));
-        }
+    return mods.reduce(
+        (shapes, mod) => {
+            if (Array.isArray(mod)) {
+                return shapes.map((shape) => transformPKPath(shape, mod));
+            }
 
-        if (mod.type === 'inset') {
-            if (Math.abs(mod.v) <= 0.01) return shapes;
+            if (mod.type === 'inset') {
+                if (Math.abs(mod.v) <= 0.01) return shapes;
+                return shapes.map((shape) => {
+                    insetPkPath(shape, mod.v);
+                    return shape;
+                });
+            }
+
+            const crop = cropCache.get(mod.id)!;
+            if (!crop) {
+                console.log(`No crop cache for ${mod.id}`);
+                return shapes;
+                // throw new Error(`No crop? ${mod.id} : ${[...cropCache.keys()]}`);
+            }
             return shapes.map((shape) => {
-                insetPkPath(shape, mod.v);
-                return shape
+                return clipShape2(shape, mod, crop.path);
             });
-        }
-
-        const crop = cropCache.get(mod.id)!;
-        if (!crop) {
-            console.log(`No crop cache for ${mod.id}`);
-            return shapes;
-            // throw new Error(`No crop? ${mod.id} : ${[...cropCache.keys()]}`);
-        }
-        return shapes.map((shape) => {
-            return clipShape2(shape, mod, crop.path);
-        });
-    }, shapes.map(({shape}) => (pkPathFromCoords(shape)!)));
+        },
+        shapes.map(({shape}) => pkPathFromCoords(shape)!),
+    );
 };
 
 export const modsToShapes = (
@@ -448,11 +449,11 @@ export const renderGroup = (ctx: Ctx, crops: CropsAndMatrices, group: Group) => 
 };
 
 export type LogItem =
-    | {type: 'seg'; prev: Coord; seg: Segment, color?: Color}
-    | {type: 'point'; p: Coord, color?: Color}
-    | {type: 'shape'; shape: BarePath, color?: Color};
+    | {type: 'seg'; prev: Coord; seg: Segment; color?: Color}
+    | {type: 'point'; p: Coord; color?: Color}
+    | {type: 'shape'; shape: BarePath; color?: Color};
 
-export type LogItems = {item: LogItem | LogItem[]; text?: string; color?: Color}
+export type LogItems = {item: LogItem | LogItem[]; text?: string; color?: Color; data?: any};
 export type RenderLog =
     | {
           type: 'items';
