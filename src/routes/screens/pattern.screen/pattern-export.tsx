@@ -34,7 +34,10 @@ import {loadState} from './types/load-state';
 
 const PatternPicker = () => {
     const all = usePromise((signal) => fetch('/gallery.json', {signal}).then((r) => r.json()));
-    return <div>Pick a pattern you cowards {all?.length} options</div>;
+    if (all?.type === 'err') {
+        return <div>No bueno</div>;
+    }
+    return <div>Pick a pattern you cowards {all?.value.length} options</div>;
 };
 
 const colorsRaw = '1f77b4ff7f0e2ca02cd627289467bd8c564be377c27f7f7fbcbd2217becf';
@@ -146,13 +149,21 @@ const LoadAndMigratePattern = ({id}: {id: string}) => {
         );
     }
 
-    if (state.version !== null) {
+    if (state.type === 'err') {
+        return (
+            <Page breadcrumbs={bcr}>
+                <div>Failed to load: {state.error.message}</div>
+            </Page>
+        );
+    }
+
+    if (state.value.version !== null) {
         // Show a dialog asking if the user wants to
         // a) edit it using an older version
         // b) migrate to the current version
     }
 
-    return <LoadPattern state={state.value} id={id} />;
+    return <LoadPattern state={state.value.value} id={id} />;
 };
 
 const LoadPattern = ({id, state}: {id: string; state: ExportHistory}) => {
@@ -169,12 +180,6 @@ const LoadPattern = ({id, state}: {id: string; state: ExportHistory}) => {
 
     const initialPatterns = usePromise(
         async (signal) => {
-            console.log('get pattern');
-            if (!state) {
-                console.log('no state');
-                return null;
-            }
-            console.log('have state');
             const ids = unique(
                 Object.values(state.current.layers)
                     .flatMap((l) =>
@@ -201,16 +206,29 @@ const LoadPattern = ({id, state}: {id: string; state: ExportHistory}) => {
         {title: id, href: '/export/' + id},
     ];
 
-    if (!state || !initialPatterns)
+    if (!initialPatterns) {
         return (
             <Page breadcrumbs={bcr}>
                 <div>Loading...</div>
             </Page>
         );
+    }
+
+    if (initialPatterns.type === 'err') {
+        return (
+            <Page breadcrumbs={bcr}>
+                <div>Unable to load pattern defintions...</div>
+            </Page>
+        );
+    }
 
     return (
         <Page breadcrumbs={bcr}>
-            <PatternExport initial={state} onSave={onSave} initialPatterns={initialPatterns} />
+            <PatternExport
+                initial={state}
+                onSave={onSave}
+                initialPatterns={initialPatterns.value}
+            />
         </Page>
     );
 };
@@ -274,6 +292,18 @@ const ListExports = () => {
             }),
     );
     if (!all) return 'Loading...';
+    if (all.type === 'err') {
+        return (
+            <Page
+                breadcrumbs={[
+                    {title: 'Geometric Art', href: '/'},
+                    {title: 'Exports', href: '/export/'},
+                ]}
+            >
+                <div>Failed to load exports</div>
+            </Page>
+        );
+    }
     return (
         <Page
             breadcrumbs={[
@@ -282,7 +312,7 @@ const ListExports = () => {
             ]}
         >
             <div className="flex flex-row flex-wrap gap-4 p-4">
-                {all.map(({id, icon}) => (
+                {all.value.map(({id, icon}) => (
                     <div>
                         <a className="link" href={`/export/${id}`}>
                             {icon ? (
