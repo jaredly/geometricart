@@ -7,8 +7,8 @@ const assetsDir = join(import.meta.dirname, '../../../assets');
 export async function loader({params}: Route.LoaderArgs) {
     console.log('LOADING');
     const {'*': fname} = params;
-    if (fname.includes('..')) return new Response('Invalid path', {status: 400});
-    const full = join(assetsDir, fname);
+    if (fname!.includes('..')) return new Response('Invalid path', {status: 400});
+    const full = join(assetsDir, fname!);
     if (!fs.existsSync(full)) {
         console.log('no path', full);
         return new Response('Does not exist', {status: 404});
@@ -36,11 +36,11 @@ export async function loader({params}: Route.LoaderArgs) {
 
 export async function action({params, request}: Route.LoaderArgs) {
     const {'*': fname} = params;
-    if (fname.includes('..')) throw new Error(`invalid file name`);
+    if (fname!.includes('..')) throw new Error(`invalid file name`);
     if (request.method === 'POST') {
         const data = await request.arrayBuffer();
-        await Bun.write(Bun.file(join(assetsDir, fname)), data);
+        await Bun.write(Bun.file(join(assetsDir, fname!)), data);
     } else if (request.method === 'DELETE') {
-        unlinkSync(join(assetsDir, fname));
+        unlinkSync(join(assetsDir, fname!));
     }
 }

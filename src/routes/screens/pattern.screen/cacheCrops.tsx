@@ -1,7 +1,8 @@
 import {Path as PKPath} from 'canvaskit-wasm';
 import {pkPathWithCmds} from '../animator.screen/cropPath';
 import {AnimCtx} from './evaluate';
-import {State, Crop} from './export-types';
+import {Crop} from './export-types';
+import {State} from './types/state-type';
 import {resolveEnabledPMods, pathMod} from './resolveMods';
 import {globals} from './eval-globals';
 import {centroid} from '../../findReflectionAxes';

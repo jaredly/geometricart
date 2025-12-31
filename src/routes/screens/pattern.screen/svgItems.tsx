@@ -3,7 +3,7 @@ import {globals, mulberry32} from './eval-globals';
 import {evalTimeline} from './evalEase';
 import {AnimCtx, Ctx, Patterns, RenderItem, a} from './evaluate';
 import {expandShapes} from './expandShapes';
-import {State} from './export-types';
+import {State} from './types/state-type';
 import {RenderLog, renderGroup, handleShadowAndZSorting} from './resolveMods';
 
 export const svgItems = (

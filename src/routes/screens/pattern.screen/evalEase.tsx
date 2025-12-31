@@ -1,6 +1,6 @@
 import {Coord} from '../../../types';
 import {easeInOutCubic} from '../animator.screen/easeInOutCubic';
-import {State} from './export-types';
+import {State} from './types/state-type';
 
 export const tlpos = (ts: number[], t: number) => {
     t = Math.min(1, Math.max(0, t));

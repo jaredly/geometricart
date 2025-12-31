@@ -1,6 +1,7 @@
 import {useState} from 'react';
 import {Patterns, Ctx} from './evaluate';
-import {State, Box} from './export-types';
+import {Box} from './export-types';
+import {State} from './types/state-type';
 import {recordVideo} from './recordVideo';
 import {WorkerSend} from './render-client';
 import {SpinnerEarring} from '../../../icons/Icon';

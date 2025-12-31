@@ -2,7 +2,7 @@ import React, {useMemo} from 'react';
 import {Coord} from '../../../../types';
 import {shapeD} from '../../../shapeD';
 import {tlpos, evalLane} from '../evalEase';
-import {State} from '../export-types';
+import {State} from '../types/state-type';
 import {JsonEditor} from './JsonEditor';
 
 const LaneEditor = ({

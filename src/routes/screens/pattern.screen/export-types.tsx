@@ -62,36 +62,6 @@ export const colorToRgb = (c: Color): {r: number; g: number; b: number} =>
 const rgbFromArr = (c: [number, number, number]) => ({r: c[0], g: c[1], b: c[2]});
 
 export type Crop = {id: string; shape: string; mods?: PMods[]};
-export type State = {
-    // multiply = a pattern id in a layer.
-    // that's used to determine the dooblydoo.
-    shapes: Record<string, BarePath & {multiply?: string}>;
-    layers: Record<string, Layer>;
-    crops: Record<string, Crop>;
-    view: {
-        ppi: number;
-        background?: AnimatableColor;
-        box: Box;
-    };
-    styleConfig: {
-        seed: AnimatableNumber;
-        palette: Color[];
-        timeline: {
-            // 0 to 1, sorted
-            ts: number[];
-            lanes: {
-                name: string;
-                // sorted orders
-                ys: number[];
-                // index into ys
-                // one number per `t` in `ts`
-                values: number[];
-                // easings
-                easings: (string | null)[];
-            }[];
-        };
-    };
-};
 
 export type Layer = {
     id: string;

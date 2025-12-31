@@ -9,7 +9,8 @@ import {
     usePendingState,
 } from './editState';
 // import {example} from './example';
-import {ShapeStyle, State} from './export-types';
+import {ShapeStyle} from './export-types';
+import {State} from './types/state-type';
 import {RenderExport} from './RenderExport';
 import {StateEditor} from './state-editor/StateEditor';
 import type {Route} from './+types/pattern-export';
@@ -29,6 +30,7 @@ import {thinTiling} from './renderPattern';
 import {ExportHistory, ProvideExportState, useExportState} from './ExportHistory';
 import {useWorker} from './render-client';
 import typia from 'typia';
+import {loadState} from './types/load-state';
 
 const PatternPicker = () => {
     const all = usePromise((signal) => fetch('/gallery.json', {signal}).then((r) => r.json()));
@@ -123,26 +125,37 @@ const CreateAndRedirect = ({id}: {id: string}) => {
     return <div>Loading pattern...</div>;
 };
 
-const isValidHistory = typia.createIs<ExportHistory>();
-const isValidState = typia.createIs<State>();
-const validateHistory = typia.createValidate<ExportHistory>();
-
-const LoadPattern = ({id}: {id: string}) => {
-    const state = usePromise<ExportHistory>((signal) =>
+const LoadAndMigratePattern = ({id}: {id: string}) => {
+    const state = usePromise((signal) =>
         fetch(`/fs/exports/${id}.json`, {signal})
             .then((r) => r.json())
-            .then((value): ExportHistory => {
-                if (isValidState(value)) {
-                    return blankHistory(value);
-                }
-                if (isValidHistory(value)) {
-                    return value;
-                }
-                console.log(validateHistory(value));
-                throw new Error(`Unable to parse export state`);
-            }),
+            .then(loadState),
     );
 
+    const bcr = [
+        {title: 'Geometric Art', href: '/'},
+        {title: 'Export', href: '/export/'},
+        {title: id, href: '/export/' + id},
+    ];
+
+    if (!state) {
+        return (
+            <Page breadcrumbs={bcr}>
+                <div>Loading...</div>
+            </Page>
+        );
+    }
+
+    if (state.version !== null) {
+        // Show a dialog asking if the user wants to
+        // a) edit it using an older version
+        // b) migrate to the current version
+    }
+
+    return <LoadPattern state={state.value} id={id} />;
+};
+
+const LoadPattern = ({id, state}: {id: string; state: ExportHistory}) => {
     const onSave = useCallback(
         (state: ExportHistory) => {
             return fetch(`/fs/exports/${id}.json`, {
@@ -295,7 +308,7 @@ export default function PatternExportScreen({params}: Route.ComponentProps) {
     const pattern = sparams.get('pattern');
 
     if (params.id) {
-        return <LoadPattern id={params.id} />;
+        return <LoadAndMigratePattern id={params.id} />;
     }
 
     if (pattern) {

@@ -1,0 +1,14 @@
+
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/api-extractor/api-extractor.schema.json",
+  "mainEntryPointFilePath": "<projectFolder>/temp/types/src/routes/screens/pattern.screen/state-type.d.ts",
+
+  "dtsRollup": {
+    "enabled": true,
+    "untrimmedFilePath": "<projectFolder>/temp/frozen/state-v1.d.ts"
+  },
+
+  "apiReport": { "enabled": false },
+  "docModel": { "enabled": false },
+  "tsdocMetadata": { "enabled": false }
+}

@@ -53,7 +53,7 @@ export const SharedEditor = ({
                     .map(([key, value]) => (
                         <div key={key} className="flex flex-row">
                             <BlurInput
-                                className="w-10"
+                                className="w-10 font-mono"
                                 value={key}
                                 placeholder="key"
                                 onChange={(nkey) => {

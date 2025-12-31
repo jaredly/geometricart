@@ -1,6 +1,7 @@
 import React from 'react';
 import {State, Tiling} from '../types';
 import {migrateState} from '../state/migrateState';
+// @ts-ignore
 import {readMetadata} from 'png-metadata';
 import {PREFIX, SUFFIX} from './Sidebar';
 import {initialState} from '../state/initialState';

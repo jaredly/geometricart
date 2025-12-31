@@ -3,7 +3,7 @@ import {AddIcon, BaselineFilterCenterFocus, BaselineZoomInMap} from '../../../ic
 import {closeEnough} from '../../../rendering/epsilonToZero';
 import {EditStateUpdate} from './editState';
 import {AnimCtx, Ctx, Patterns} from './evaluate';
-import {State} from './export-types';
+import {State} from './types/state-type';
 import {svgItems} from './svgItems';
 import {SVGCanvas} from './SVGCanvas';
 import {useAnimate} from './useAnimate';

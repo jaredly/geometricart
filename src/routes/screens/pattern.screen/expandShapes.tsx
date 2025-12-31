@@ -8,7 +8,7 @@ import {Coord, Segment, BarePath} from '../../../types';
 import {centroid} from '../../findReflectionAxes';
 import {coordsFromBarePath, simpleSize} from '../../getPatternData';
 import {Patterns} from './evaluate';
-import {State} from './export-types';
+import {State} from './types/state-type';
 
 const findPattern = (layers: State['layers'], id: string) => {
     for (let layer of Object.values(layers)) {

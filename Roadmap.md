@@ -1,12 +1,31 @@
 
+## Let's talk about state migration
+
+-> we have a type freezer
+-> now, when a document is loaded up for an old type, we need to:
+  -> show a dialog asking if the user wants to (a) open up an old editor, or (b) migrate to the current schema version
+-> migrating to the current version should preserve all snapshotted states, but can ignore others.
+
+
+##
+
 Debugs:
 - http://localhost:5173/export/5kwg6cxtbsh?debug=0.67
 
+Ok we're feeling good about adjusted shapes now.
+
+So I think we can move on to:
+- [ ] data format changes
+  -> ok but first, how do I manage migrations?
+  -> the ExportState data structure should have a version on it
+- [ ] 'archive' exports
+- [ ] rearchitect the exports page to be nicer to use
 
 # Data Format changes:
 
 - history annotations should be a map [id] instead of a list.
 - shouldn't allow non-tagged unions to include non-primitives (other than nullable)
+- remove timelines? idk or maybe make it so it uses chunk() under the hood?
 
 # NEXT ERRROR
 

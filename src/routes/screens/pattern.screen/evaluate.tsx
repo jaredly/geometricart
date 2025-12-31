@@ -3,7 +3,6 @@ import {BarePath, Coord, Tiling} from '../../../types';
 import {PKPath} from '../../pk';
 import {parseColor, Rgb} from './colors';
 import {
-    State,
     Layer,
     AnimatableNumber,
     AnimatableBoolean,
@@ -13,6 +12,7 @@ import {
     AnimatableValue,
     Color,
 } from './export-types';
+import {State} from './types/state-type';
 import {processScript} from './process-script';
 import {RenderLog} from './resolveMods';
 

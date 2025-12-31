@@ -2,7 +2,8 @@ import {Coord} from '../../../types';
 import {PKPath} from '../../pk';
 import {cacheCrops} from './cacheCrops';
 import {Patterns, RenderItem} from './evaluate';
-import {Box, Color, Crop, State} from './export-types';
+import {Box, Color, Crop} from './export-types';
+import {State} from './types/state-type';
 import {recordVideo} from './recordVideo';
 import {svgItems} from './svgItems';
 

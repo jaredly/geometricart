@@ -1,7 +1,8 @@
 import {Path as PKPath} from 'canvaskit-wasm';
 import {useMemo} from 'react';
 import {AnimCtx} from './evaluate';
-import {State, Crop} from './export-types';
+import {Crop} from './export-types';
+import {State} from './types/state-type';
 import {cacheCrops} from './cacheCrops';
 
 export function useCropCache(

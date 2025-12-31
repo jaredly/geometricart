@@ -150,7 +150,7 @@ export const NewSidebar = ({
                                                         cursor: 'pointer',
                                                     }}
                                                 >
-                                                    Last saved {dayjs(lastSaved.when).fromNow()}
+                                                    {/*Last saved {dayjs(lastSaved.when).fromNow()}*/}
                                                 </div>
                                             )
                                         ) : (

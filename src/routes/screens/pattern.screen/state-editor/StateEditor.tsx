@@ -7,7 +7,7 @@ import {transformBarePath} from '../../../../rendering/points';
 import {BarePath, Coord} from '../../../../types';
 import {useEditState, usePendingState} from '../editState';
 import {Patterns} from '../evaluate';
-import {State} from '../export-types';
+import {State} from '../types/state-type';
 import {useExportState} from '../ExportHistory';
 import {genid} from '../genid';
 import {WorkerSend} from '../render-client';
