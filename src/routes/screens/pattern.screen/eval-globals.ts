@@ -1,3 +1,4 @@
+import {closeEnough} from '../../../rendering/epsilonToZero';
 import {angleTo, dist} from '../../../rendering/getMirrorTransforms';
 import {ease, easeInOutCubic} from '../animator.screen/easeInOutCubic';
 import {easeFn} from './evalEase';
@@ -18,19 +19,84 @@ const tsplit = (t: number, count: number, by: number, ease = easeInOutCubic) => 
 };
 
 export const chunk = (
-    config: (number | [number, number] | [number, number, string])[],
+    config: (
+        | number
+        | [number, number]
+        | [number, number, string]
+        | [number, number, string, number]
+    )[],
     t: number,
 ) => {
-    const v = t * config.length;
-    const t0 = Math.floor(v);
-    const current = config[Math.min(t0, config.length - 1)];
-    const amount = t0 === config.length ? 1 : v - t0;
+    if (t == null) return 0;
+    const weights = config.map((item) => (Array.isArray(item) ? (item[3] ?? 1) : 1));
+    const totalWeight = weights.reduce((a, b) => a + b, 0);
+    const scaled = weights.map((w) => w / totalWeight);
+    let soFar = 0;
+    let at = scaled.findIndex((weight) => {
+        if (soFar + weight > t) {
+            return true;
+        }
+        soFar += weight;
+    });
+    let self = 0;
+    if (at === -1) {
+        at = config.length - 1;
+        self = 1;
+    } else {
+        self = (t - soFar) / scaled[at];
+        if (closeEnough(self, 1)) {
+            self = 1;
+        }
+    }
+    const current = config[at];
     if (typeof current === 'number') {
         return current;
     } else {
         const [min, max, ease = 'straight'] = current;
-        return easeFn(ease)(amount) * (max - min) + min;
+        return easeFn(ease)(self) * (max - min) + min;
     }
+};
+
+export const chunks = (
+    config: (
+        | number
+        | [number, number]
+        | [number, number, string]
+        | [number, number, string, number]
+    )[],
+    t: number,
+): number[] => {
+    if (t == null) return config.map(() => 0);
+
+    const weights = config.map((item) => (Array.isArray(item) ? (item[3] ?? 1) : 1));
+    const totalWeight = weights.reduce((a, b) => a + b, 0);
+    const scaled = weights.map((w) => w / totalWeight);
+    let soFar = 0;
+    let at = scaled.findIndex((weight) => {
+        if (soFar + weight > t) {
+            return true;
+        }
+        soFar += weight;
+    });
+    let self = 0;
+    if (at === -1) {
+        at = config.length - 1;
+        self = 1;
+    } else {
+        self = (t - soFar) / scaled[at];
+        if (closeEnough(self, 1)) {
+            self = 1;
+        }
+    }
+    return config.map((current, i) => {
+        const iself = i === at ? self : i < at ? 1 : 0;
+        if (typeof current === 'number') {
+            return current;
+        } else {
+            const [min, max, ease = 'straight'] = current;
+            return easeFn(ease)(iself) * (max - min) + min;
+        }
+    });
 };
 
 export function mulberry32(seed: number) {
@@ -45,6 +111,7 @@ export function mulberry32(seed: number) {
     };
 }
 
+// biome-ignore lint: this one is fine
 export const globals: Record<string, any> = {
     Math,
     dist,
@@ -53,6 +120,12 @@ export const globals: Record<string, any> = {
     easeInOutCubic,
     tsplit,
     chunk,
+    chunks,
+    zJump(t: number, p = 0.1) {
+        if (t < p) return t / p;
+        if (t > 1 - p) return (1 - t) / p;
+        return 1;
+    },
     // chunk(values: number[], t: number) {
     //     const v = t * values.length;
     //     const t0 = Math.floor(v);

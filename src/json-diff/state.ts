@@ -1,5 +1,5 @@
-import {ops} from './ops';
-import {JsonPatchOp} from './types';
+import {ops} from './ops2';
+import {JsonPatchOp} from './helper2';
 
 export type History<T> = {ops: JsonPatchOp<T>[]; ts: number};
 

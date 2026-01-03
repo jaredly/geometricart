@@ -6,6 +6,7 @@ import {migrateState} from '../state/migrateState';
 import {getNewPatternData, getPatternData, PatternData} from './getPatternData';
 import {unique} from './shapesFromSegments';
 import {State as Animated} from './screens/animator.screen/animator.utils';
+import {thinTiling} from './screens/pattern.screen/renderPattern';
 
 export const db = new Database(join(import.meta.dirname, '../../data.db'));
 
@@ -88,7 +89,7 @@ export const getAllPatterns = () => {
 
 const patternCache: Record<string, PatternData> = {};
 export const getCachedPatternData = (hash: string, tiling: Tiling) => {
-    if (!patternCache[hash]) patternCache[hash] = getNewPatternData(tiling);
+    if (!patternCache[hash]) patternCache[hash] = getNewPatternData(thinTiling(tiling));
     return patternCache[hash];
 };
 

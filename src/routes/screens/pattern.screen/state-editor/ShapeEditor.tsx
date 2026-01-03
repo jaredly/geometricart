@@ -1,22 +1,40 @@
 import React from 'react';
 import {BarePath, Coord} from '../../../../types';
-import {useEditState} from '../editState';
+import {useEditState, usePendingState} from '../editState';
 import {JsonEditor} from './JsonEditor';
+import {Updater} from '../../../../json-diff/Updater';
+import {useExportState} from '../ExportHistory';
+import {notNull} from '../resolveMods';
 
 export const ShapeEditor = ({
     shape,
     id,
-    onChange,
+    update,
     onHover,
     onDup,
+    onCrop,
 }: {
-    shape: BarePath;
+    shape: BarePath & {multiply?: string};
     id: string;
     onHover: (v: {type: 'shape'; id: string} | null) => void;
-    onChange: (v: BarePath | null) => void;
+    update: Updater<BarePath & {multiply?: string}>;
+    onCrop(): void;
     onDup: (p: Coord) => void;
 }) => {
-    const es = useEditState();
+    const es = usePendingState();
+    const st = useExportState();
+    const tilingIds = st.use((state) => {
+        if (!state) throw new Error('cant happen');
+        const ids = Object.values(state.layers)
+            .flatMap((layer) =>
+                Object.values(layer.entities).map((entity) =>
+                    entity.type === 'Pattern' ? entity.id : null,
+                ),
+            )
+            .filter(notNull);
+        return ids;
+    }, false);
+
     return (
         <div
             className="p-4 cursor-pointer hover:bg-base-300"
@@ -38,14 +56,36 @@ export const ShapeEditor = ({
             >
                 Dup
             </button>
-            <button className="btn btn-sm" onClick={() => onChange(null)}>
-                &times;
+            <button onClick={onCrop} className="btn">
+                Crop
             </button>
-            <details>
-                <summary>JSON</summary>
-
-                <JsonEditor label="json" onChange={() => {}} value={shape} />
-            </details>
+            <div>
+                <label>
+                    Mulitply
+                    <select
+                        className="select"
+                        onChange={(evt) => {
+                            const id = evt.target.value;
+                            if (id !== '') {
+                                update.multiply.replace(id);
+                            } else {
+                                update.multiply.remove();
+                            }
+                        }}
+                        value={shape.multiply ?? ''}
+                    >
+                        <option value="">Select a pattern</option>
+                        {tilingIds.map((id) => (
+                            <option value={id} key={id}>
+                                {id}
+                            </option>
+                        ))}
+                    </select>
+                </label>
+                <button className="btn btn-sm" onClick={() => update.remove()}>
+                    &times;
+                </button>
+            </div>
         </div>
     );
 };

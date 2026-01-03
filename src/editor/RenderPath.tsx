@@ -17,6 +17,7 @@ import {segmentsCenter} from './Bounds';
 import {calcPathD} from './calcPathD';
 
 export class RoughGenerator {
+    // biome-ignore lint: nope
     path(raw: string, options: any): 'path' {
         return 'path';
     }
@@ -27,8 +28,10 @@ export class RoughGenerator {
 
 export class RoughCanvas extends RoughGenerator {
     generator: RoughGenerator;
+    // biome-ignore lint: nope
     constructor(canvas: any) {
         super();
+        // biome-ignore lint: nope
         this.generator = null as any;
     }
 }
@@ -162,7 +165,7 @@ const RenderPathMemo = ({
                         key={`${k}:${i}`}
                         d={info.d}
                         stroke={info.stroke}
-                        fill={info.fill != 'none' ? info.fill : common.fill}
+                        fill={info.fill !== 'none' ? info.fill : common.fill}
                         strokeWidth={info.strokeWidth}
                         onContextMenu={
                             contextMenu
@@ -533,6 +536,7 @@ export function colorSquare(full: string | undefined, i: number) {
 }
 
 function segmentArrow(prev: Coord, i: number, seg: Segment, zoom = 1, size = 2) {
+    // biome-ignore lint: this one is fine
     let mid;
     if (seg.type === 'Line') {
         mid = {

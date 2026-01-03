@@ -1,15 +1,42 @@
-import equal from 'fast-deep-equal';
+import {deepEqual} from 'fast-equals';
 import {_add, _get, _remove, _replace} from './internal2';
-import {AddOp, JsonPatchOp, RemoveOp, ReplaceOp} from './helper2';
+import {AddOp, JsonPatchOp, MoveOp, Path, PendingJsonPatchOp, RemoveOp, ReplaceOp} from './helper2';
 
 function add<T, V>(base: T, op: AddOp<V>) {
     return _add(base, op.path, op.value);
 }
 function remove<T, V>(base: T, op: RemoveOp<V>) {
-    return _remove(base, op.path, op.value, equal);
+    return _remove(base, op.path, op.value, deepEqual);
 }
 function replace<T, V>(base: T, op: ReplaceOp<V>) {
-    return _replace(base, op.path, op.previous, op.value, equal);
+    return _replace(base, op.path, op.previous, op.value, deepEqual);
+}
+function move<T>(base: T, op: MoveOp<T>) {
+    const value = _get(base, op.from);
+    const removed = _remove(base, op.from, value, deepEqual);
+    return _add(removed, op.path, value);
+}
+
+export function rebase<T, A extends PropertyKey, B>(
+    op: PendingJsonPatchOp<T, A, B>,
+    path: Path,
+): PendingJsonPatchOp<T, A, B> {
+    switch (op.op) {
+        case 'move':
+            return {
+                ...op,
+                path: [...path, ...op.path],
+                from: [...path, ...op.from],
+            };
+        case 'add':
+        case 'push':
+        case 'replace':
+        case 'remove':
+            return {...op, path: [...path, ...op.path]};
+        case 'nested':
+        case 'copy':
+            throw new Error('not supporting these');
+    }
 }
 
 function invert<T>(op: JsonPatchOp<T>): JsonPatchOp<T> {
@@ -21,6 +48,7 @@ function invert<T>(op: JsonPatchOp<T>): JsonPatchOp<T> {
         case 'remove':
             return {op: 'add', path: op.path, value: op.value} as JsonPatchOp<T>;
         case 'move':
+            return {op: 'move', from: op.path, path: op.from} as JsonPatchOp<T>;
         case 'copy':
             throw new Error('not supporting these');
     }
@@ -35,6 +63,7 @@ function apply<T>(base: T, op: JsonPatchOp<T>) {
         case 'remove':
             return remove(base, op);
         case 'move':
+            return move(base, op);
         case 'copy':
             throw new Error('not supporting these either');
     }

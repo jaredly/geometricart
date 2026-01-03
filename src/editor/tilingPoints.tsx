@@ -10,9 +10,15 @@ import {
 } from '../rendering/getMirrorTransforms';
 import {scalePos} from './scalePos';
 import {getShapeSize, tilingTransforms} from './tilingTransforms';
+import {PKPath} from '../routes/pk';
 
 const transformLines = (lines: [Coord, Coord][], mx: Matrix[]) =>
     lines.map(([p1, p2]): [Coord, Coord] => [applyMatrices(p1, mx), applyMatrices(p2, mx)]);
+
+export const transformPKPath = (path: PKPath, tx: Matrix[]) => {
+    tx.forEach(([one, two]) => path.transform(...one, ...two));
+    return path;
+};
 
 export const transformShape = (pts: Coord[], tx: Matrix[]) =>
     pts.map((pt) => applyMatrices(pt, tx));

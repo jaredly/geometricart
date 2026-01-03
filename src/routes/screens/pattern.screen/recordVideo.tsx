@@ -1,11 +1,12 @@
-import {ImageFilter, Surface} from 'canvaskit-wasm';
 import {cmdsForCoords} from '../../getPatternData';
 import {pk} from '../../pk';
 import {generateVideo} from '../animator.screen/muxer';
-import {Patterns, Ctx, RenderItem} from './evaluate';
-import {State, Box, Color, colorToRgb} from './export-types';
-import {svgItems} from './resolveMods';
-import {pkPathWithCmds, segmentsCmds} from '../animator.screen/cropPath';
+import {Patterns, Ctx} from './evaluate';
+import {Box} from './export-types';
+import {State} from './types/state-type';
+import {svgItems} from './svgItems';
+import {pkPathWithCmds} from '../animator.screen/cropPath';
+import {renderItems} from './renderItems';
 
 export const recordVideo = async (
     state: State,
@@ -13,7 +14,8 @@ export const recordVideo = async (
     box: Box,
     patterns: Patterns,
     duration: number,
-    onStatus: {current: HTMLElement | null},
+    // onStatus: {current: HTMLElement | null},
+    onStatus: (progress: number) => void,
     cropCache: Ctx['cropCache'],
 ) => {
     const canvas = new OffscreenCanvas(size * 2, size * 2);
@@ -23,9 +25,16 @@ export const recordVideo = async (
 
     const animCache = new Map();
 
+    const fontData = await fetch('/assets/Roboto-Regular.ttf').then((r) => r.arrayBuffer());
+
+    let last = Date.now();
     const blob = await generateVideo(canvas, frameRate, totalFrames, (_, currentFrame) => {
-        if (currentFrame % 10 === 0)
-            onStatus.current!.textContent = ((currentFrame / totalFrames) * 100).toFixed(0) + '%';
+        let now = Date.now();
+        if (now - last > 200) {
+            last = now;
+            onStatus(currentFrame / totalFrames);
+        }
+        // if (currentFrame % 10 === 0)
         const surface = pk.MakeWebGLCanvasSurface(canvas)!;
 
         const {items, bg} = svgItems(
@@ -35,66 +44,20 @@ export const recordVideo = async (
             patterns,
             currentFrame / totalFrames,
         );
-        renderItems(surface, box, items, bg);
-    });
-    onStatus.current!.textContent = '';
-    return blob ? URL.createObjectURL(blob) : null;
-};
-
-export const renderItems = (surface: Surface, box: Box, items: RenderItem[], bg: Color) => {
-    const ctx = surface.getCanvas();
-    const bgc = colorToRgb(bg);
-    ctx.clear(pk.Color(bgc.r, bgc.g, bgc.b));
-
-    ctx.save();
-    ctx.scale(surface.width() / box.width, surface.height() / box.height);
-    ctx.translate(-box.x, -box.y);
-    items.forEach((item) => {
-        const pkp =
-            item.pk ??
-            pk.Path.MakeFromCmds(
-                item.shapes.flatMap((shape) => segmentsCmds(shape.origin, shape.segments, false)),
-            )!;
-        const paint = new pk.Paint();
-        paint.setAntiAlias(true);
-        if (item.strokeWidth == null) {
-            paint.setStyle(pk.PaintStyle.Fill);
-            paint.setColor([item.color.r / 255, item.color.g / 255, item.color.b / 255]);
-        } else if (item.strokeWidth) {
-            paint.setStyle(pk.PaintStyle.Stroke);
-            paint.setStrokeWidth(item.strokeWidth!);
-            paint.setColor([item.color.r / 255, item.color.g / 255, item.color.b / 255]);
+        const debugTime = false;
+        if (debugTime) {
+            renderItems(surface, box, items, bg, fontData, currentFrame / totalFrames);
         } else {
-            return;
+            renderItems(surface, box, items, bg);
         }
-
-        let imf: null | ImageFilter = null;
-        if (item.shadow) {
-            imf = pk.ImageFilter.MakeDropShadow(
-                // 0,
-                // 0,
-                item.shadow.offset.x,
-                item.shadow.offset.y,
-                item.shadow.blur.x,
-                item.shadow.blur.y,
-                // 0.01,
-                // 0.01,
-                pk.Color(item.shadow.color.r, item.shadow.color.g, item.shadow.color.b),
-                null,
-            );
-            paint.setImageFilter(imf);
-        }
-
-        if (item.opacity != null) {
-            paint.setAlphaf(item.opacity);
-        }
-        ctx.drawPath(pkp, paint);
-        paint.delete();
-        if (!item.pk) {
-            pkp.delete();
-        }
-        // if (imf != null) imf.delete();
+        // const ctx = surface.getCanvas();
+        // const paint = new pk.Paint();
+        // paint.setColor(pk.RED);
+        // paint.setStyle(pk.PaintStyle.Fill);
+        // const font = new pk.Font();
+        // // font.setSize()
+        // ctx.drawText(currentFrame / totalFrames + '', size / 2, size / 2, paint, font);
+        // surface.flush();
     });
-    ctx.restore();
-    surface.flush();
+    return blob ? URL.createObjectURL(blob) : null;
 };

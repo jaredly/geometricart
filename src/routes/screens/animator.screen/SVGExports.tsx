@@ -82,7 +82,6 @@ export const SVGExports = ({
         return makeThreedItems(tconfig, svgs, paper, config);
     }, [svgs, tconfig, paper, config]);
 
-    const worker = useRef(null as null | Worker);
     const [rotate, setRotate] = useState(false);
 
     // const worker = useMemo(() => {
@@ -92,6 +91,7 @@ export const SVGExports = ({
 
     const [progress, setProgress] = useState(null as null | number);
 
+    const worker = useRef(null as null | Worker);
     useEffect(() => {
         if (!worker.current) {
             worker.current = new Worker(new URL('./svg-worker.ts', import.meta.url), {

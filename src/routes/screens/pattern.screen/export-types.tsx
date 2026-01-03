@@ -1,4 +1,3 @@
-import {mulPos} from '../../../animation/mulPos';
 import {scalePos} from '../../../editor/scalePos';
 import {hslToRgb} from '../../../rendering/colorConvert';
 import {coordKey} from '../../../rendering/coordKey';
@@ -8,7 +7,7 @@ import {
     scaleMatrix,
     translationMatrix,
 } from '../../../rendering/getMirrorTransforms';
-import {GuideGeom, Coord, Segment, BarePath} from '../../../types';
+import {GuideGeom, Coord, Segment, BarePath, Tiling, ThinTiling} from '../../../types';
 import {pk, PKPath} from '../../pk';
 import {colorToString} from './colors';
 import {CropsAndMatrices} from './resolveMods';
@@ -63,34 +62,6 @@ export const colorToRgb = (c: Color): {r: number; g: number; b: number} =>
 const rgbFromArr = (c: [number, number, number]) => ({r: c[0], g: c[1], b: c[2]});
 
 export type Crop = {id: string; shape: string; mods?: PMods[]};
-export type State = {
-    shapes: Record<string, BarePath>;
-    layers: Record<string, Layer>;
-    crops: Record<string, Crop>;
-    view: {
-        ppi: number;
-        background?: AnimatableColor;
-        box: Box;
-    };
-    styleConfig: {
-        seed: AnimatableNumber;
-        palette: Color[];
-        timeline: {
-            // 0 to 1, sorted
-            ts: number[];
-            lanes: {
-                name: string;
-                // sorted orders
-                ys: number[];
-                // index into ys
-                // one number per `t` in `ts`
-                values: number[];
-                // easings
-                easings: (string | null)[];
-            }[];
-        };
-    };
-};
 
 export type Layer = {
     id: string;
@@ -109,39 +80,28 @@ export type Group = {
     id: string;
     name?: string;
     entities: Record<string, number>; // id -> order
-    // mods: PMod[];
-    // crops: {hole?: boolean; rough?: boolean; id: string}[];
 };
-
-// export type ConcreteMods = {
-//     inset?: number;
-//     scale?: Coord | number;
-//     scaleOrigin?: Coord;
-//     offset?: Coord;
-//     rotation?: number;
-//     rotationOrigin?: Coord;
-//     // Non-positional
-//     opacity?: number;
-//     tint?: Color;
-//     // for 3d rendering
-//     thickness?: number;
-// };
 
 export type CropMode = 'rough' | 'half';
 
 export type PMods =
-    | {type: 'inset'; v: AnimatableNumber}
-    | {type: 'crop'; id: string; hole?: boolean; mode?: CropMode}
-    | {type: 'scale'; v: AnimatableCoord | AnimatableNumber; origin?: AnimatableCoord}
-    | {type: 'rotate'; v: AnimatableNumber; origin?: AnimatableCoord}
-    | {type: 'translate'; v: AnimatableCoord};
+    | {type: 'inset'; v: AnimatableNumber; disabled?: boolean}
+    | {type: 'crop'; id: string; hole?: boolean; mode?: CropMode; disabled?: boolean}
+    | {
+          type: 'scale';
+          v: AnimatableCoord | AnimatableNumber;
+          origin?: AnimatableCoord;
+          disabled?: boolean;
+      }
+    | {type: 'rotate'; v: AnimatableNumber; origin?: AnimatableCoord; disabled?: boolean}
+    | {type: 'translate'; v: AnimatableCoord; disabled?: boolean};
 
 export type ConcretePMod =
-    | {type: 'inset'; v: number}
-    | {type: 'crop'; id: string; hole?: boolean; mode?: CropMode}
-    | {type: 'scale'; v: Coord | number; origin?: Coord}
-    | {type: 'rotate'; v: number; origin?: Coord}
-    | {type: 'translate'; v: Coord};
+    | {type: 'inset'; v: number; disabled?: boolean}
+    | {type: 'crop'; id: string; hole?: boolean; mode?: CropMode; disabled?: boolean}
+    | {type: 'scale'; v: Coord | number; origin?: Coord; disabled?: boolean}
+    | {type: 'rotate'; v: number; origin?: Coord; disabled?: boolean}
+    | {type: 'translate'; v: Coord; disabled?: boolean};
 
 export type SMods = PMods;
 
@@ -153,24 +113,10 @@ export type NPMods = {
     thickness: AnimatableNumber;
 };
 
-// export type Mods = {
-//     inset?: AnimatableNumber;
-//     scale?: AnimatableCoord | AnimatableNumber;
-//     scaleOrigin?: AnimatableCoord;
-//     offset?: AnimatableCoord;
-//     rotation?: AnimatableNumber;
-//     rotationOrigin?: AnimatableCoord;
-//     // Non-positional
-//     opacity?: AnimatableNumber;
-//     tint?: AnimatableColor;
-//     // for 3d rendering
-//     thickness?: AnimatableNumber;
-// };
-
 export const insetPkPath = (path: PKPath, inset: number) => {
     if (Math.abs(inset) < 0.00001) return;
     const stroke = path.copy().stroke({
-        width: Math.abs(inset),
+        width: Math.abs(inset) * 2,
     })!;
     if (!stroke) return;
     path.op(stroke, inset < 0 ? pk.PathOp.Union : pk.PathOp.Difference);
@@ -213,39 +159,10 @@ export const modMatrix = (mod: ConcretePMod, origin?: Coord) => {
     return tx;
 };
 
-// export const modsTransforms = (mods: ConcreteMods, origin?: Coord) => {
-//     const tx: Matrix[] = [];
-//     if (mods.scale) {
-//         const scale = typeof mods.scale === 'number' ? {x: mods.scale, y: mods.scale} : mods.scale;
-//         const sorigin = mods.scaleOrigin ?? origin;
-//         if (sorigin) {
-//             tx.push(translationMatrix(scalePos(sorigin, -1)));
-//         }
-//         tx.push(scaleMatrix(scale.x, scale.y));
-//         if (sorigin) {
-//             tx.push(translationMatrix(sorigin));
-//         }
-//     }
-//     if (mods.rotation) {
-//         const rorigin = mods.rotationOrigin ?? origin;
-//         if (rorigin) {
-//             tx.push(translationMatrix(scalePos(rorigin, -1)));
-//         }
-//         tx.push(rotationMatrix(mods.rotation));
-//         if (rorigin) {
-//             tx.push(translationMatrix(rorigin));
-//         }
-//     }
-//     if (mods.offset) {
-//         tx.push(translationMatrix(mods.offset));
-//     }
-//     return tx;
-// };
-
 export type Pattern = {
     type: 'Pattern';
     id: string;
-    tiling: string;
+    tiling: string | {id: string; tiling: ThinTiling};
 
     psize: Coord | number;
     contents: PatternContents;
@@ -321,6 +238,7 @@ export type Shadow =
           color?: AnimatableColor;
           offset?: AnimatableCoord | AnimatableNumber;
           blur?: AnimatableCoord | AnimatableNumber;
+          inner?: AnimatableBoolean;
       }
     | string;
 
@@ -406,7 +324,13 @@ export type EObject = {
     type: 'Object';
     id: string;
     shape: string;
-    style: ShapeStyle;
+    style: {
+        disabled?: boolean;
+        fills: Record<string, Fill>;
+        lines: Record<string, Line>;
+        t?: TChunk;
+        mods: PMods[];
+    };
 };
 
 export type Entity = Group | Pattern | EObject;

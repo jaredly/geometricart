@@ -1,6 +1,7 @@
 import {useState, useRef, useEffect, useCallback} from 'react';
 import {Coord} from '../../../types';
 import {Box} from './export-types';
+import {useLatest} from './editState';
 
 export const percentToWorld = (percent: Coord, viewBox: Box) => {
     const x = viewBox.width * percent.x + viewBox.x;
@@ -26,57 +27,64 @@ export const sizeBox = (initialSize: number) => ({
 });
 
 export const useElementZoom = (initialBox: Box) => {
-    const [box, setBox] = useState(initialBox);
+    const [sbox, setBox] = useState<null | Box>(null);
+    const box = sbox ?? initialBox;
 
-    const latest = useRef(box);
-    latest.current = box;
-    const ref = useRef<HTMLElement | SVGElement>(null);
+    const lbox = useLatest(box);
     useEffect(() => {
-        if (!ref.current) return;
-        const fn = function (this: HTMLElement | SVGElement, evt: WheelEvent) {
-            evt.preventDefault();
+        if (lbox.current != null && lbox.current !== initialBox) {
+            setBox(null);
+        }
+    }, [initialBox, lbox]);
 
-            const nbox = {...latest.current};
+    const latest = useLatest(box);
+    const ref = useRef<{node: HTMLElement | SVGElement | null; tick(): void}>({
+        node: null,
+        tick() {
+            if (!ref.current.node) return;
+            const fn = function (this: HTMLElement | SVGElement, evt: WheelEvent) {
+                evt.preventDefault();
 
-            if (evt.shiftKey) {
-                nbox.x += nbox.width * 0.003 * evt.deltaX;
-                nbox.y += nbox.height * 0.003 * evt.deltaY;
+                const nbox = {...latest.current};
+
+                if (evt.shiftKey) {
+                    nbox.x += nbox.width * 0.003 * evt.deltaX;
+                    nbox.y += nbox.height * 0.003 * evt.deltaY;
+                    latest.current = nbox;
+                    return setBox(nbox);
+                }
+
+                nbox.width *= 1 + evt.deltaY * 0.01;
+                nbox.height *= 1 + evt.deltaY * 0.01;
+
+                const percent = worldToPercent(
+                    {x: evt.clientX, y: evt.clientY},
+                    this.getBoundingClientRect(),
+                );
+                const pre = percentToWorld(percent, latest.current);
+                const post = percentToWorld(percent, nbox);
+
+                nbox.x -= post.x - pre.x;
+                nbox.y -= post.y - pre.y;
+
                 latest.current = nbox;
-                return setBox(nbox);
-            }
-
-            nbox.width *= 1 + evt.deltaY * 0.01;
-            nbox.height *= 1 + evt.deltaY * 0.01;
-
-            const percent = worldToPercent(
-                {x: evt.clientX, y: evt.clientY},
-                this.getBoundingClientRect(),
-            );
-            const pre = percentToWorld(percent, latest.current);
-            const post = percentToWorld(percent, nbox);
-
-            nbox.x -= post.x - pre.x;
-            nbox.y -= post.y - pre.y;
-
-            latest.current = nbox;
-            setBox(nbox);
-        } as EventListenerOrEventListenerObject;
-        ref.current.addEventListener('wheel', fn, {passive: false});
-        return () => ref.current?.removeEventListener('wheel', fn);
-    }, []);
+                setBox(nbox);
+            } as EventListenerOrEventListenerObject;
+            ref.current.node.addEventListener('wheel', fn, {passive: false});
+        },
+    });
+    // useEffect(() => {
+    //     return () => ref.current?.removeEventListener('wheel', fn);
+    // }, [latest]);
 
     const reset = useCallback(
         (keepZoom = false) =>
             setBox(
                 keepZoom
-                    ? (box) => ({
-                          ...box,
-                          x: -box.width / 2,
-                          y: -box.height / 2,
-                      })
-                    : initialBox,
+                    ? (box) => (box ? {...box, x: -box.width / 2, y: -box.height / 2} : null)
+                    : null,
             ),
-        [initialBox],
+        [],
     );
 
     const canReset =
@@ -96,3 +104,5 @@ export const useElementZoom = (initialBox: Box) => {
         reset: canReset ? reset : null,
     };
 };
+
+export type ZoomProps = ReturnType<typeof useElementZoom>['zoomProps'];

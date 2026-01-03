@@ -3,118 +3,164 @@ import {Color, PMods, AnimatableNumber, AnimatableCoord} from '../export-types';
 import {AnimInput} from './AnimInput';
 import {AnimCoordInput} from './AnimCoordInput';
 import {AnimCoordOrNumberInput} from './AnimCoordOrNumberInput';
+import {useExportState} from '../ExportHistory';
+import {EyeIcon, EyeInvisibleIcon} from '../../../../icons/Eyes';
+import {Updater} from '../../../../json-diff/Updater';
+
+const Disableable = ({
+    children,
+    remove,
+    toggle,
+    disabled,
+}: {
+    children: React.ReactNode;
+    toggle(): void;
+    remove(): void;
+    disabled?: boolean;
+}) => (
+    <div className="flex flex-row gap-2 items-center" style={disabled ? {opacity: 0.6} : undefined}>
+        <button
+            onClick={toggle}
+            className="cursor-pointer p-3 text-gray-600 hover:text-gray-900"
+            aria-label={disabled ? 'Enable mod' : 'Disable mod'}
+        >
+            {disabled ? <EyeInvisibleIcon color="gray" /> : <EyeIcon />}
+        </button>
+        <button onClick={remove} className="cursor-pointer p-3 text-gray-600 hover:text-red-500">
+            &times;
+        </button>
+        {children}
+    </div>
+);
 
 export const PModEditor = ({
     palette,
     value,
-    onChange,
-    onRemove,
+    update,
 }: {
     palette: Color[];
     value: PMods;
-    onChange: (next: PMods, nextKey?: string) => void;
-    onRemove: () => void;
+    update: Updater<PMods>;
 }) => {
+    const ctx = useExportState();
+    const cropIds = ctx.use((v) => Object.keys(v?.crops ?? {}), false);
+    // const cropIds = Object.keys(ctx.latest().crops);
+
     switch (value.type) {
         case 'inset':
             return (
-                <div>
-                    <button
-                        onClick={onRemove}
-                        className="cursor-pointer p-3 text-gray-600 hover:text-red-500"
-                    >
-                        &times;
-                    </button>
+                <Disableable
+                    disabled={value.disabled}
+                    toggle={() => update.variant(value.type).disabled((v, u) => u(!v))}
+                    remove={update.remove}
+                >
                     <span className="mr-2">{value.type}</span>
                     <AnimInput
                         label="v"
                         value={value.v}
-                        onChange={(v) => onChange({...value, v: v as AnimatableNumber})}
+                        // biome-ignore lint: this one is fine
+                        onChange={update.variant(value.type).v as Updater<any>}
                     />
-                </div>
+                </Disableable>
             );
         case 'translate':
             return (
-                <div>
-                    <button
-                        onClick={onRemove}
-                        className="cursor-pointer p-3 text-gray-600 hover:text-red-500"
-                    >
-                        &times;
-                    </button>
-                    {value.type}
+                <Disableable
+                    disabled={value.disabled}
+                    toggle={() => update.variant(value.type).disabled((v, u) => u(!v))}
+                    remove={update.remove}
+                >
+                    translate
                     <AnimCoordInput
                         label="v"
                         value={value.v}
-                        onChange={(v) => onChange({...value, v: v as AnimatableCoord})}
+                        // biome-ignore lint: this one is fine
+                        onChange={update.variant('translate').v as Updater<any>}
                     />
-                </div>
+                </Disableable>
             );
         case 'crop':
             return (
-                <div>
-                    <button
-                        onClick={onRemove}
-                        className="cursor-pointer p-3 text-gray-600 hover:text-red-500"
+                <Disableable
+                    disabled={value.disabled}
+                    toggle={() => update.variant(value.type).disabled((v, u) => u(!v))}
+                    remove={update.remove}
+                >
+                    {value.type}
+                    <select
+                        value={value.id}
+                        onChange={(evt) => update.variant('crop').id(evt.target.value)}
                     >
-                        &times;
-                    </button>
-                    {value.type}:{value.id}
+                        <option disabled value="">
+                            Select an id
+                        </option>
+                        {cropIds.map((id) => (
+                            <option key={id} value={id}>
+                                {id}
+                            </option>
+                        ))}
+                    </select>
+                    Rough
+                    <input
+                        type="checkbox"
+                        className="checkbox"
+                        checked={value.mode === 'rough'}
+                        onChange={() =>
+                            value.mode === undefined
+                                ? update.variant('crop').mode.add('rough')
+                                : update.variant('crop').mode.remove()
+                        }
+                    />
+                    Hole
                     <input
                         type="checkbox"
                         className="checkbox"
                         checked={value.hole}
-                        onChange={(evt) => onChange({...value, hole: evt.target.checked})}
+                        onChange={(evt) => update.variant('crop').hole(evt.target.checked)}
                     />
-                </div>
+                </Disableable>
             );
         case 'scale':
             return (
-                <div className="flex flex-row gap-2 items-center">
-                    <button
-                        onClick={onRemove}
-                        className="cursor-pointer p-3 text-gray-600 hover:text-red-500"
-                    >
-                        &times;
-                    </button>
+                <Disableable
+                    disabled={value.disabled}
+                    toggle={() => update.variant(value.type).disabled((v, u) => u(!v))}
+                    remove={update.remove}
+                >
                     {value.type}
                     <AnimCoordOrNumberInput
                         label="v"
                         value={value.v}
-                        onChange={(v) => onChange({...value, v: v as AnimatableNumber})}
+                        // biome-ignore lint: this one is fine
+                        onChange={update.variant('scale').v as Updater<any>}
                     />
                     <AnimCoordInput
                         label="origin"
                         value={value.origin}
-                        onChange={(origin) =>
-                            onChange({...value, origin: origin as AnimatableCoord})
-                        }
+                        onChange={update.variant('scale').origin}
                     />
-                </div>
+                </Disableable>
             );
         case 'rotate':
             return (
-                <div className="flex flex-row gap-2 items-center">
-                    <button
-                        onClick={onRemove}
-                        className="cursor-pointer p-3 text-gray-600 hover:text-red-500"
-                    >
-                        &times;
-                    </button>
+                <Disableable
+                    disabled={value.disabled}
+                    toggle={() => update.variant(value.type).disabled((v, u) => u(!v))}
+                    remove={update.remove}
+                >
                     {value.type}
                     <AnimInput
                         label="v"
                         value={value.v}
-                        onChange={(v) => onChange({...value, v: v as AnimatableNumber})}
+                        // biome-ignore lint: this one is fine
+                        onChange={update.variant('rotate').v as Updater<any>}
                     />
                     <AnimCoordInput
                         label="origin"
                         value={value.origin}
-                        onChange={(origin) =>
-                            onChange({...value, origin: origin as AnimatableCoord})
-                        }
+                        onChange={update.variant('rotate').origin}
                     />
-                </div>
+                </Disableable>
             );
     }
 };

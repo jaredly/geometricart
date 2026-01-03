@@ -1,36 +1,43 @@
-import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
-import {Tiling} from '../../../types';
-import {ProvideEditState} from './editState';
+import {useCallback, useEffect, useMemo, useState} from 'react';
+import {ThinTiling, Tiling} from '../../../types';
+import {
+    EditState,
+    PendingState,
+    ProvideEditState,
+    ProvidePendingState,
+    useEditState,
+    usePendingState,
+} from './editState';
 // import {example} from './example';
-import {ShapeStyle, State} from './export-types';
+import {ShapeStyle} from './export-types';
+import {State} from './types/state-type';
 import {RenderExport} from './RenderExport';
 import {StateEditor} from './state-editor/StateEditor';
 import type {Route} from './+types/pattern-export';
-import {useLocation} from 'react-router';
+import {useLocation, useParams} from 'react-router';
 import {getNewPatternData} from '../../getPatternData';
 import {sizeBox} from './useSVGZoom';
 import {parseColor} from './colors';
 import {genid} from './genid';
 import {Patterns} from './evaluate';
-import {unique} from '../../shapesFromSegments';
-import {notNull} from './resolveMods';
-// import {example3} from './example3';
-
-const usePromise = <T,>(f: (abort: AbortSignal) => Promise<T>, deps: any[] = []) => {
-    const [v, setV] = useState<T | null>(null);
-    const lv = useRef(f);
-    lv.current = f;
-    useEffect(() => {
-        const ctrl = new AbortController();
-        lv.current(ctrl.signal).then(setV);
-        return () => ctrl.abort();
-    }, deps);
-    return v;
-};
+import {RenderDebug} from './RenderDebug';
+import {blankHistory} from '../../../json-diff/history';
+import {makeContext} from '../../../json-diff/react';
+import {usePromise} from './usePromise';
+import {thinTiling} from './renderPattern';
+import {ExportHistory, ProvideExportState, useExportState} from './ExportHistory';
+import {useWorker} from './render-client';
+import typia from 'typia';
+import {loadState} from './types/load-state';
+import {useInitialPatterns} from './useInitialPatterns';
+import {Page} from './Page';
 
 const PatternPicker = () => {
     const all = usePromise((signal) => fetch('/gallery.json', {signal}).then((r) => r.json()));
-    return <div>Pick a pattern you cowards {all.length}</div>;
+    if (all?.type === 'err') {
+        return <div>No bueno</div>;
+    }
+    return <div>Pick a pattern you cowards {all?.value.length} options</div>;
 };
 
 const colorsRaw = '1f77b4ff7f0e2ca02cd627289467bd8c564be377c27f7f7fbcbd2217becf';
@@ -39,7 +46,7 @@ for (let i = 0; i < colorsRaw.length; i += 6) {
     colors.push('#' + colorsRaw.slice(i, i + 6));
 }
 
-const makeForPattern = (tiling: Tiling, hash: string): State => {
+const makeForPattern = (tiling: ThinTiling, hash: string): State => {
     const pd = getNewPatternData(tiling);
     const styles: Record<string, ShapeStyle> = {};
     for (let i = 0; i <= pd.colorInfo.maxColor; i++) {
@@ -77,7 +84,7 @@ const makeForPattern = (tiling: Tiling, hash: string): State => {
                         mods: [],
                         psize: 3,
                         contents: {type: 'shapes', styles},
-                        tiling: hash,
+                        tiling: {id: hash, tiling},
                     },
                 },
                 guides: [],
@@ -102,9 +109,9 @@ const CreateAndRedirect = ({id}: {id: string}) => {
         const controller = new AbortController();
         const ok = async () => {
             const v: Tiling = await fetch(`/gallery/pattern/${id}/json`).then((r) => r.json());
-            const state = makeForPattern(v, id);
+            const state = makeForPattern(thinTiling(v), id);
             const sid = genid();
-            await fetch(`/assets/exports/${sid}.json`, {
+            await fetch(`/fs/exports/${sid}.json`, {
                 method: 'POST',
                 body: JSON.stringify(state, null, 2),
                 headers: {'Content-type': 'application/json'},
@@ -121,23 +128,47 @@ const CreateAndRedirect = ({id}: {id: string}) => {
     return <div>Loading pattern...</div>;
 };
 
-const NewPattern = () => {
-    const loc = useLocation();
-    const params = new URLSearchParams(loc.search);
-    const pattern = params.get('pattern');
-    if (!pattern) {
-        return <PatternPicker />;
-    }
-    return <CreateAndRedirect id={pattern} />;
-};
-
-const LoadPattern = ({id}: {id: string}) => {
-    const state = usePromise<State>((signal) =>
-        fetch(`/fs/exports/${id}.json`, {signal}).then((r) => r.json()),
+const LoadAndMigratePattern = ({id}: {id: string}) => {
+    const state = usePromise((signal) =>
+        fetch(`/fs/exports/${id}.json`, {signal})
+            .then((r) => r.json())
+            .then(loadState),
     );
 
+    const bcr = [
+        {title: 'Geometric Art', href: '/'},
+        {title: 'Export', href: '/export/'},
+        {title: id, href: '/export/' + id},
+    ];
+
+    if (!state) {
+        return (
+            <Page breadcrumbs={bcr}>
+                <div>Loading...</div>
+            </Page>
+        );
+    }
+
+    if (state.type === 'err') {
+        return (
+            <Page breadcrumbs={bcr}>
+                <div>Failed to load: {state.error.message}</div>
+            </Page>
+        );
+    }
+
+    if (state.value.version !== null) {
+        // Show a dialog asking if the user wants to
+        // a) edit it using an older version
+        // b) migrate to the current version
+    }
+
+    return <LoadPattern state={state.value.value} id={id} />;
+};
+
+const LoadPattern = ({id, state}: {id: string; state: ExportHistory}) => {
     const onSave = useCallback(
-        (state: State) => {
+        (state: ExportHistory) => {
             return fetch(`/fs/exports/${id}.json`, {
                 method: 'POST',
                 body: JSON.stringify(state, null, 2),
@@ -147,33 +178,7 @@ const LoadPattern = ({id}: {id: string}) => {
         [id],
     );
 
-    const initialPatterns = usePromise(
-        async (signal) => {
-            console.log('get pattern');
-            if (!state) {
-                console.log('no state');
-                return null;
-            }
-            console.log('have state');
-            const ids = unique(
-                Object.values(state.layers)
-                    .flatMap((l) =>
-                        Object.values(l.entities).map((e) =>
-                            e.type === 'Pattern' ? e.tiling : null,
-                        ),
-                    )
-                    .filter(notNull),
-                (x) => x,
-            );
-            const values = await Promise.all(
-                ids.map((id) =>
-                    fetch(`/gallery/pattern/${id}/json`, {signal}).then((r) => r.json()),
-                ),
-            );
-            return Object.fromEntries(ids.map((id, i) => [id, values[i]]));
-        },
-        [state],
-    );
+    const initialPatterns = useInitialPatterns(state);
 
     const bcr = [
         {title: 'Geometric Art', href: '/'},
@@ -181,106 +186,206 @@ const LoadPattern = ({id}: {id: string}) => {
         {title: id, href: '/export/' + id},
     ];
 
-    if (!state || !initialPatterns)
+    if (!initialPatterns) {
         return (
             <Page breadcrumbs={bcr}>
                 <div>Loading...</div>
             </Page>
         );
+    }
+
+    if (initialPatterns.type === 'err') {
+        return (
+            <Page breadcrumbs={bcr}>
+                <div>Unable to load pattern defintions...</div>
+            </Page>
+        );
+    }
 
     return (
         <Page breadcrumbs={bcr}>
-            <PatternExport initial={state} onSave={onSave} initialPatterns={initialPatterns} />
+            <PatternExport
+                initial={state}
+                onSave={onSave}
+                initialPatterns={initialPatterns.value}
+            />
         </Page>
     );
 };
 
-const Page = ({
-    children,
-    breadcrumbs,
-}: {
-    children: React.ReactElement;
-    breadcrumbs: {title: string; href: string}[];
-}) => (
-    <div className="mx-auto w-6xl p-4 pt-0 bg-base-200 shadow-base-300 shadow-md">
-        <div className="sticky top-0 py-2 mb-2 bg-base-200 shadow-md shadow-base-200 flex justify-between">
-            <div className="breadcrumbs text-sm">
-                <ul>
-                    {breadcrumbs.map((item, i) => (
-                        <li key={i}>
-                            <a href={item.href}>{item.title}</a>
-                        </li>
-                    ))}
-                </ul>
+const ListExports = () => {
+    const all = usePromise((signal) =>
+        fetch('/fs/exports', {signal})
+            .then((r) => r.json())
+            .then((v: {name: string; created: number; modified: number}[]) => {
+                const patterns: Record<
+                    string,
+                    {id: string; icon?: {id: string; created: number}; modified: number}
+                > = {};
+                v.forEach(({name, created, modified}) => {
+                    if (name.endsWith('.json')) {
+                        const id = name.slice(0, -'.json'.length);
+                        if (!patterns[id]) {
+                            patterns[id] = {id, modified};
+                        } else {
+                            patterns[id].modified = modified;
+                        }
+                    } else if (name.endsWith('.png')) {
+                        const parts = name.slice(0, -'.png'.length).split('-');
+                        const iid = parts.pop()!;
+                        const id = parts.join('-');
+                        if (!patterns[id]) {
+                            patterns[id] = {id, modified: created, icon: {id: iid, created}};
+                        } else if (!patterns[id].icon || patterns[id].icon.created < created) {
+                            patterns[id].icon = {id: iid, created};
+                        }
+                    }
+                });
+                return Object.values(patterns).sort((a, b) => b.modified - a.modified);
+            }),
+    );
+    if (!all) return 'Loading...';
+    if (all.type === 'err') {
+        return (
+            <Page
+                breadcrumbs={[
+                    {title: 'Geometric Art', href: '/'},
+                    {title: 'Exports', href: '/export/'},
+                ]}
+            >
+                <div>Failed to load exports</div>
+            </Page>
+        );
+    }
+    return (
+        <Page
+            breadcrumbs={[
+                {title: 'Geometric Art', href: '/'},
+                {title: 'Exports', href: '/export/'},
+            ]}
+        >
+            <div className="flex flex-row flex-wrap gap-4 p-4">
+                {all.value.map(({id, icon}) => (
+                    <div>
+                        <a className="link" href={`/export/${id}`}>
+                            {icon ? (
+                                <img
+                                    width={200}
+                                    height={200}
+                                    src={`/assets/exports/${id}-${icon.id}.png`}
+                                />
+                            ) : (
+                                id
+                            )}
+                        </a>
+                    </div>
+                ))}
             </div>
-            {/* <div role="tablist" className="tabs tabs-border">
-                    {tabs.map((tap) =>
-                        tap.enabled !== false ? (
-                            <a
-                                role="tab"
-                                key={tap.name}
-                                className={'tab' + (currentTab === tap.name ? ` tab-active` : '')}
-                                href={tap.link}
-                                onClick={
-                                    tap.link
-                                        ? undefined
-                                        : () => {
-                                              setCurrentTab(tap.name);
-                                          }
-                                }
-                            >
-                                {tap.name}
-                            </a>
-                        ) : null,
-                    )}
-                </div> */}
-        </div>
-        {children}
-    </div>
-);
+        </Page>
+    );
+};
 
 export default function PatternExportScreen({params}: Route.ComponentProps) {
+    const loc = useLocation();
+    const sparams = new URLSearchParams(loc.search);
+    const pattern = sparams.get('pattern');
+
     if (params.id) {
-        return <LoadPattern id={params.id} />;
+        return <LoadAndMigratePattern id={params.id} />;
     }
-    return <NewPattern />;
+
+    if (pattern) {
+        return <CreateAndRedirect id={pattern} />;
+    }
+
+    return <ListExports />;
 }
 
-const PatternExport = ({
+const initialEditState: EditState = {
+    hover: null,
+    showShapes: false,
+};
+const initialPendingStateHistory = blankHistory<PendingState>({pending: null});
+
+export const PatternExport = ({
     initial,
     onSave,
     initialPatterns,
 }: {
-    initial: State;
-    onSave: (s: State) => void;
+    initial: ExportHistory;
+    onSave: (s: ExportHistory) => void;
     initialPatterns: Patterns;
 }) => {
-    const [state, setState] = useState<State>(initial);
+    return (
+        <ProvideExportState initial={initial} save={onSave}>
+            <ProvidePendingState initial={initialPendingStateHistory}>
+                <ProvideEditState initial={initialEditState}>
+                    <Inner initialPatterns={initialPatterns} />
+                </ProvideEditState>
+            </ProvidePendingState>
+        </ProvideExportState>
+    );
+};
+
+const Inner = ({initialPatterns}: {initialPatterns: Patterns}) => {
+    const sctx = useExportState();
+    const state = sctx.use((v) => v);
+    const patternCache = useMemo<Patterns>(() => initialPatterns, [initialPatterns]);
+    const pctx = usePendingState();
+    const debug = location.search.includes('debug=');
+    const params = useParams();
 
     useEffect(() => {
-        if (state !== initial) {
-            console.log('saving', state);
-            onSave(state);
-        }
-    }, [state, initial, onSave]);
+        return sctx.onHistoryChange(() => {
+            pctx.clearHistory();
+        });
+    }, [sctx, pctx]);
 
-    const patternCache = useMemo<Patterns>(() => initialPatterns, [initialPatterns]);
-
-    // biome-ignore lint/correctness/useExhaustiveDependencies : this is for hot refresh
-    // useEffect(() => {
-    //     setState(example3);
-    // }, [example3, id]);
-
-    // const patterns = useMemo(() => ({[id]: tiling}), [id, tiling]);
+    useEffect(() => {
+        const fn = (evt: KeyboardEvent) => {
+            if (evt.metaKey && evt.key === 'z') {
+                if (evt.shiftKey) {
+                    if (sctx.canRedo()) {
+                        sctx.redo();
+                    } else {
+                        pctx.redo();
+                    }
+                } else {
+                    if (pctx.canUndo()) {
+                        pctx.undo();
+                    } else {
+                        sctx.undo();
+                    }
+                }
+            }
+        };
+        document.addEventListener('keydown', fn);
+        return () => document.removeEventListener('keydown', fn);
+    }, [sctx, pctx]);
+    const worker = useWorker();
 
     return (
-        <ProvideEditState>
-            <div className="flex">
-                <RenderExport state={state} patterns={patternCache} />
-                <div className="max-h-250 overflow-auto flex-1">
-                    <StateEditor value={state} onChange={setState} />
-                </div>
+        <div className="flex">
+            {debug ? (
+                <RenderDebug state={state} update={sctx.update} patterns={patternCache} />
+            ) : (
+                <RenderExport
+                    worker={worker}
+                    id={params.id!}
+                    state={state}
+                    patterns={patternCache}
+                    onChange={sctx.update}
+                />
+            )}
+            <div className="max-h-250 overflow-auto flex-1">
+                <StateEditor
+                    id={params.id!}
+                    value={state}
+                    patterns={patternCache}
+                    update={sctx.update}
+                    worker={worker}
+                />
             </div>
-        </ProvideEditState>
+        </div>
     );
 };

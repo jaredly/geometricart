@@ -1,7 +1,306 @@
 
+## Isolated pattern editor:
+
+- [x] basic loading
+- [ ] load/save snapshot images correctly
+  - [ ] either from the /fs/ or from localStorage
+- [ ] do the build, and like commit it probably
+
+## Migrating state, are we ready?
+
+-> can put it off for now, and say you have to use the old editor
+
+
+## Let's talk about state migration
+
+-> we have a type freezer
+-> now, when a document is loaded up for an old type, we need to:
+  -> show a dialog asking if the user wants to (a) open up an old editor, or (b) migrate to the current schema version
+-> migrating to the current version should preserve all snapshotted states, but can ignore others.
+
+-> NOW I need to [bundle up the v0 editor].
+-> Where do I put it?
+-> idk, like ... in some file somewhere presumably.
+-> maybe it could even be hosted elsewhere? hmmm.
+  -> oh maybe `/export/v0/:id` or something
+  -> or it could live in assets
+    -> so we'd provide like ... the url to load it from, right?
+    -> which would presumably also be the place to save it to.?
+    -> so we'd redirect to
+      /assets/editor-old/v0/?src=/fs/exports/someid.json
+  Yeah that seems legit.
+
+
+##
+
+Debugs:
+- http://localhost:5173/export/5kwg6cxtbsh?debug=0.67
+
+Ok we're feeling good about adjusted shapes now.
+
+So I think we can move on to:
+- [ ] data format changes
+  -> ok but first, how do I manage migrations?
+  -> the ExportState data structure should have a version on it
+- [ ] 'archive' exports
+- [ ] rearchitect the exports page to be nicer to use
+
+# Data Format changes:
+
+- history annotations should be a map [id] instead of a list.
+- shouldn't allow non-tagged unions to include non-primitives (other than nullable)
+- remove timelines? idk or maybe make it so it uses chunk() under the hood?
+
+# NEXT ERRROR
+
+We have a case where splits
+http://localhost:5173/export/5len8yytkvr?debug=.765
+are detecting an intersection where there should be none,
+producing an extra little triangle
+that throws off the coloring calculations.
+
+- [ ] renderlog -> filter to only things in view
+
+##
+
+AHHH THE SHAPE DEDUPLICATION BY CENTER IS OVERLAPPING BETWEEN THINGS
+
+# Make an 'archive' button
+
+so I don't accidentally delete things that are actually good
+
+#
+
+Ok, I want a way to designate a given snapshot as the "main one"
+or also, a way to delete a snapshot.
+
+I kinda want to indicate on a history node whether there's anything that's animatable ...
+
+
+CONSIDER for graph coloring, ignoring neighboring sides that are very small.
+
+#
+
+Next up:
+- [x] adjust -> remove all shapes at once.
+
+YAYYYY IT WORKED
+
+#
+
+0.911 is weird in http://localhost:5173/export/dxxvh2fuahw-debug2
+
+agh ok so the "remove on same line" really does need to be mucked with.
+I think it's something like "project the segment onto the shape and see if the coords aren't too far off"
+
+
+
+Some things are better.
+I need to be able to jump between snapshots.
+
+Which means I also want to be able to visualize history.
+
+##
+
+AdjustShapes -> what if the "isLineOnLine" were more forgiving? Or rather, had better approximations?
+Like mx+b comparing pairwise works well if the (x) limits are close to zero, but if they're way large or small,
+then it's much worse. So I'd maybe want to transpose the lines to be near the origin before comparing them.
+
+##
+
+um I broke some things
+
+`use-it` has dxxvh2fuahw-debug2 rendering almost correctly.
+
+and my latest branch has it very broken
+
+also, ajustShapes2 leaves residuals outside of the relevant shapes, that I wish it wouldn't.
+
+Also, "psize" should just give the "make ttt" function a target width & height, and it should keep expanding
+until the eigenshape totally covers the target width and height. That would be really straightforward.
+
+#
+
+ok folks, let's start over
+
+like `renderPatterns` needs to start over
+ugh.
+ok so what is the problem.
+and how do I ... make tests for it.
+
+-> "removed pre shape" isn't working right.
+
+
+#
+
+A shape should be able to be compound. with boolean ops. So that we could have a crop that is the + of two shapes, -'d another shape. Instead of having three separate crops.
+
+-> debug circular holes
+  -> lol ok it was coordsFromBarePath (arcToCoords) not knowing about counter clockwises.
+
+-> clipShape, just return the cmds
+
+
+
+- [ ] rerchitect the whole visial thing. Turn it into a "studio"
+  - history along the bottom (toggleable)
+  - right side a full tree view
+    - shape editor pops in / out bottom right
+  - export is also a pane
+  - instead of viewBox do "center + ppi"
+  - export needs an "export box" that is determined separately. like a "camera" honestly.
+
+I alsoooo want to STORE SNAPSHOT ANNOTATIONS
+-> I think it's files
+-> assets/exports/some-id.json.other-id.png
+-> and when viewing all exports, just load the most recent .png, it's fine. or load all of them idk
+yeah let's do that.
+
+- [ ] I kinda want to convert the AnimatableNumber stuff into tagged unions
+  -> also non-primitive nullables should probably stop
+
+->><<->><<-
+
+- [ ] whenever you do an export, make that a snapshot
+- [ ] load up latest snapshot in the whatsit screen
+
+###
+
+Ok I tried the dumber adjustShapes and it took like 10x as long.
+30s to 220s 😭
+
+#
+
+- [ ] MOER BUGS
+  -> now it's on the coloring side maybe?
+    -> it might be useful to go through and ensure that everything is next to each other?
+
+- [x] Export pls
+- [x] export svg would be good toooo
+- [x] export video w/ worker
+- [ ] let's do shape auto-duplication. that should reduce storage size a fair bit
+  ->> lol now I need to deduplicate the whatsits
+  - [ ] deduplicate the newly produced shapes yes pls
+- [ ] Q: should I truncate numbers when I store them? 🤔 eh maybe not
+- [x] how about video render in a worker?
+- [x] the /patterns/ should be inlined
+  -> "thinTiling" is the thing
+
+how about alsooo
+we store snapshot images tho
+-> 
+
+#
+
+Still have more floating bugs looks like it.
+- [x] I should `normalize` (* 1000 | round | / 1000) instead of just unique'ing on the reduced keys.
+that should clear up a lot.
+
+anyway, chunksss
+
+Nowww what if we make history actually persist
+so then we can play with it.
+
+Ok next up, we want `preview` type updates.
+
+yay! loving it.
+
+Now I need export.
+
+
+- [x] mod crop edit working
+- [ ] all mods should be disableable.
+
+
+#
+
+yo so working with these update builders is so fun.
+i dunno if it's too much magic, but I'm loving it.
+
+SO the next barrier on the block:
+-> T | T[]
+my builder doesn't know how to distinguish.
+
+I've done the `variant` thing which is awesome.
+Maybe we can do `single(true/false)`?
+
+##
+
+Ok yall
+I have gotten the 'two level undo/redo' working!!!! And it's very cool.
+
+NOWWWW let's make history happen.
+first, do I want ot make my onChange much more granular?
+sure why not.
+
+##
+
+soooooanyway
+shall we do some undo/redo?
+
+something to think about:
+- IF editState has history, I want undo/redo to go there.
+- when main state gets a new history item, I want to clear editState history.
+- if you undo all the way through editState and then undo the main state ... I guess we don't need to clear editState necessarily.
+
+ANOTHER CONSIDERATION
+
+The nature of incremental exploration is such that I would want to "checkpoint" various states,
+with thumbnails. These should be loadable .... and like ... represent forks of history? maybe?
+
+Let's talk about a history tree.
+because I do think that's what I want.
+And I want to be able to visualize it, really well.
+
+"If you pause for more than ... 1 minute ... we automatically take a thumbnail."
+-> if animations make any difference, we'll take 5 thumbnails
+  -> lol ok so mp4 it is I guess. yeah we'll save a li'l video for ya
+
+Yeah I think I'll want a state-level checkbox that's like "enable animation"
+which is how I'll decide to even show the "animation" slider, or the "video export" thing.
+
+BTW I still need an image export (png / svg) as well.
+anddd I want to be able to handle 3d as well.
+
+ok but one thing at a time.
+
+I need a history format that works for trees.
+
+
+
+
+Make a shape style that is "within [these shapes]"
+with a shared variable called `shapeCenter`
+
+
+
+
+
+
 VISUAL BUG
 0.754 in export doc `5len8yytkvr`
 we're losing some shapes. Not getting colored.
+
+FIxEDDDDD
+
+
+Yeah ok so to debug the adjustment logic.
+
+- split "shapes" into "intersects the adjustment (pre or post)" vs "doesn't"
+- the ones that do get decomposed into segments
+  - show segments here (allow scrubbing through)
+- then remove the segments that lie along the pre-adjustment shape
+  - show segments removed (allow scrubbing through)
+- then add the post-move adjustment shape, and do "cut segments"
+- then we do 'shape reconstruction'
+  - go through each potential seed point
+    - go through exit segments
+      - discover a shape starting from the seed point going along that exit segment
+- and then we remove any shapes the overlap with the centroid of the moved shape, although really it should be "remove shapes that fully contain any internal shapes that didn't intersect the adjustment"
+- and that's it
+
+
+...
 
 ---
 

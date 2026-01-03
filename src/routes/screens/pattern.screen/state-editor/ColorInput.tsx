@@ -2,7 +2,15 @@ import React, {useState} from 'react';
 import {colorToRgbString, parseColor} from '../colors';
 import {Color} from '../export-types';
 
-export const ColorInput = ({value, onChange}: {value: Color; onChange: (v: Color) => void}) => {
+export const ColorInput = ({
+    value,
+    onChange,
+    onPreview,
+}: {
+    value: Color;
+    onChange: (v: Color) => void;
+    onPreview: (v: Color) => void;
+}) => {
     const [tmp, setTmp] = useState(null as null | Color);
 
     return (
@@ -14,6 +22,7 @@ export const ColorInput = ({value, onChange}: {value: Color; onChange: (v: Color
                 const color = parseColor(evt.target.value);
                 if (color) {
                     setTmp(color);
+                    onPreview(color);
                 }
             }}
         />

@@ -11,23 +11,27 @@ import {addMod} from './createLayerTemplate';
 import {AnimColor} from './AnimColor';
 import {AnimInput} from './AnimInput';
 import {PModEditor} from './PModEditor';
+import {BlurInput} from './BlurInput';
+import {ShadowEditor} from './ShadowEditor';
+import {Updater} from '../../../../json-diff/Updater';
 
 export const FillEditor = ({
     value,
-    onChange,
-    onRemove,
+    update,
     palette,
+    reId,
 }: {
     palette: Color[];
     value: Fill;
-    onChange: (next: Fill, nextKey?: string) => void;
-    onRemove: () => void;
+    update: Updater<Fill>;
+    reId(newKey: string): void;
 }) => {
     return (
         <div className="space-y-2 relative">
             <div className="flex flex-row md:flex-row gap-2 md:items-center">
-                Fill <span className="font-mono bg-gray-600 px-2 rounded">{value.id}</span>
-                <button className="btn btn-ghost btn-xs text-error " onClick={onRemove}>
+                Fill
+                <BlurInput className="w-20 font-mono" value={value.id} onChange={reId} />
+                <button className="btn btn-ghost btn-xs text-error " onClick={update.remove}>
                     &times;
                 </button>
             </div>
@@ -35,46 +39,48 @@ export const FillEditor = ({
                 <AnimInput
                     label="enabled"
                     value={value.enabled}
-                    onChange={(enabled) =>
-                        onChange({...value, enabled: enabled as AnimatableBoolean})
-                    }
+                    onChange={(enabled) => update.enabled(enabled as AnimatableBoolean)}
+                />
+                <AnimInput
+                    label="opacity"
+                    value={value.opacity}
+                    onChange={(opacity) => update.opacity(opacity as AnimatableNumber)}
                 />
                 <AnimInput
                     label="zIndex"
                     value={value.zIndex}
-                    onChange={(zIndex) => onChange({...value, zIndex: zIndex as AnimatableNumber})}
+                    onChange={(zIndex) => update.zIndex(zIndex as AnimatableNumber)}
                 />
                 <AnimColor
                     label="Color"
                     value={value.color}
-                    onChange={(color) => onChange({...value, color: color as AnimatableColor})}
+                    onChange={(color, when) => update.color(color as AnimatableColor, when)}
                     palette={palette}
                 />
                 <AnimInput
                     label="Rounded"
                     value={value.rounded}
-                    onChange={(rounded) =>
-                        onChange({...value, rounded: rounded as AnimatableNumber})
-                    }
+                    onChange={(rounded) => update.rounded(rounded as AnimatableNumber)}
+                />
+                <ShadowEditor
+                    value={value.shadow ?? null}
+                    update={update.shadow}
+                    palette={palette}
                 />
             </div>
-            <ModsEditor
-                palette={palette}
-                mods={value.mods}
-                onChange={(mods) => onChange({...value, mods})}
-            />
+            <ModsEditor palette={palette} mods={value.mods} update={update.mods} />
         </div>
     );
 };
 
 export const ModsEditor = ({
     mods,
-    onChange,
+    update,
     palette,
 }: {
     palette: Color[];
     mods: PMods[];
-    onChange: (mods: PMods[]) => void;
+    update: Updater<PMods[]> | Updater<PMods[] | undefined>;
 }) => (
     <div>
         <div className="font-semibold text-sm flex flex-row gap-4 items-center">
@@ -83,7 +89,10 @@ export const ModsEditor = ({
                 className="select select-sm w-50"
                 value=""
                 onChange={(evt) => {
-                    onChange([...mods, addMod(evt.target.value)]);
+                    (update as Updater<PMods[] | undefined>)((a, u) =>
+                        a ? u.push(addMod(evt.target.value)) : u([addMod(evt.target.value)]),
+                    );
+                    // update.push(addMod(evt.target.value));
                 }}
             >
                 <option disabled value="">
@@ -98,21 +107,7 @@ export const ModsEditor = ({
         </div>
 
         {mods.map((mod, i) => (
-            <PModEditor
-                key={i}
-                value={mod}
-                palette={palette}
-                onRemove={() => {
-                    const nmods = mods.slice();
-                    nmods.splice(i, 1);
-                    onChange(nmods);
-                }}
-                onChange={(mod) => {
-                    const nmods = mods.slice();
-                    nmods[i] = mod;
-                    onChange(nmods);
-                }}
-            />
+            <PModEditor key={i} value={mod} palette={palette} update={update[i]} />
         ))}
     </div>
 );

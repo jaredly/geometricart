@@ -12,6 +12,7 @@ import {angleBetween} from '../rendering/isAngleBetween';
 import {transformSegment} from '../rendering/points';
 import {Coord, Tiling} from '../types';
 import {getNewPatternData, getPatternData, preTransformTiling} from './getPatternData';
+import {thinTiling} from './screens/pattern.screen/renderPattern';
 import {
     shouldFlipTriangle,
     getRectangleTransform,
@@ -33,8 +34,8 @@ export const cutTilingSegments = (tiling: Tiling): Tiling => {
     const max = Math.max(...lens);
     const perc = lens.map((l) => Math.round((l / max) * 100));
     // console.log(perc.sort((a, b) => a - b).join(', '));
-    segs = cutSegments(segs);
-    segs = splitOverlappingSegs(segs);
+    segs = cutSegments(segs, 1000);
+    segs = splitOverlappingSegs(segs, 3);
     return {
         ...tiling,
         cache: {
@@ -55,7 +56,15 @@ export const flipPattern = (tiling: Tiling): Tiling => {
         let [start, corner, end] = bounds;
 
         let internalAngle = angleBetween(angleTo(start, corner), angleTo(start, end), true);
-        if (!shouldFlipTriangle(shape.rotateHypotenuse, internalAngle, tiling, start, end)) {
+        if (
+            !shouldFlipTriangle(
+                shape.rotateHypotenuse,
+                internalAngle,
+                thinTiling(tiling),
+                start,
+                end,
+            )
+        ) {
             return tiling;
         }
 
@@ -80,7 +89,7 @@ export const flipPattern = (tiling: Tiling): Tiling => {
         return {...tiling, cache, shape: {...shape, start: end, corner, end: start}};
     }
     if (shape.type === 'parallellogram') {
-        const data = getNewPatternData(tiling);
+        const data = getNewPatternData(thinTiling(tiling));
         const tx = getRectangleTransform(tiling, data);
         if (!tx?.length) return tiling;
 

@@ -3,7 +3,6 @@ import {BarePath, Coord, Tiling} from '../../../types';
 import {PKPath} from '../../pk';
 import {parseColor, Rgb} from './colors';
 import {
-    State,
     Layer,
     AnimatableNumber,
     AnimatableBoolean,
@@ -13,7 +12,9 @@ import {
     AnimatableValue,
     Color,
 } from './export-types';
+import {State} from './types/state-type';
 import {processScript} from './process-script';
+import {RenderLog} from './resolveMods';
 
 export type AnimCtx = {
     accessedValues?: Set<string>;
@@ -23,34 +24,49 @@ export type AnimCtx = {
     palette: Color[];
 };
 
-export type RenderItem = {
-    type: 'path';
-    pk?: PKPath;
-    onClick?: (evt: React.MouseEvent<SVGElement>) => void;
-    shadow?: {blur: Coord; offset: Coord; color: Rgb};
-    color: {r: number; g: number; b: number};
-    strokeWidth?: number;
-    zIndex?: number | null;
-    shapes: BarePath[];
-    opacity?: number;
-    key: string;
-};
+export type RenderShadow = {blur: Coord; offset: Coord; color: Rgb; inner?: boolean};
+
+export type RenderItem =
+    | {
+          type: 'path';
+          pk?: PKPath;
+          adjustForZoom?: boolean;
+          onClick?: (evt: React.MouseEvent<SVGElement>) => void;
+          shadow?: RenderShadow;
+          color: {r: number; g: number; b: number};
+          sharp?: boolean;
+          strokeWidth?: number;
+          zIndex?: number | null;
+          shapes: BarePath[];
+          opacity?: number;
+          key: string;
+      }
+    | {
+          type: 'point';
+          coord: Coord;
+          color?: {r: number; g: number; b: number};
+          zIndex?: number | null;
+          opacity?: number;
+          key: string;
+      };
 
 export type Ctx = {
     // warn(m: string): void;
+    shapes: State['shapes'];
     state: State;
     anim: AnimCtx;
     cropCache: Map<string, {path: PKPath; crop: Crop}>;
     layer: Layer;
     patterns: Patterns;
     items: RenderItem[];
-    keyPoints: Coord[];
+    keyPoints: ([Coord, Coord] | Coord)[];
     byKey: Record<string, string[]>;
+    log?: RenderLog[];
 };
 
 type AnimFn = (ctx: AnimCtx['values']) => any;
 
-const getScript = (ctx: AnimCtx, v: string) => {
+export const getScript = (ctx: AnimCtx, v: string) => {
     if (!ctx.cache.has(v)) {
         try {
             const {undeclared, arg, needsReturn} = processScript(v);

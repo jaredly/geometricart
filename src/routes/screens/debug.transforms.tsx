@@ -22,6 +22,7 @@ import {
 } from '../getPatternData';
 import {pk} from '../pk';
 import {cmdsToSegments} from '../../gcode/cmdsToSegments';
+import {thinTiling} from './pattern.screen/renderPattern';
 
 export function loader() {
     const ids = [
@@ -38,7 +39,7 @@ const Transform = ({tiling, id}: {tiling: Tiling; id: string}) => {
     const size = 400;
     const data = useMemo(() => {
         const cs = 2;
-        return getNewPatternData(tiling, 3, [
+        return getNewPatternData(thinTiling(tiling), 3, [
             {
                 segments: [
                     {type: 'Line', to: {x: cs, y: -cs}},

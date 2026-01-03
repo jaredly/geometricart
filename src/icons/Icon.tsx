@@ -3,6 +3,101 @@ import {SVGProps} from 'react';
 import {useTouchClick} from '../editor/RenderIntersections';
 
 /** Gotten from https://reactsvgicons.com/search?q=scissors */
+export function SpinnerEarring(props: SVGProps<SVGSVGElement>) {
+    return (
+        <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            width="1em"
+            height="1em"
+            {...props}
+        >
+            <path
+                fill="none"
+                stroke="currentColor"
+                strokeLinecap="round"
+                strokeWidth="2"
+                d="M8.124 5a8 8 0 1 0 7.752 0"
+            ></path>
+        </svg>
+    );
+}
+
+export function GraphUp(props: SVGProps<SVGSVGElement>) {
+    return (
+        <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            width="1em"
+            height="1em"
+            {...props}
+        >
+            <g
+                fill="none"
+                stroke="currentColor"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="1.5"
+            >
+                <path d="M20 20H4V4"></path>
+                <path d="M4 16.5L12 9l3 3l4.5-4.5"></path>
+            </g>
+        </svg>
+    );
+}
+
+export function CheckboxChecked(props: SVGProps<SVGSVGElement>) {
+    return (
+        <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 16 16"
+            width="1em"
+            height="1em"
+            {...props}
+        >
+            <path
+                fill="currentColor"
+                d="M14 0H2C.9 0 0 .9 0 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V2c0-1.1-.9-2-2-2M7 12.414L3.293 8.707l1.414-1.414L7 9.586l4.793-4.793l1.414 1.414z"
+            ></path>
+        </svg>
+    );
+}
+
+export function CheckboxUnchecked(props: SVGProps<SVGSVGElement>) {
+    return (
+        <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 16 16"
+            width="1em"
+            height="1em"
+            {...props}
+        >
+            <path
+                fill="currentColor"
+                d="M14 0H2C.9 0 0 .9 0 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V2c0-1.1-.9-2-2-2m0 14H2V2h12z"
+            ></path>
+        </svg>
+    );
+}
+
+export function ExternalLinkIcon() {
+    return (
+        <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            width="1em"
+            height="1em"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            style={{opacity: 1}}
+        >
+            <path d="M15 3h6v6m-11 5L21 3m-3 10v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+        </svg>
+    );
+}
 
 export function DragMove2Fill(props: SVGProps<SVGSVGElement>) {
     return (

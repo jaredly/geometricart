@@ -72,8 +72,8 @@ export const epsilon = 0.000001; // export const lineLine_ = (
 //     };
 // };
 
-export const withinLimit = ([low, high]: [number, number], value: number) => {
-    return low - epsilon <= value && value <= high + epsilon;
+export const withinLimit = ([low, high]: [number, number], value: number, eps = epsilon) => {
+    return low - eps <= value && value <= high + eps;
 };
 export const zeroToTwoPi = (angle: number) => {
     if (angle < 0) {

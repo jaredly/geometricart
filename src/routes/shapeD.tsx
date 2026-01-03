@@ -1,7 +1,9 @@
 import {Coord} from '../types';
 
-export const shapeD = (points: Coord[], z = true) =>
-    'M' + points.map((p) => `${(p.x).toFixed(3)} ${(p.y).toFixed(3)}`).join('L') + (z ? 'Z' : '');
+export const shapeD = (points: Coord[], z = true, prec = 3) =>
+    'M' +
+    points.map((p) => `${(p.x).toFixed(prec)} ${(p.y).toFixed(prec)}`).join('L') +
+    (z ? 'Z' : '');
 
 export function arcPathFromCenter(opts: {
     center: {x: number; y: number};

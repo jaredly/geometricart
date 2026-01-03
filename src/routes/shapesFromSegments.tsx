@@ -1,4 +1,5 @@
 import {Bounds} from '../editor/Bounds';
+import {RenderWebGL} from '../editor/RenderWebGL';
 import {coordKey} from '../rendering/coordKey';
 import {closeEnough, closeEnoughAngle, epsilon} from '../rendering/epsilonToZero';
 import {
@@ -11,13 +12,32 @@ import {
 import {lineLine, lineToSlope} from '../rendering/intersect';
 import {coordsEqual} from '../rendering/pathsAreIdentical';
 import {isClockwisePoints} from '../rendering/pathToPoints';
-import {Coord, Tiling} from '../types';
+import {Coord, ThinTiling, Tiling} from '../types';
 import {discoverShape} from './discoverShape';
 import {centroid} from './findReflectionAxes';
 import {getNewPatternData, getPatternData} from './getPatternData';
+import {
+    coordPairKey,
+    coordsTruncateSame,
+    sortCoordPair,
+    truncateCoordKey,
+    truncateSame,
+} from './screens/pattern.screen/adjustShapes';
+import {RenderItem} from './screens/pattern.screen/evaluate';
+import {LogItem, LogItems, RenderLog} from './screens/pattern.screen/resolveMods';
 
 const gte = (a: number, b: number) => a >= b - epsilon;
 const lte = (a: number, b: number) => a <= b + epsilon;
+
+// const between = (a: number, b: number, x: number, y: number) =>
+
+export function aabbContains(a: Bounds, b: Coord) {
+    return !(b.x < a.x0 || b.x > a.x1 || b.y < a.y0 || b.y > a.y1);
+}
+
+export function aabbIntersects(a: Bounds, b: Bounds) {
+    return !(a.x1 < b.x0 || a.x0 > b.x1 || a.y1 < b.y0 || a.y0 > b.y1);
+}
 
 const boundsIntersect = (l1: [Coord, Coord], l2: [Coord, Coord], log = false) => {
     // Get bounding box for line 1
@@ -60,43 +80,57 @@ const isLargerThan = (l1: [Coord, Coord], l2: [Coord, Coord]) => {
     return lte(l1MinX, l2MinX) && lte(l1MinY, l2MinY) && gte(l1MaxX, l2MaxX) && gte(l1MaxY, l2MaxY);
 };
 
-const removeOverlappingSegs = (segs: [Coord, Coord][]) => {
-    const slopes = segs.map(([a, b]) => lineToSlope(a, b, true));
-    const toRemove: number[] = [];
-    for (let i = 0; i < slopes.length; i++) {
-        if (toRemove.includes(i)) continue;
-        // const ki1 = coordKey(segs[i][0]);
-        // const ki2 = coordKey(segs[i][1]);
-        for (let j = i + 1; j < slopes.length; j++) {
-            if (!boundsIntersect(segs[i], segs[j])) continue;
-            if (closeEnough(slopes[i].m, slopes[j].m)) {
-                // if one is contained by the other
-                if (isLargerThan(segs[i], segs[j])) {
-                    toRemove.push(j);
-                } else if (isLargerThan(segs[j], segs[i])) {
-                    toRemove.push(i);
-                    break;
-                }
-            }
-        }
-    }
+// const removeOverlappingSegs = (segs: [Coord, Coord][]) => {
+//     const slopes = segs.map(([a, b]) => lineToSlope(a, b, true));
+//     const toRemove: number[] = [];
+//     for (let i = 0; i < slopes.length; i++) {
+//         if (toRemove.includes(i)) continue;
+//         // const ki1 = coordKey(segs[i][0]);
+//         // const ki2 = coordKey(segs[i][1]);
+//         for (let j = i + 1; j < slopes.length; j++) {
+//             if (!boundsIntersect(segs[i], segs[j])) continue;
+//             if (closeEnough(slopes[i].m, slopes[j].m)) {
+//                 // if one is contained by the other
+//                 if (isLargerThan(segs[i], segs[j])) {
+//                     toRemove.push(j);
+//                 } else if (isLargerThan(segs[j], segs[i])) {
+//                     toRemove.push(i);
+//                     break;
+//                 }
+//             }
+//         }
+//     }
 
-    return toRemove.length ? segs.filter((_, i) => !toRemove.includes(i)) : segs;
-};
+//     return toRemove.length ? segs.filter((_, i) => !toRemove.includes(i)) : segs;
+// };
 
-export const splitOverlappingSegs = (segs: [Coord, Coord][], marks?: number[]) => {
+const segToBounds = (seg: [Coord, Coord]): Bounds => ({
+    x0: Math.min(seg[0].x, seg[1].x),
+    y0: Math.min(seg[0].y, seg[1].y),
+    x1: Math.max(seg[0].x, seg[1].x),
+    y1: Math.max(seg[0].y, seg[1].y),
+});
+
+export const splitOverlappingSegs = (segs: [Coord, Coord][], prec: number, marks?: number[]) => {
     const slopes = segs.map(([a, b]) => lineToSlope(a, b, true));
     const toRemove: number[] = [];
     const toAdd: [Coord, Coord][] = [];
+    const bounds = segs.map(segToBounds);
     for (let i = 0; i < slopes.length; i++) {
         if (toRemove.includes(i)) continue;
         for (let j = i + 1; j < slopes.length; j++) {
-            if (!boundsIntersect(segs[i], segs[j])) {
+            if (!aabbIntersects(bounds[i], bounds[j])) {
                 continue;
             }
+            // if (!boundsIntersect(segs[i], segs[j])) {
+            //     continue;
+            // }
             if (closeEnough(slopes[i].m, slopes[j].m) && closeEnough(slopes[i].b, slopes[j].b)) {
                 if (!shareMidPoint(segs[i], segs[j])) {
-                    const got = splitByPoints(unique([...segs[i], ...segs[j]], coordKey));
+                    const got = splitByPoints(
+                        unique([...segs[i], ...segs[j]], (m) => coordKey(m, prec)),
+                        Math.pow(10, prec),
+                    );
                     toAdd.push(...got);
                     toRemove.push(i, j);
                     marks?.push(i, j);
@@ -117,21 +151,39 @@ const shareMidPoint = ([a1, a2]: [Coord, Coord], [b1, b2]: [Coord, Coord]) => {
     return coordsEqual(sorted[1], sorted[2]);
 };
 
-const findSplitPoints = (segs: [Coord, Coord][]) => {
+const findSplitPoints = (segs: [Coord, Coord][], amt: number, log?: LogItems[]) => {
     const splitPoints: Record<number, Coord[]> = {};
 
-    const slopes = segs.map(([a, b]) => lineToSlope(a, b, true));
-    for (let i = 0; i < slopes.length; i++) {
-        for (let j = i + 1; j < slopes.length; j++) {
-            if (!boundsIntersect(segs[i], segs[j])) continue;
+    const bounds = segs.map(segToBounds);
+    // const slopes = segs.map(([a, b]) => lineToSlope(a, b, true));
+    for (let i = 0; i < segs.length; i++) {
+        for (let j = i + 1; j < segs.length; j++) {
+            // if (!boundsIntersect(segs[i], segs[j])) continue;
+            if (!aabbIntersects(bounds[i], bounds[j])) {
+                continue;
+            }
 
-            // TODO: maybe check bounding box collision first?
-            const int = lineLine(slopes[i], slopes[j]);
+            // const int = lineLine(slopes[i], slopes[j]);
+            const int = intersectLines(segs[i], segs[j]);
             if (!int) continue;
-            if (!coordsEqual(segs[i][0], int) && !coordsEqual(segs[i][1], int)) {
+            log?.push({
+                item: [
+                    {type: 'seg', prev: segs[i][0], seg: {type: 'Line', to: segs[i][1]}},
+                    {type: 'seg', prev: segs[j][0], seg: {type: 'Line', to: segs[j][1]}},
+                    {type: 'point', p: int},
+                ],
+                // data: {i: slopes[i], j: slopes[j], is: segs[i], js: segs[j]},
+            });
+            if (
+                !coordsTruncateSame(segs[i][0], int, amt) &&
+                !coordsTruncateSame(segs[i][1], int, amt)
+            ) {
                 addToMap(splitPoints, i, int);
             }
-            if (!coordsEqual(segs[j][0], int) && !coordsEqual(segs[j][1], int)) {
+            if (
+                !coordsTruncateSame(segs[j][0], int, amt) &&
+                !coordsTruncateSame(segs[j][1], int, amt)
+            ) {
                 addToMap(splitPoints, j, int);
             }
         }
@@ -139,9 +191,55 @@ const findSplitPoints = (segs: [Coord, Coord][]) => {
     return splitPoints;
 };
 
-const splitByPoints = (splits: Coord[]): [Coord, Coord][] => {
+type Point = {
+    x: number;
+    y: number;
+};
+
+type Line = {
+    p1: Point;
+    p2: Point;
+};
+
+function intOnLine({x, y}: Coord, [a1, a2]: [Coord, Coord], eps = epsilon) {
+    if ((x + eps < a1.x && x + eps < a2.x) || (x - eps > a1.x && x - eps > a2.x)) return false;
+    if ((y + eps < a1.y && y + eps < a2.y) || (y - eps > a1.y && y - eps > a2.y)) return false;
+    return true;
+}
+
+/**
+ * Returns the intersection point of two infinite lines,
+ * or null if the lines are parallel or coincident.
+ */
+function intersectLines(
+    [a1, a2]: [Coord, Coord],
+    [b1, b2]: [Coord, Coord],
+    eps = epsilon,
+): Point | null {
+    const dxA = a2.x - a1.x;
+    const dyA = a2.y - a1.y;
+    const dxB = b2.x - b1.x;
+    const dyB = b2.y - b1.y;
+
+    const denominator = dxA * dyB - dyA * dxB;
+
+    // Lines are parallel or coincident
+    if (Math.abs(denominator) < epsilon) {
+        return null;
+    }
+
+    const t = ((b1.x - a1.x) * dyB - (b1.y - a1.y) * dxB) / denominator;
+
+    const x = a1.x + t * dxA;
+    const y = a1.y + t * dyA;
+    if (!intOnLine({x, y}, [a1, a2]) || !intOnLine({x, y}, [b1, b2])) return null;
+
+    return {x, y};
+}
+
+const splitByPoints = (splits: Coord[], amt: number): [Coord, Coord][] => {
     // sort by x or y
-    if (closeEnough(splits[0].x, splits[1].x)) {
+    if (truncateSame(splits[0].x, splits[1].x, amt)) {
         // sort by y
         splits.sort((a, b) => a.y - b.y);
     } else {
@@ -152,7 +250,7 @@ const splitByPoints = (splits: Coord[]): [Coord, Coord][] => {
     for (let i = 1; i < splits.length; i++) {
         const prev = splits[i - 1];
         const next = splits[i];
-        if (coordsEqual(prev, next)) {
+        if (coordsTruncateSame(prev, next, amt)) {
             throw new Error(`shouldn't get duplicate points here`);
         }
         res.push([prev, next]);
@@ -160,7 +258,7 @@ const splitByPoints = (splits: Coord[]): [Coord, Coord][] => {
     return res;
 };
 
-export const cutSegments = (segs: [Coord, Coord][]) => {
+export const cutSegments = (segs: [Coord, Coord][], amt: number, prec = 3, log?: RenderLog[]) => {
     /*
     1. convert everything to SlopeIntercept form
     2. do line/line collisions with everything. each collision knows the seg indices
@@ -168,15 +266,36 @@ export const cutSegments = (segs: [Coord, Coord][]) => {
         2b. could also first check for shared endpoints
     3. go through each seg, splitting on any collisions
     */
-    const splitPoints = findSplitPoints(segs);
+    const items: LogItems[] | undefined = log ? [] : undefined;
+    const splitPoints = findSplitPoints(segs, amt, items);
+    log?.push({type: 'items', title: 'Split Points', items: items!});
     const result: [Coord, Coord][] = [];
+    const splits: LogItems[] | undefined = log ? [] : undefined;
     segs.forEach(([a, b], i) => {
         if (splitPoints[i]) {
-            result.push(...splitByPoints(unique([a, b, ...splitPoints[i]], coordKey)));
+            splits?.push({
+                item: [
+                    {
+                        type: 'seg',
+                        prev: a,
+                        seg: {type: 'Line', to: b},
+                    },
+                    ...splitPoints[i].map((p) => ({type: 'point' as const, p})),
+                ],
+            });
+            result.push(
+                ...splitByPoints(
+                    unique([a, b, ...splitPoints[i]], (m) => truncateCoordKey(m, amt)),
+                    amt,
+                ),
+            );
         } else {
             result.push([a, b]);
         }
     });
+    if (splits) {
+        log?.push({type: 'items', title: 'Splits', items: splits});
+    }
     return result;
 };
 
@@ -194,27 +313,61 @@ export type EndPointMap = Record<
     {exits: {idx: number; theta: number; to: Coord}[]; pos: Coord}
 >;
 
-export const edgesByEndpoint = (segs: [Coord, Coord][]) => {
+export const edgesByEndpoint = (segs: [Coord, Coord][], prec?: number) => {
     const byEndPoint: EndPointMap = {};
+    segs = unique(segs, (p) => coordPairKey(p, prec));
+    const eps = Math.pow(10, -(prec ?? 3));
 
-    // const coordsByKey: Record<string, Coord> = {}
+    // const coordsByKey: Record<string, Coord> = {};
+    // const canon = (c: Coord) => {
+    //     const k = coordKey(c, prec);
+    //     return coordsByKey[k] ?? (coordsByKey[k] = c);
+    // };
+    // segs = segs.map(([a, b]) => [canon(a), canon(b)]);
+
     segs.forEach((seg, i) => {
-        if (coordsEqual(seg[0], seg[1])) {
+        if (coordsEqual(seg[0], seg[1], prec)) {
             return;
         }
         const to = angleTo(seg[0], seg[1]);
         const from = angleTo(seg[1], seg[0]);
-        const k0 = coordKey(seg[0]);
+        const k0 = coordKey(seg[0], prec);
         if (!byEndPoint[k0]) byEndPoint[k0] = {exits: [], pos: seg[0]};
         byEndPoint[k0].exits.push({idx: i, theta: to, to: seg[1]});
 
-        const k1 = coordKey(seg[1]);
+        const k1 = coordKey(seg[1], prec);
         if (!byEndPoint[k1]) byEndPoint[k1] = {exits: [], pos: seg[1]};
         byEndPoint[k1].exits.push({idx: i, theta: from, to: seg[0]});
 
         // addToMap(byEndPoint, coordKey(seg[1]), {idx: i, theta: from, to: seg[0]});
-        // coordsByKey[coordKey(seg[0])] = seg[0] coordsByKey[coordKey(seg[1])] = seg[1]
+        // coordsByKey[coordKey(seg[0])] = seg[0];
+        // coordsByKey[coordKey(seg[1])] = seg[1];
     });
+
+    let sup: string[] = [];
+    Object.entries(byEndPoint).forEach(([k, {exits}]) => {
+        const seen: Record<string, true> = {};
+        exits.forEach((e) => {
+            const key = coordKey(e.to, prec);
+            if (seen[key]) {
+                console.warn(`Why is there a dup: ${k} -> ${coordKey(e.to, prec)}`);
+                sup.push(k, key);
+            }
+            seen[key] = true;
+        });
+    });
+    if (sup.length)
+        console.log(
+            segs
+                .map(sortCoordPair)
+                .filter(
+                    (s) => sup.includes(coordKey(s[0], prec)) || sup.includes(coordKey(s[1], prec)),
+                )
+                .sort((a, b) => (closeEnough(a[0].x, b[0].x) ? a[0].y - b[0].y : a[0].x - b[0].x)),
+            // .map((seg) => coordPairKey(seg))
+            // .sort(),
+        );
+
     return byEndPoint;
 };
 
@@ -243,23 +396,54 @@ export type SegLink = {left: number[]; right: number[]; pathId?: number};
 
 export const cmpCoords = (a: Coord, b: Coord) => (closeEnough(a.x, b.x) ? a.y - b.y : a.x - b.x);
 
-export const shapesFromSegments = (byEndPoint: EndPointMap, eigenPoints: Coord[]) => {
+export const shapesFromSegments = (
+    byEndPoint: EndPointMap,
+    eigenPoints: Coord[],
+    prec: number,
+    log?: RenderLog[],
+) => {
     const used: Record<string, true> = {};
     const shapes: Coord[][] = [];
     const backwards: Coord[][] = [];
+    const extras: Coord[][] = [];
+
+    const slog: RenderLog[] | undefined = log ? [] : undefined;
+    if (log) log.push({type: 'group', title: 'Shapes from segments', children: slog!});
+
     eigenPoints.forEach((point) => {
-        if (!byEndPoint[coordKey(point)]) return;
-        const segs = byEndPoint[coordKey(point)].exits;
-        if (!segs) {
+        if (!byEndPoint[coordKey(point, prec)]) return;
+        const segs = byEndPoint[coordKey(point, prec)].exits;
+        // slog.push({point, segs});
+        if (!segs?.length) {
             console.warn(`no segs from point`, point);
             return;
         }
+        slog?.push({
+            type: 'items',
+            title: `Exits from ${coordKey(point, prec)}`,
+            items: segs.map((seg) => ({
+                item: {type: 'seg', prev: point, seg: {type: 'Line', to: seg.to}},
+                text: `${seg.idx} - ${seg.theta.toFixed(2)} - ${coordKey(seg.to, prec)}`,
+            })),
+        });
         for (const seg of segs) {
-            const sk = `${coordKey(point)}:${coordKey(seg.to)}`;
+            const sk = `${coordKey(point, prec)}:${coordKey(seg.to, prec)}`;
             if (used[sk]) continue;
-            const {points, ranout} = discoverShape(point, seg, used, byEndPoint);
+            const {points, ranout} = discoverShape(
+                point,
+                seg,
+                used,
+                byEndPoint,
+                undefined,
+                undefined,
+                slog,
+                prec,
+            );
+            // slog.push(log);
             if (points.length === 100 || ranout) {
+                // console.log(points, ranout);
                 // console.warn('bad news, shape is bad');
+                extras.push(points);
                 continue;
             }
             if (!isClockwisePoints(points)) {
@@ -269,7 +453,7 @@ export const shapesFromSegments = (byEndPoint: EndPointMap, eigenPoints: Coord[]
             }
         }
     });
-    return shapes;
+    return {shapes, used, backwards, extras};
 };
 
 export const addToMap = <T,>(map: Record<string | number, T[]>, k: string | number, t: T) => {
@@ -319,6 +503,7 @@ export const chooseCorner = (options: Coord[], shapes: Coord[][]) => {
     const bySize = shapesAtPoints
         .map((shape, i) => ({
             i,
+            // biome-ignore lint: nope
             shape: shape && shape.length,
             area: shape ? calcPolygonArea(shape) : 0,
         }))
@@ -331,7 +516,7 @@ export const chooseCorner = (options: Coord[], shapes: Coord[][]) => {
 export const shouldFlipTriangle = (
     rotHyp: boolean,
     internalAngle: number,
-    tiling: Tiling,
+    tiling: ThinTiling,
     start: Coord,
     end: Coord,
 ) => {

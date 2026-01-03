@@ -3,6 +3,8 @@ import {Tiling} from '../../../types';
 import {drawShapes, drawLines, drawWoven, drawBounds} from '../../canvasDraw';
 import {getPatternData} from '../../getPatternData';
 import {pk} from '../../pk';
+import {Box} from './export-types';
+import {ZoomProps} from './useSVGZoom';
 
 export const CanvasPattern = ({
     data,
@@ -13,7 +15,7 @@ export const CanvasPattern = ({
     showLines,
     showShapes,
     lineWidth,
-    margin,
+    zoomProps,
     sharp,
 }: {
     data: ReturnType<typeof getPatternData>;
@@ -25,19 +27,22 @@ export const CanvasPattern = ({
     showShapes?: boolean;
     sharp?: boolean;
     lineWidth: number;
-    margin: number;
+    zoomProps: ZoomProps;
 }) => {
-    const ref = useRef<HTMLCanvasElement>(null);
     useEffect(() => {
-        if (!ref.current) return;
+        if (!zoomProps.innerRef.current) return;
 
-        const surface = pk.MakeWebGLCanvasSurface(ref.current);
+        const surface = pk.MakeWebGLCanvasSurface(
+            zoomProps.innerRef.current.node as HTMLCanvasElement,
+        );
         if (!surface) return;
         const ctx = surface.getCanvas();
         ctx.clear(pk.BLACK);
 
-        ctx.scale((size * 2) / (2 + margin * 2), (size * 2) / (2 + margin * 2));
-        ctx.translate(1 + margin, 1 + margin);
+        const {box} = zoomProps;
+        ctx.save();
+        ctx.scale(surface.width() / box.width, surface.height() / box.height);
+        ctx.translate(-box.x, -box.y);
 
         if (showShapes) {
             drawShapes(ctx, data, false, data.minSegLength * lineWidth * 2, !!sharp);
@@ -51,10 +56,21 @@ export const CanvasPattern = ({
         if (showBounds) {
             drawBounds(ctx, data);
         }
+        ctx.restore();
         surface.flush();
         // ok do the render
-    }, [tiling, data, showShapes, showLines, showWoven, showBounds, lineWidth, margin, sharp]);
+    }, [tiling, data, showShapes, showLines, showWoven, showBounds, lineWidth, sharp, zoomProps]);
     return (
-        <canvas ref={ref} width={size * 2} height={size * 2} style={{width: size, height: size}} />
+        <canvas
+            ref={(node) => {
+                if (node && zoomProps.innerRef.current.node !== node) {
+                    zoomProps.innerRef.current.node = node;
+                    zoomProps.innerRef.current.tick();
+                }
+            }}
+            width={size * 2}
+            height={size * 2}
+            style={{width: size, height: size}}
+        />
     );
 };

@@ -28,6 +28,7 @@ import {filterNull} from './filterNull';
 import {IGuide} from './IGuide';
 import {ShowLabel} from './ShowLabel';
 import {sizeBox, svgCoord, useElementZoom} from './useSVGZoom';
+import {thinTiling} from './renderPattern';
 
 type Selection = {type: 'shape'; i: number} | {type: 'seg'; i: number};
 
@@ -58,7 +59,7 @@ const boxCrop = (cs: number) => ({
 export const PatternInspect = ({tiling}: {tiling: Tiling}) => {
     const size = 800;
     const [psize, setPsize] = useState(3);
-    const data = useMemo(() => getNewPatternData(tiling, psize), [tiling, psize]);
+    const data = useMemo(() => getNewPatternData(thinTiling(tiling), psize), [tiling, psize]);
 
     const [guides, setGuides] = useState([] as IGuide[]);
 
@@ -128,8 +129,12 @@ export const PatternInspect = ({tiling}: {tiling: Tiling}) => {
             <div className="relative overflow-hidden">
                 <svg
                     xmlns="http://www.w3.org/2000/svg"
-                    // {...zoomProps.ref}
-                    ref={innerRef as React.RefObject<SVGSVGElement>}
+                    ref={(node) => {
+                        if (node && innerRef.current.node !== node) {
+                            innerRef.current.node = node;
+                            innerRef.current.tick();
+                        }
+                    }}
                     viewBox={`${box.x.toFixed(4)} ${box.y.toFixed(4)} ${box.width.toFixed(4)} ${box.height.toFixed(4)}`}
                     style={size ? {background: 'black', width: size, height: size} : undefined}
                     onMouseLeave={() => setMouse(null)}

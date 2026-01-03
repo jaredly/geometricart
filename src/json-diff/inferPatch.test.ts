@@ -1,6 +1,6 @@
 import {describe, expect, it} from 'bun:test';
 import {inferPatch} from './inferPatch';
-import {ops} from './ops';
+import {ops} from './ops2';
 
 const applyPatch = <T>(start: T, patch: ReturnType<typeof inferPatch<T>>) =>
     patch.reduce((value, op) => ops.apply(value, op as any), start);
@@ -41,7 +41,10 @@ describe('inferPatch', () => {
     });
 
     it('removes nested keys and trims arrays', () => {
-        const pre = {user: {name: 'Ada', city: 'London', tags: ['math', 'poetry']}, notes: {pinned: true}};
+        const pre = {
+            user: {name: 'Ada', city: 'London', tags: ['math', 'poetry']},
+            notes: {pinned: true},
+        };
         const post = {user: {name: 'Ada', tags: ['math']}};
         type T = {user: {name: string; city?: string; tags: string[]}; notes?: {pinned: boolean}};
         const patch = inferPatch<T>(pre, post);

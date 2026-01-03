@@ -9,8 +9,10 @@ export const cssColors = [
     {name: 'lime', code: '#00FF00'},
     {name: 'blue', code: '#0000FF'},
     {name: 'yellow', code: '#FFFF00'},
-    {name: 'cyan / Aqua', code: '#00FFFF'},
-    {name: 'magenta / Fuchsia', code: '#FF00FF'},
+    {name: 'cyan', code: '#00FFFF'},
+    {name: 'Aqua', code: '#00FFFF'},
+    {name: 'magenta', code: '#FF00FF'},
+    {name: 'Fuchsia', code: '#FF00FF'},
     {name: 'silver', code: '#C0C0C0'},
     {name: 'gray', code: '#808080'},
     {name: 'maroon', code: '#800000'},
@@ -103,7 +105,8 @@ export const cssColors = [
     {name: 'thistle', code: '#D8BFD8'},
     {name: 'plum', code: '#DDA0DD'},
     {name: 'violet', code: '#EE82EE'},
-    {name: 'magenta / fuchsia', code: '#FF00FF'},
+    {name: 'fuchsia', code: '#FF00FF'},
+    {name: 'magenta', code: '#FF00FF'},
     {name: 'orchid', code: '#DA70D6'},
     {name: 'medium violet red', code: '#C71585'},
     {name: 'pale violet red', code: '#DB7093'},
@@ -167,9 +170,12 @@ export type Rgb = {r: number; g: number; b: number};
 
 export const parseHex = (hex: string) => {
     if (hex.length === 4) {
-        const r = parseInt(hex.slice(1, 2), 16);
-        const g = parseInt(hex.slice(3, 5), 16);
-        const b = parseInt(hex.slice(5), 16);
+        const r0 = hex.slice(1, 2);
+        const g0 = hex.slice(2, 3);
+        const b0 = hex.slice(3);
+        const r = parseInt(r0 + r0, 16);
+        const g = parseInt(g0 + g0, 16);
+        const b = parseInt(b0 + b0, 16);
         return {r: r, g: g, b: b};
     }
     const r = parseInt(hex.slice(1, 3), 16);

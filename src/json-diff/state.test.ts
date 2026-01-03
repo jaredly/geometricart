@@ -1,21 +1,30 @@
 import {test, expect, describe, it} from 'bun:test';
 import {AddPath, AddPathValue, Path, PathValue, RemovablePath} from './types';
-import {make} from './make';
-import {ops} from './ops';
+import {fromPending} from './make2';
+import {ops} from './ops2';
 import {initialState, redo, State, undo, update} from './state';
 
 type T = {name: string; pets: Record<string, number>; age?: number; stars: number[]};
 
 const v = (v: T) => ({type: 'expect' as const, v});
-const m = (p: RemovablePath<T>) => (v: T) => make.remove(v, p);
+const m = (p: RemovablePath<T>) => (v: T) => {
+    // make.remove(v, p);
+    throw new Error('no');
+};
 const a =
     <P extends AddPath<T>>(p: AddPath<T>, n: AddPathValue<T, P>) =>
-    (v: T) =>
-        make.add(v, p, n);
+    (v: T) => {
+        throw new Error('no');
+
+        // make.add(v, p, n);
+    };
 const r =
     <P extends AddPath<T>>(p: Path<T>, n: PathValue<T, P>) =>
-    (v: T) =>
-        make.replace(v, p, n);
+    (v: T) => {
+        throw new Error('no');
+
+        // make.replace(v, p, n);
+    };
 
 const ud = {type: 'undo' as const};
 const rd = {type: 'redo' as const};

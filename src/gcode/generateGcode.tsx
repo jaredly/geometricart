@@ -5,7 +5,6 @@ import {dist} from '../rendering/getMirrorTransforms';
 import {pathToPoints, RasterSeg, rasterSegPoints} from '../rendering/pathToPoints';
 import {sortedVisibleInsetPaths} from '../rendering/sortedVisibleInsetPaths';
 import {Coord, Path, State, StyleLine} from '../types';
-import {PathKit} from 'pathkit-wasm';
 import {calcPathD} from '../editor/calcPathD';
 import {segmentKey, segmentKeyReverse} from '../rendering/segmentKey';
 import {getClips} from '../rendering/pkInsetPaths';

@@ -1,7 +1,5 @@
 import React, {useMemo} from 'react';
-// @ts-expect-error
 import prettier from 'prettier';
-// @ts-expect-error
 import babel from 'prettier/parser-babel';
 import {BlurInt} from '../editor/Forms';
 import {Action} from '../state/Action';

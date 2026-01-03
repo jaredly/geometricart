@@ -2,7 +2,7 @@ import {Primitive} from './intersect';
 import {epsilon} from './epsilonToZero';
 import {Coord} from '../types';
 
-let keys;
+// let keys;
 export const numKey = (num: number, precision = 3) => {
     const res = num.toFixed(precision);
     if (res === (-epsilon).toFixed(precision)) {

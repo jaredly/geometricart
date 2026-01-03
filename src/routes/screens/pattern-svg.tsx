@@ -5,6 +5,7 @@ import {canvasTiling} from '../canvasTiling';
 import {getNewPatternData, getPatternData} from '../getPatternData';
 import {TilingPattern} from '../ShowTiling';
 import {flipPattern} from '../flipPattern';
+import {thinTiling} from './pattern.screen/renderPattern';
 
 const pngCache: Record<string, Buffer<ArrayBuffer>> = {};
 
@@ -30,7 +31,7 @@ export async function loader({params, request}: Route.LoaderArgs) {
             <TilingPattern
                 tiling={pattern.tiling}
                 size={+size}
-                data={getNewPatternData(pattern.tiling)}
+                data={getNewPatternData(thinTiling(pattern.tiling))}
             />,
         );
         return new Response(tiling, {headers: {'Content-Type': 'image/svg+xml'}});
@@ -42,20 +43,12 @@ export async function loader({params, request}: Route.LoaderArgs) {
         return new Response(pngCache[k], {headers: {'Content-type': 'image/png'}});
     }
 
-    // pattern.tiling = preTransformTiling(pattern.tiling);
-
-    // const flip = search.get('flip') === 'no' ? pattern.tiling : flipPattern(pattern.tiling);
-    // const dataUri = await canvasTiling(getNewPatternData(flip), size * 2, flip !== pattern.tiling)!;
-    // const font = await fetch('https://cdn.skia.org/misc/Roboto-Regular.ttf').then((s) =>
-    //     s.arrayBuffer(),
-    // );
-
     const flip = search.get('flip') === 'no' ? pattern.tiling : flipPattern(pattern.tiling);
     const psize = search.get('psize') ? +search.get('psize')! : 2;
     const crop = search.get('crop') ? +search.get('crop')! : undefined;
-    const dataUri = await canvasTiling(
+    const rawBytes = await canvasTiling(
         getNewPatternData(
-            flip,
+            thinTiling(flip),
             psize,
             crop
                 ? [
@@ -79,9 +72,8 @@ export async function loader({params, request}: Route.LoaderArgs) {
             margin: search.get('margin') ? +search.get('margin')! : undefined,
         },
     )!;
-    // return dataUri;
-    // const [mime, data] = dataUri.split(',');
-    const buffer = Buffer.from(dataUri);
+
+    const buffer = Buffer.from(rawBytes);
     pngCache[k] = buffer;
     return new Response(buffer, {headers: {'Content-type': 'image/png'}});
 }

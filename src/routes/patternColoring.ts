@@ -1,9 +1,18 @@
 import {coordKey} from '../rendering/coordKey';
 import {closeEnough} from '../rendering/epsilonToZero';
+import {dist} from '../rendering/getMirrorTransforms';
 import {Coord} from '../types';
+import {barePathFromCoords, LogItems, RenderLog} from './screens/pattern.screen/resolveMods';
 import {addToMap, unique} from './shapesFromSegments';
 
-const colorGraph = (edges: [number, number][], debug = false) => {
+// const debugColors:
+
+const colorGraph = (
+    edges: [number, number][],
+    debug = false,
+    log?: RenderLog[],
+    shapes?: Coord[][],
+) => {
     const edgeMap: Record<number, number[]> = {};
     let max = 0;
     edges.forEach(([a, b]) => {
@@ -12,6 +21,11 @@ const colorGraph = (edges: [number, number][], debug = false) => {
         max = Math.max(max, a, b);
     });
     const colors: (null | number)[] = Array(max + 1).fill(null);
+
+    const items: LogItems[] = [];
+    if (shapes && log) {
+        log.push({type: 'items', title: 'Coloring Shapes', items});
+    }
 
     const single = (idx: number) => {
         if (!edgeMap[idx]) {
@@ -26,6 +40,34 @@ const colorGraph = (edges: [number, number][], debug = false) => {
         for (let i = 0; i < 10; i++) {
             if (!used.includes(i)) {
                 colors[idx] = i;
+                if (shapes && log) {
+                    items.push(
+                        {
+                            item: [
+                                {
+                                    type: 'shape',
+                                    shape: barePathFromCoords(shapes[idx]),
+                                    color: {r: 255, g: 255, b: 255},
+                                },
+                                ...edgeMap[idx].map((idx) => ({
+                                    type: 'shape' as const,
+                                    shape: barePathFromCoords(shapes[idx]),
+                                    color:
+                                        colors[idx] != null
+                                            ? {h: colors[idx] * 36, s: 100, l: 50}
+                                            : {r: 10, g: 10, b: 10},
+                                })),
+                            ],
+                        },
+                        {
+                            item: {
+                                type: 'shape',
+                                shape: barePathFromCoords(shapes[idx]),
+                                color: {h: i * 36, s: 100, l: 50},
+                            },
+                        },
+                    );
+                }
                 return;
             }
         }
@@ -99,20 +141,36 @@ export const colorShapes = (
     shapes: Coord[][],
     minLength: number,
     debug = false,
+    log?: RenderLog[],
 ) => {
-    const by = Math.log10(100 / minLength);
+    const childLog: undefined | RenderLog[] = log ? [] : undefined;
+    log?.push({type: 'group', title: 'Color Shapes', children: childLog!});
+    childLog?.push({
+        type: 'items',
+        title: 'Color Shapes',
+        items: shapes.map((shape, i) => ({
+            text: i + ' - shape',
+            item: {type: 'shape', shape: barePathFromCoords(shape)},
+        })),
+    });
     // const by = Math.log10(100 / minLength);
-    const byEdge: Record<string, number[]> = {};
+    // const by = Math.log10(100 / minLength);
+    const byEdge: Record<string, {edge: [Coord, Coord]; shapes: number[]}> = {};
     shapes.forEach((shape, i) => {
         const edges = toEdges(shape);
         edges.forEach((edge) => {
+            const length = dist(edge[0], edge[1]);
+            if (length < 0.01) return; // ignore this one
             const p1 = pointNames[coordKey(edge[0])];
             const p2 = pointNames[coordKey(edge[1])];
-            const k = p1 < p2 ? p1 * 1000 + p2 : p2 * 1000 + p1;
+            // const k = p1 < p2 ? p1 * 100000 + p2 : p2 * 100000 + p1;
+            const k = p1 < p2 ? `${p1}:${p2}` : `${p2}:${p1}`;
 
             // console.log(`Shape ${i} - ${k}`);
 
-            addToMap(byEdge, k, i);
+            if (!byEdge[k]) byEdge[k] = {edge, shapes: []};
+            byEdge[k].shapes.push(i);
+            // addToMap(byEdge, k, i);
         });
     });
     if (debug) {
@@ -120,10 +178,79 @@ export const colorShapes = (
             console.log(`edge ${key}`, byEdge[key]);
         });
     }
-    return colorGraph(
-        Object.values(byEdge).filter((e) => e.length === 2) as [number, number][],
-        debug,
+    const edgePairs = Object.values(byEdge).filter((e) => e.shapes.length === 2);
+    childLog?.push({
+        type: 'items',
+        title: 'Color Edge Pairs',
+        items: Object.entries(byEdge).map(([k, {shapes: idxs, edge}]) => ({
+            text: k + ' - coord',
+            item: [
+                {type: 'seg' as const, prev: edge[0], seg: {type: 'Line', to: edge[1]}},
+                ...idxs.map((i) => ({
+                    type: 'shape' as const,
+                    shape: barePathFromCoords(shapes[i]),
+                })),
+            ],
+        })),
+    });
+    const uniqueShapePairs = unique(
+        edgePairs.map((pair) => pair.shapes.toSorted() as [number, number]),
+        ([a, b]) => `${a},${b}`,
     );
+    childLog?.push({
+        type: 'items',
+        title: 'Unique Shape Pairs',
+        items: uniqueShapePairs.map((idxs) => ({
+            item: idxs.map((i) => ({
+                type: 'shape' as const,
+                shape: barePathFromCoords(shapes[i]),
+            })),
+        })),
+    });
+    if (childLog) {
+        const byShape: Record<number, number[]> = {};
+        uniqueShapePairs.forEach(([a, b]) => {
+            addToMap(byShape, a, b);
+            addToMap(byShape, b, a);
+        });
+
+        childLog.push({
+            type: 'items',
+            title: 'Shape Neighbors',
+            items: Object.entries(byShape).map(([main, neigh]) => ({
+                item: [
+                    {
+                        type: 'shape' as const,
+                        shape: barePathFromCoords(shapes[+main]),
+                        color: {r: 0, g: 0, b: 255},
+                    },
+                    ...neigh.map((i) => ({
+                        type: 'shape' as const,
+                        shape: barePathFromCoords(shapes[i]),
+                    })),
+                ],
+            })),
+        });
+    }
+    const colors = colorGraph(uniqueShapePairs, debug, childLog, shapes);
+    if (childLog) {
+        const byColor: number[][] = [];
+        colors.forEach((color, i) => {
+            if (!byColor[color]) byColor[color] = [];
+            byColor[color].push(i);
+        });
+        childLog?.push({
+            type: 'items',
+            title: 'Colored',
+            items: byColor.map((idx, i) => ({
+                item: idx.map((i) => ({
+                    type: 'shape',
+                    shape: barePathFromCoords(shapes[i]),
+                })),
+            })),
+        });
+    }
+    return colors;
 };
 
 // V = 4
