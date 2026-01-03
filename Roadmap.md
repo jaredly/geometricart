@@ -6,6 +6,18 @@
   -> show a dialog asking if the user wants to (a) open up an old editor, or (b) migrate to the current schema version
 -> migrating to the current version should preserve all snapshotted states, but can ignore others.
 
+-> NOW I need to [bundle up the v0 editor].
+-> Where do I put it?
+-> idk, like ... in some file somewhere presumably.
+-> maybe it could even be hosted elsewhere? hmmm.
+  -> oh maybe `/export/v0/:id` or something
+  -> or it could live in assets
+    -> so we'd provide like ... the url to load it from, right?
+    -> which would presumably also be the place to save it to.?
+    -> so we'd redirect to
+      /assets/editor-old/v0/?src=/fs/exports/someid.json
+  Yeah that seems legit.
+
 
 ##
 

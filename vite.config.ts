@@ -9,4 +9,7 @@ export default defineConfig({
     worker: {
         format: 'es',
     },
+    build: {
+        outDir: process.env.ISOLATED ? 'dist-isolated' : 'dist',
+    },
 });
