@@ -6,7 +6,7 @@ import {useInitialPatterns} from '../useInitialPatterns';
 import {usePromise} from '../usePromise';
 import typia from 'typia';
 
-const isHistory = typia.createIs<ExportHistory>();
+const validateHistory = typia.createValidate<ExportHistory>();
 
 const lsprefix = 'localstorage:';
 
@@ -21,16 +21,21 @@ const loadFromSrc = async (src: string, signal: AbortSignal) => {
         } catch (err) {
             throw new Error(`Data in localStorage "${key}" not valid json`);
         }
-        if (isHistory(data)) {
-            return data;
+        const valid = validateHistory(data);
+        if (valid.success) {
+            return valid.data;
         }
+        console.log('wrong format', valid);
         throw new Error(`Data is in the wrong format!`);
     }
+    console.log('fetching', src);
     const res = await fetch(src, {signal});
     const data = await res.json();
-    if (isHistory(data)) {
-        return data;
+    const valid = validateHistory(data);
+    if (valid.success) {
+        return valid.data;
     }
+    console.log('validation error', valid);
     throw new Error(`Data is in the wrong format!`);
 };
 
@@ -69,8 +74,15 @@ export const PatternExportIsolated = () => {
     if (!state || !initialPatterns) {
         return <div>Loading...</div>;
     }
-    if (state.type === 'err' || initialPatterns.type === 'err') {
-        return <div>Unable to load {src}</div>;
+    if (state.type === 'err') {
+        return (
+            <div>
+                Unable to load {src} : error message {state.error.message}
+            </div>
+        );
+    }
+    if (initialPatterns.type === 'err') {
+        return <div>Unable to load patterns {initialPatterns.error.message}</div>;
     }
     if (!state.value) {
         return <div>Loading...</div>;

@@ -1,4 +1,16 @@
 
+## Isolated pattern editor:
+
+- [x] basic loading
+- [ ] load/save snapshot images correctly
+  - [ ] either from the /fs/ or from localStorage
+- [ ] do the build, and like commit it probably
+
+## Migrating state, are we ready?
+
+-> can put it off for now, and say you have to use the old editor
+
+
 ## Let's talk about state migration
 
 -> we have a type freezer

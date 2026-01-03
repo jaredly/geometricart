@@ -17,6 +17,7 @@ export function useInitialPatterns(state?: ExportHistory | null) {
                     .filter(notNull),
                 (x) => x,
             );
+            console.log('need to load patterns', ids);
             const values = await Promise.all(
                 ids.map((id) =>
                     fetch(`/gallery/pattern/${id}/json`, {signal}).then((r) => r.json()),
