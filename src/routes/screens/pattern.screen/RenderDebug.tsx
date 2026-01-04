@@ -3,7 +3,7 @@ import {AddIcon, BaselineFilterCenterFocus, BaselineZoomInMap} from '../../../ic
 import {closeEnough} from '../../../rendering/epsilonToZero';
 import {push} from '../../../rendering/getMirrorTransforms';
 import {BarePath, Coord} from '../../../types';
-import {AnimCtx, Patterns, RenderItem} from './evaluate';
+import {AnimCtx, RenderItem} from './evaluate';
 import {colorToRgb} from './export-types';
 import {State} from './types/state-type';
 import {LogItem, LogItems, RenderLog} from './resolveMods';
@@ -168,15 +168,7 @@ export const matchPath = (one: number[], two: number[]) => {
     return two[two.length - 1];
 };
 
-export const RenderDebug = ({
-    state,
-    patterns,
-    update,
-}: {
-    state: State;
-    patterns: Patterns;
-    update: Updater<State>;
-}) => {
+export const RenderDebug = ({state, update}: {state: State; update: Updater<State>}) => {
     const animCache = useMemo<AnimCtx['cache']>(() => new Map(), []);
 
     const m = location.search.match(/debug=([\d.]+)/g);
@@ -190,8 +182,8 @@ export const RenderDebug = ({
     const cropCache = useCropCache(state, t, animCache);
 
     const {items, warnings, keyPoints, byKey, bg, log} = useMemo(
-        () => svgItems(state, animCache, cropCache, patterns, t, true),
-        [state, patterns, cropCache, animCache, t],
+        () => svgItems(state, animCache, cropCache, t, true),
+        [state, cropCache, animCache, t],
     );
 
     const {zoomProps, box, reset: resetZoom} = useElementZoom(state.view.box);

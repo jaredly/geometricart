@@ -68,8 +68,6 @@ export const PatternExportIsolated = () => {
         [src],
     );
 
-    const initialPatterns = useInitialPatterns(state?.type === 'res' ? state.value : undefined);
-
     const snapshotUrl = useCallback(
         (aid: string, ext: string) => src?.replace('.json', `-${aid}.${ext}`) ?? '',
         [src],
@@ -78,7 +76,7 @@ export const PatternExportIsolated = () => {
     if (!src) {
         return <div>No `?src` provided.</div>;
     }
-    if (!state || !initialPatterns) {
+    if (!state) {
         return <div>Loading...</div>;
     }
     if (state.type === 'err') {
@@ -87,9 +85,6 @@ export const PatternExportIsolated = () => {
                 Unable to load {src} : error message {state.error.message}
             </div>
         );
-    }
-    if (initialPatterns.type === 'err') {
-        return <div>Unable to load patterns {initialPatterns.error.message}</div>;
     }
     if (!state.value) {
         return <div>Loading...</div>;
@@ -105,7 +100,6 @@ export const PatternExportIsolated = () => {
             <PatternExport
                 initial={state.value}
                 onSave={onSave}
-                initialPatterns={initialPatterns.value}
                 namePrefix="deprecated-editor-"
                 snapshotUrl={snapshotUrl}
             />

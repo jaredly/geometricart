@@ -1,19 +1,14 @@
 import {useState} from 'react';
-import {Patterns, Ctx} from './evaluate';
-import {Box} from './export-types';
-import {State} from './types/state-type';
-import {recordVideo} from './recordVideo';
-import {Updater} from '../../../json-diff/Updater';
-import {BlurInput} from './state-editor/BlurInput';
 import {BlurInt} from '../../../editor/Forms';
-import {makeContext} from '../../../json-diff/react';
-import {useExportState} from './ExportHistory';
-import {svgItems} from './svgItems';
-import {useCropCache} from './useCropCache';
 import {BaselineDownload} from '../../../icons/Icon';
+import {makeContext} from '../../../json-diff/react';
+import {Ctx} from './evaluate';
+import {Box} from './export-types';
+import {useExportState} from './ExportHistory';
 import {WorkerSend} from './render-client';
 import {runPNGExport, runSVGExport} from './runPNGExport';
 import {saveAnnotation} from './state-editor/saveAnnotation';
+import {State} from './types/state-type';
 
 /*
 ExportSettings:
@@ -80,7 +75,6 @@ const ButtonSwitch = <T extends string>({
 const ExportSettingsForm = ({
     namePrefix,
     worker,
-    patterns,
     cropCache,
     state,
     box,
@@ -90,7 +84,6 @@ const ExportSettingsForm = ({
     snapshotUrl: (id: string, ext: string) => string;
     namePrefix: string;
     worker: WorkerSend;
-    patterns: Patterns;
     cropCache: Ctx['cropCache'];
     state: State;
     box: Box;
@@ -121,7 +114,7 @@ const ExportSettingsForm = ({
             <button
                 className="btn btn-accent ml-4"
                 onClick={() => {
-                    worker({type: 'frame', state, patterns, t}, (res) => {
+                    worker({type: 'frame', state, t}, (res) => {
                         if (res.type !== 'frame') {
                             return;
                         }
@@ -205,7 +198,6 @@ const ExportSettingsForm = ({
 
 export function FrameExport({
     box,
-    patterns,
     statusRef,
     cropCache,
     worker,
@@ -221,7 +213,6 @@ export function FrameExport({
     state: State;
     worker: WorkerSend;
     statusRef: React.RefObject<HTMLDivElement | null>;
-    patterns: Patterns;
     cropCache: Ctx['cropCache'];
 }) {
     return (
@@ -234,7 +225,6 @@ export function FrameExport({
                     worker={worker}
                     t={t}
                     box={box}
-                    patterns={patterns}
                     cropCache={cropCache}
                 />
             </div>

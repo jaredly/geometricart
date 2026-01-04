@@ -1,7 +1,7 @@
 import {Coord} from '../../../types';
 import {globals, mulberry32} from './eval-globals';
 import {evalTimeline} from './evalEase';
-import {AnimCtx, Ctx, Patterns, RenderItem, a} from './evaluate';
+import {AnimCtx, Ctx, RenderItem, a} from './evaluate';
 import {expandShapes} from './expandShapes';
 import {State} from './types/state-type';
 import {RenderLog, renderGroup, handleShadowAndZSorting} from './resolveMods';
@@ -10,7 +10,6 @@ export const svgItems = (
     state: State,
     animCache: AnimCtx['cache'],
     cropCache: Ctx['cropCache'],
-    patterns: Patterns,
     t: number,
     debug = false,
 ) => {
@@ -49,13 +48,12 @@ export const svgItems = (
                 state,
                 anim,
                 layer,
-                patterns,
                 items,
                 keyPoints,
                 cropCache,
                 byKey,
                 log,
-                shapes: expandShapes(state.shapes, state.layers, patterns),
+                shapes: expandShapes(state.shapes, state.layers),
             },
             [],
             group,

@@ -1,7 +1,7 @@
 import {useEffect, useMemo, useRef, useState} from 'react';
 import {Coord} from '../../../types';
 import {PendingState, PendingStateUpdate, useEditState, usePendingState} from './editState';
-import {Patterns, RenderItem} from './evaluate';
+import {RenderItem} from './evaluate';
 import {Color} from './export-types';
 import {State} from './types/state-type';
 import {WorkerSend} from './render-client';
@@ -28,7 +28,6 @@ export const DeferredRender = ({
     setWarnings,
     worker,
     state,
-    patterns,
     t,
     zoomProps,
     size,
@@ -38,7 +37,6 @@ export const DeferredRender = ({
     size: number;
     t: number;
     state: State;
-    patterns: Patterns;
     worker: WorkerSend;
     zoomProps: ZoomProps;
     onFPS: (v: number) => void;
@@ -59,7 +57,7 @@ export const DeferredRender = ({
     const bouncy = useRef<boolean | MessageToWorker>(false);
 
     useEffect(() => {
-        const msg: MessageToWorker = {type: 'frame', patterns, state, t};
+        const msg: MessageToWorker = {type: 'frame', state, t};
         if (bouncy.current) {
             bouncy.current = msg;
             return;
@@ -83,7 +81,7 @@ export const DeferredRender = ({
 
         bouncy.current = true;
         worker(msg, got);
-    }, [state, patterns, t, worker, setWarnings, onFPS]);
+    }, [state, t, worker, setWarnings, onFPS]);
 
     const pendingState = usePendingState();
     const pending = pendingState.use((v) => v.pending);
@@ -96,7 +94,7 @@ export const DeferredRender = ({
         (): RenderItem[] =>
             showShapes
                 ? renderShapes(
-                      expandShapes(state.shapes, state.layers, patterns),
+                      expandShapes(state.shapes, state.layers),
                       hover,
                       selectedShapes,
                       pendingState.update,
@@ -111,7 +109,6 @@ export const DeferredRender = ({
             selectedShapes,
             pendingState.update,
             pending,
-            patterns,
         ],
     );
 

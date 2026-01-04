@@ -19,7 +19,6 @@ import {getNewPatternData} from '../../getPatternData';
 import {sizeBox} from './useSVGZoom';
 import {parseColor} from './colors';
 import {genid} from './genid';
-import {Patterns} from './evaluate';
 import {RenderDebug} from './RenderDebug';
 import {blankHistory} from '../../../json-diff/history';
 import {makeContext} from '../../../json-diff/react';
@@ -183,36 +182,17 @@ const LoadPattern = ({id, state}: {id: string; state: ExportHistory}) => {
         [id],
     );
 
-    const initialPatterns = useInitialPatterns(state);
-
     const bcr = [
         {title: 'Geometric Art', href: '/'},
         {title: 'Export', href: '/export/'},
         {title: id, href: '/export/' + id},
     ];
 
-    if (!initialPatterns) {
-        return (
-            <Page breadcrumbs={bcr}>
-                <div>Loading...</div>
-            </Page>
-        );
-    }
-
-    if (initialPatterns.type === 'err') {
-        return (
-            <Page breadcrumbs={bcr}>
-                <div>Unable to load pattern defintions...</div>
-            </Page>
-        );
-    }
-
     return (
         <Page breadcrumbs={bcr}>
             <PatternExport
                 initial={state}
                 onSave={onSave}
-                initialPatterns={initialPatterns.value}
                 snapshotUrl={snapshotUrl}
                 namePrefix={id}
             />
@@ -317,13 +297,11 @@ const initialPendingStateHistory = blankHistory<PendingState>({pending: null});
 export const PatternExport = ({
     initial,
     onSave,
-    initialPatterns,
     snapshotUrl,
     namePrefix,
 }: {
     initial: ExportHistory;
     onSave: (s: ExportHistory) => void;
-    initialPatterns: Patterns;
     namePrefix: string;
     snapshotUrl: (id: string, ext: string) => string;
 }) => {
@@ -331,11 +309,7 @@ export const PatternExport = ({
         <ProvideExportState initial={initial} save={onSave}>
             <ProvidePendingState initial={initialPendingStateHistory}>
                 <ProvideEditState initial={initialEditState}>
-                    <Inner
-                        initialPatterns={initialPatterns}
-                        snapshotUrl={snapshotUrl}
-                        namePrefix={namePrefix}
-                    />
+                    <Inner snapshotUrl={snapshotUrl} namePrefix={namePrefix} />
                 </ProvideEditState>
             </ProvidePendingState>
         </ProvideExportState>
@@ -343,17 +317,14 @@ export const PatternExport = ({
 };
 
 const Inner = ({
-    initialPatterns,
     snapshotUrl,
     namePrefix,
 }: {
-    initialPatterns: Patterns;
     snapshotUrl: (id: string, ext: string) => string;
     namePrefix: string;
 }) => {
     const sctx = useExportState();
     const state = sctx.use((v) => v);
-    const patternCache = useMemo<Patterns>(() => initialPatterns, [initialPatterns]);
     const pctx = usePendingState();
     const debug = location.search.includes('debug=');
 
@@ -389,14 +360,13 @@ const Inner = ({
     return (
         <div className="flex">
             {debug ? (
-                <RenderDebug state={state} update={sctx.update} patterns={patternCache} />
+                <RenderDebug state={state} update={sctx.update} />
             ) : (
                 <RenderExport
                     worker={worker}
                     namePrefix={namePrefix}
                     snapshotUrl={snapshotUrl}
                     state={state}
-                    patterns={patternCache}
                     onChange={sctx.update}
                 />
             )}
@@ -404,7 +374,6 @@ const Inner = ({
                 <StateEditor
                     snapshotUrl={snapshotUrl}
                     value={state}
-                    patterns={patternCache}
                     update={sctx.update}
                     worker={worker}
                 />

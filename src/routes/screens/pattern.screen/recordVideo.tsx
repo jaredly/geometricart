@@ -1,7 +1,7 @@
 import {cmdsForCoords} from '../../getPatternData';
 import {pk} from '../../pk';
 import {generateVideo} from '../animator.screen/muxer';
-import {Patterns, Ctx} from './evaluate';
+import {Ctx} from './evaluate';
 import {Box} from './export-types';
 import {State} from './types/state-type';
 import {svgItems} from './svgItems';
@@ -12,9 +12,7 @@ export const recordVideo = async (
     state: State,
     size: number,
     box: Box,
-    patterns: Patterns,
     duration: number,
-    // onStatus: {current: HTMLElement | null},
     onStatus: (progress: number) => void,
     cropCache: Ctx['cropCache'],
 ) => {
@@ -37,13 +35,7 @@ export const recordVideo = async (
         // if (currentFrame % 10 === 0)
         const surface = pk.MakeWebGLCanvasSurface(canvas)!;
 
-        const {items, bg} = svgItems(
-            state,
-            animCache,
-            cropCache,
-            patterns,
-            currentFrame / totalFrames,
-        );
+        const {items, bg} = svgItems(state, animCache, cropCache, currentFrame / totalFrames);
         const debugTime = false;
         if (debugTime) {
             renderItems(surface, box, items, bg, fontData, currentFrame / totalFrames);

@@ -88,7 +88,7 @@ export const LayerEditor = ({
                                 >
                                     Add group
                                 </button>
-                                <button
+                                {/*<button
                                     className="btn btn-outline btn-xs"
                                     onClick={() => {
                                         const id = `pattern-${entries.length + 1}`;
@@ -96,7 +96,7 @@ export const LayerEditor = ({
                                     }}
                                 >
                                     Add pattern
-                                </button>
+                                </button>*/}
                             </div>
                         </div>
                         <div className="space-y-3">

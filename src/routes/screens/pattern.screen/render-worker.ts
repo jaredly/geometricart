@@ -1,7 +1,7 @@
 import {Coord} from '../../../types';
 import {PKPath} from '../../pk';
 import {cacheCrops} from './cacheCrops';
-import {Patterns, RenderItem} from './evaluate';
+import {RenderItem} from './evaluate';
 import {Box, Color, Crop} from './export-types';
 import {State} from './types/state-type';
 import {recordVideo} from './recordVideo';
@@ -11,7 +11,6 @@ export type MessageToWorker =
     | {
           type: 'frame';
           state: State;
-          patterns: Patterns;
           t: number;
       }
     | {
@@ -20,13 +19,11 @@ export type MessageToWorker =
           duration: number;
           box: Box;
           state: State;
-          patterns: Patterns;
       }
     | {
           type: 'animate';
           canvas: OffscreenCanvas;
           state: State;
-          patterns: Patterns;
       };
 
 export type MessageResponse =
@@ -57,14 +54,13 @@ self.onmessage = (evt: MessageEvent<MessageToWorker & {id: string}>) => {
     try {
         switch (evt.data.type) {
             case 'frame': {
-                const {state, patterns, t} = evt.data;
+                const {state, t} = evt.data;
                 cacheCrops(state.crops, state.shapes, cropCache, t, animCache);
 
                 const {items, bg, byKey, warnings, keyPoints} = svgItems(
                     state,
                     animCache,
                     cropCache,
-                    patterns,
                     t,
                 );
 
@@ -83,7 +79,6 @@ self.onmessage = (evt: MessageEvent<MessageToWorker & {id: string}>) => {
                     evt.data.state,
                     evt.data.size,
                     evt.data.box,
-                    evt.data.patterns,
                     evt.data.duration,
                     (progress) => post({type: 'status', progress, id: evt.data.id}),
                     cropCache,

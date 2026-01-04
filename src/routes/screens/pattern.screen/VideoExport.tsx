@@ -1,5 +1,5 @@
 import {useState} from 'react';
-import {Patterns, Ctx} from './evaluate';
+import {Ctx} from './evaluate';
 import {Box} from './export-types';
 import {State} from './types/state-type';
 import {recordVideo} from './recordVideo';
@@ -10,7 +10,6 @@ export function VideoExport({
     state,
     box,
     size,
-    patterns,
     duration,
     statusRef,
     cropCache,
@@ -20,7 +19,6 @@ export function VideoExport({
     state: State;
     box: Box;
     size: number;
-    patterns: Patterns;
     duration: number;
     statusRef: React.RefObject<HTMLDivElement | null>;
     cropCache: Ctx['cropCache'];
@@ -38,7 +36,7 @@ export function VideoExport({
                     onClick={() => {
                         setStatus(0);
                         const start = Date.now();
-                        worker({type: 'video', state, patterns, size, box, duration}, (res) => {
+                        worker({type: 'video', state, size, box, duration}, (res) => {
                             if (res.type === 'status') {
                                 setStatus(res.progress);
                             } else if (res.type === 'video') {

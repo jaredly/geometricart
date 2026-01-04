@@ -57,7 +57,6 @@ export type Ctx = {
     anim: AnimCtx;
     cropCache: Map<string, {path: PKPath; crop: Crop}>;
     layer: Layer;
-    patterns: Patterns;
     items: RenderItem[];
     keyPoints: ([Coord, Coord] | Coord)[];
     byKey: Record<string, string[]>;
@@ -220,4 +219,4 @@ export const a = {
         return v;
     },
 };
-export type Patterns = Record<string, Tiling>;
+// export type Patterns = Record<string, Tiling>;

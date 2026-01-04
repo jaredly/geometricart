@@ -33,10 +33,7 @@ export const thinTiling = (t: Tiling): ThinTiling => ({segments: t.cache.segment
 export const renderPattern = (ctx: Ctx, _outer: CropsAndMatrices, pattern: Pattern) => {
     // not doing yet
     if (pattern.contents.type !== 'shapes') return;
-    const tiling =
-        typeof pattern.tiling === 'string'
-            ? thinTiling(ctx.patterns[pattern.tiling])
-            : pattern.tiling.tiling;
+    const tiling = pattern.tiling.tiling;
     if (!tiling) {
         throw new Error(`Pattern not found ${pattern.tiling}`);
     }

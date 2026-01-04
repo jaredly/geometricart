@@ -7,7 +7,6 @@ import {segmentKey} from '../../../rendering/segmentKey';
 import {Coord, Segment, BarePath} from '../../../types';
 import {centroid} from '../../findReflectionAxes';
 import {coordsFromBarePath, simpleSize} from '../../getPatternData';
-import {Patterns} from './evaluate';
 import {State} from './types/state-type';
 
 const findPattern = (layers: State['layers'], id: string) => {
@@ -35,11 +34,7 @@ const barePathKey = (path: BarePath) => {
     keys.sort();
     return keys[0];
 };
-export const expandShapes = (
-    shapes: State['shapes'],
-    layers: State['layers'],
-    patterns: Patterns,
-) => {
+export const expandShapes = (shapes: State['shapes'], layers: State['layers']) => {
     let changed = false;
 
     Object.entries(shapes).forEach(([key, value]) => {
@@ -48,10 +43,7 @@ export const expandShapes = (
         if (!pattern) return;
 
         if (!changed) shapes = {...shapes};
-        const shape =
-            typeof pattern.tiling === 'string'
-                ? patterns[pattern.tiling].shape
-                : pattern.tiling.tiling.shape;
+        const shape = pattern.tiling.tiling.shape;
         const size = pattern.psize;
 
         const bounds = tilingPoints(shape);

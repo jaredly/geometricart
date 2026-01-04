@@ -1,4 +1,4 @@
-import {Segment} from '../../../../types';
+import {Segment, ThinTiling} from '../../../../types';
 import {
     PMods,
     Layer,
@@ -43,10 +43,10 @@ export const createGroup = (id: string): Group => ({
     entities: {},
 });
 
-export const createPattern = (id: string): Pattern => ({
+export const createPattern = (id: string, hash: string, tiling: ThinTiling): Pattern => ({
     type: 'Pattern',
     id,
-    tiling: id,
+    tiling: {id: hash, tiling},
     adjustments: {},
     psize: {x: 1, y: 1},
     contents: {type: 'shapes', styles: {}},

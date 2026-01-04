@@ -6,7 +6,6 @@ import {angleTo, dist, push, translationMatrix} from '../../../../rendering/getM
 import {transformBarePath} from '../../../../rendering/points';
 import {BarePath, Coord} from '../../../../types';
 import {useEditState, usePendingState} from '../editState';
-import {Patterns} from '../evaluate';
 import {State} from '../types/state-type';
 import {useExportState} from '../ExportHistory';
 import {genid} from '../genid';
@@ -31,11 +30,10 @@ type StateEditorProps = {
     value: State;
     update: Updater<State>;
     worker: WorkerSend;
-    patterns: Patterns;
     snapshotUrl: (id: string, ext: string) => string;
 };
 
-export const StateEditor = ({value, worker, patterns, update, snapshotUrl}: StateEditorProps) => {
+export const StateEditor = ({value, worker, update, snapshotUrl}: StateEditorProps) => {
     const layers = useMemo(
         () => Object.entries(value.layers).sort(([, a], [, b]) => a.order - b.order),
         [value.layers],
@@ -347,11 +345,7 @@ export const StateEditor = ({value, worker, patterns, update, snapshotUrl}: Stat
                 />
             </Section>
             <Section title="History & Snapshots">
-                <SnapshotAnnotations
-                    snapshotUrl={snapshotUrl}
-                    worker={worker}
-                    patterns={patterns}
-                />
+                <SnapshotAnnotations snapshotUrl={snapshotUrl} worker={worker} />
                 <HistoryView snapshotUrl={snapshotUrl} />
             </Section>
         </div>
@@ -360,11 +354,9 @@ export const StateEditor = ({value, worker, patterns, update, snapshotUrl}: Stat
 
 const SnapshotAnnotations = ({
     worker,
-    patterns,
     snapshotUrl,
 }: {
     worker: WorkerSend;
-    patterns: Patterns;
     snapshotUrl: (id: string, ext: string) => string;
 }) => {
     const ctx = useExportState();
@@ -377,7 +369,7 @@ const SnapshotAnnotations = ({
                 className="btn"
                 onClick={() => {
                     setLoading(true);
-                    worker({type: 'frame', patterns, state: ctx.latest(), t: 0}, (res) => {
+                    worker({type: 'frame', state: ctx.latest(), t: 0}, (res) => {
                         if (res.type !== 'frame') return setLoading(false);
                         const blob = runPNGExport(100, ctx.latest().view.box, res.items, res.bg);
                         saveAnnotation(snapshotUrl, blob, history.tip, ctx.updateAnnotations).then(

@@ -8,6 +8,7 @@
 - [x] add a path for /isolated
 - [ ] can we make localstorage work
 - [ ] upgrade all current exports to embed the tiling, so we're not loading tilings anymore
+  -> oh that will need the upgrade I guess
 - [ ] do the build, and like commit it probably
 
 ## Migrating state, are we ready?

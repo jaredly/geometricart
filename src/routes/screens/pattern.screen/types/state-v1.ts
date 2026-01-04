@@ -234,12 +234,10 @@ declare type LineStyle = {
 declare type Pattern = {
     type: 'Pattern';
     id: string;
-    tiling:
-        | string
-        | {
-              id: string;
-              tiling: ThinTiling;
-          };
+    tiling: {
+        id: string;
+        tiling: ThinTiling;
+    };
     psize: Coord | number;
     contents: PatternContents;
     adjustments: Record<string, Adjustment>;

@@ -1,32 +1,27 @@
 import {useCallback, useMemo, useRef, useState} from 'react';
 import {AddIcon, BaselineFilterCenterFocus, BaselineZoomInMap} from '../../../icons/Icon';
+import {Updater} from '../../../json-diff/Updater';
 import {closeEnough} from '../../../rendering/epsilonToZero';
-import {EditStateUpdate} from './editState';
-import {AnimCtx, Ctx, Patterns} from './evaluate';
+import {DeferredRender} from './DeferredRender';
+import {AnimCtx} from './evaluate';
+import {FrameExport} from './FrameExport';
+import {WorkerSend} from './render-client';
 import {State} from './types/state-type';
-import {svgItems} from './svgItems';
-import {SVGCanvas} from './SVGCanvas';
 import {useAnimate} from './useAnimate';
 import {useCropCache} from './useCropCache';
 import {useElementZoom} from './useSVGZoom';
 import {VideoExport} from './VideoExport';
-import {Updater} from '../../../json-diff/Updater';
-import {FrameExport} from './FrameExport';
-import {useWorker, WorkerSend} from './render-client';
-import {DeferredRender} from './DeferredRender';
 
 export const RenderExport = ({
     namePrefix,
     state,
     snapshotUrl,
-    patterns,
     onChange,
     worker,
 }: {
     worker: WorkerSend;
     namePrefix: string;
     state: State;
-    patterns: Patterns;
     onChange: Updater<State>;
     snapshotUrl: (id: string, ext: string) => string;
 }) => {
@@ -63,7 +58,6 @@ export const RenderExport = ({
                     onFPS={onFPS}
                     t={t}
                     state={state}
-                    patterns={patterns}
                     size={size}
                     zoomProps={zoomProps}
                 />
@@ -127,7 +121,6 @@ export const RenderExport = ({
                     state={state}
                     box={box}
                     size={size}
-                    patterns={patterns}
                     duration={duration}
                     statusRef={statusRef}
                     cropCache={cropCache}
@@ -137,7 +130,6 @@ export const RenderExport = ({
                     snapshotUrl={snapshotUrl}
                     state={state}
                     box={box}
-                    patterns={patterns}
                     t={t}
                     worker={worker}
                     statusRef={statusRef}
