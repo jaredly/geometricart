@@ -30,12 +30,12 @@ import {HistoryView} from './HistoryView';
 type StateEditorProps = {
     value: State;
     update: Updater<State>;
-    id: string;
     worker: WorkerSend;
     patterns: Patterns;
+    snapshotUrl: (id: string, ext: string) => string;
 };
 
-export const StateEditor = ({value, worker, patterns, update, id}: StateEditorProps) => {
+export const StateEditor = ({value, worker, patterns, update, snapshotUrl}: StateEditorProps) => {
     const layers = useMemo(
         () => Object.entries(value.layers).sort(([, a], [, b]) => a.order - b.order),
         [value.layers],
@@ -347,21 +347,25 @@ export const StateEditor = ({value, worker, patterns, update, id}: StateEditorPr
                 />
             </Section>
             <Section title="History & Snapshots">
-                <SnapshotAnnotations id={id} worker={worker} patterns={patterns} />
-                <HistoryView id={id} />
+                <SnapshotAnnotations
+                    snapshotUrl={snapshotUrl}
+                    worker={worker}
+                    patterns={patterns}
+                />
+                <HistoryView snapshotUrl={snapshotUrl} />
             </Section>
         </div>
     );
 };
 
 const SnapshotAnnotations = ({
-    id,
     worker,
     patterns,
+    snapshotUrl,
 }: {
-    id: string;
     worker: WorkerSend;
     patterns: Patterns;
+    snapshotUrl: (id: string, ext: string) => string;
 }) => {
     const ctx = useExportState();
     const history = ctx.useHistory();
@@ -376,9 +380,11 @@ const SnapshotAnnotations = ({
                     worker({type: 'frame', patterns, state: ctx.latest(), t: 0}, (res) => {
                         if (res.type !== 'frame') return setLoading(false);
                         const blob = runPNGExport(100, ctx.latest().view.box, res.items, res.bg);
-                        saveAnnotation(id, blob, history.tip, ctx.updateAnnotations).then(() => {
-                            setLoading(false);
-                        });
+                        saveAnnotation(snapshotUrl, blob, history.tip, ctx.updateAnnotations).then(
+                            () => {
+                                setLoading(false);
+                            },
+                        );
                     });
                 }}
             >
@@ -393,10 +399,10 @@ const SnapshotAnnotations = ({
                                     <img
                                         key={i}
                                         style={{width: 100, height: 100}}
-                                        src={`/assets/exports/${id}-${an.id}.png`}
+                                        src={snapshotUrl(an.id, 'png')}
                                     />
                                 ) : (
-                                    <video key={i} src={`/assets/exports/${id}-${an.id}.mp4`} />
+                                    <video key={i} src={snapshotUrl(an.id, 'mp4')} />
                                 )}
                                 <button
                                     className="btn btn-sm btn-square absolute top-0 right-0"
@@ -406,7 +412,12 @@ const SnapshotAnnotations = ({
                                                 `Are you sure you want to delete this annotation?`,
                                             )
                                         ) {
-                                            deleteAnnotation(id, key, an.id, ctx.updateAnnotations);
+                                            deleteAnnotation(
+                                                snapshotUrl,
+                                                key,
+                                                an.id,
+                                                ctx.updateAnnotations,
+                                            );
                                         }
                                     }}
                                 >

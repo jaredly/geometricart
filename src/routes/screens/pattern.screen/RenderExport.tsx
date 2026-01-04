@@ -16,17 +16,19 @@ import {useWorker, WorkerSend} from './render-client';
 import {DeferredRender} from './DeferredRender';
 
 export const RenderExport = ({
-    id,
+    namePrefix,
     state,
+    snapshotUrl,
     patterns,
     onChange,
     worker,
 }: {
     worker: WorkerSend;
-    id: string;
+    namePrefix: string;
     state: State;
     patterns: Patterns;
     onChange: Updater<State>;
+    snapshotUrl: (id: string, ext: string) => string;
 }) => {
     const [t, setT] = useState(0); // animateeeee
     const animCache = useMemo<AnimCtx['cache']>(() => new Map(), []);
@@ -131,7 +133,8 @@ export const RenderExport = ({
                     cropCache={cropCache}
                 />
                 <FrameExport
-                    id={id}
+                    namePrefix={namePrefix}
+                    snapshotUrl={snapshotUrl}
                     state={state}
                     box={box}
                     patterns={patterns}

@@ -1,15 +1,16 @@
 import {useState} from 'react';
-import {Route} from './screens/+types/gallery';
+// import {Route} from './screens/+types/gallery';
 import {ShowShape} from './ShowShape';
 import {FrameInspectSharp} from '../icons/Icon';
 import {useOnOpen} from './useOnOpen';
 import {InspectShape} from './InspectShape';
+import {getUniqueShapes} from './getUniqueShapes';
 
 export const ShapeDialog = ({
-    data: {patterns, shapes},
+    data: {shapes},
     setFilter,
 }: {
-    data: Route.ComponentProps['loaderData'];
+    data: {shapes: ReturnType<typeof getUniqueShapes>};
     setFilter: (selected: string[]) => void;
 }) => {
     const {patternsWithShapes, uniqueShapes, shapesOrganized} = shapes;

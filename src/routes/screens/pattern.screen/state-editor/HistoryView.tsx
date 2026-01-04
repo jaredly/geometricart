@@ -3,7 +3,7 @@ import {addToMap} from '../../../shapesFromSegments';
 import {useOnOpen} from '../../../useOnOpen';
 import {useExportState, ExportHistory} from '../ExportHistory';
 
-export const HistoryView = ({id}: {id: string}) => {
+export const HistoryView = ({snapshotUrl}: {snapshotUrl: (id: string, ext: string) => string}) => {
     const ctx = useExportState();
     const history = ctx.useHistory();
     const [showDialog, setShowDialog] = useState(false);
@@ -24,7 +24,9 @@ export const HistoryView = ({id}: {id: string}) => {
                 Show History
             </button>
             <dialog id="history-modal" className="modal" ref={dialogRef}>
-                {showDialog ? <HistoryViewDialog history={history} jump={jump} eid={id} /> : null}
+                {showDialog ? (
+                    <HistoryViewDialog history={history} jump={jump} snapshotUrl={snapshotUrl} />
+                ) : null}
                 <form method="dialog" className="modal-backdrop">
                     <button>close</button>
                 </form>
@@ -36,12 +38,12 @@ export const HistoryView = ({id}: {id: string}) => {
 type SizeInfo = {size: number; height: number; skipTo?: {id: string; count: number}};
 const HistoryViewDialog = ({
     history,
-    eid,
+    snapshotUrl,
     jump,
 }: {
     jump: (id: string) => void;
     history: ExportHistory;
-    eid: string;
+    snapshotUrl: (id: string, ext: string) => string;
 }) => {
     // const ref = useRef<HTMLCanvasElement>(null);
     const {byParent, sizes} = useMemo(() => {
@@ -76,8 +78,8 @@ const HistoryViewDialog = ({
     }, [history]);
 
     const nctx = useMemo(
-        () => ({history, byParent, sizes, eid, jump}),
-        [history, byParent, sizes, eid, jump],
+        () => ({history, byParent, sizes, snapshotUrl, jump}),
+        [history, byParent, sizes, snapshotUrl, jump],
     );
 
     return (
@@ -94,13 +96,13 @@ type NCtx = {
     history: ExportHistory;
     byParent: Record<string, string[]>;
     sizes: Record<string, SizeInfo>;
-    eid: string;
+    snapshotUrl: (id: string, ext: string) => string;
     jump: (id: string) => void;
 };
 
 const renderNode = (id: string, ctx: NCtx) => {
     const oneHeight = 22;
-    const {history, byParent, sizes, eid, jump} = ctx;
+    const {history, byParent, sizes, snapshotUrl, jump} = ctx;
 
     const self = (
         <div className="flex flex-row items-center">
@@ -147,9 +149,9 @@ const renderNode = (id: string, ctx: NCtx) => {
                 <div className="font-mono">{id}</div>
                 {history.annotations[id]?.map((an, i) =>
                     an.type === 'img' ? (
-                        <img key={i} src={`/assets/exports/${eid}-${an.id}.png`} />
+                        <img key={i} src={snapshotUrl(an.id, 'png')} />
                     ) : (
-                        <video key={i} src={`/assets/exports/${eid}-${an.id}.mp4`} />
+                        <video key={i} src={snapshotUrl(an.id, 'mp4')} />
                     ),
                 )}
             </div>

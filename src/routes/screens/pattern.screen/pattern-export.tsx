@@ -335,6 +335,11 @@ const Inner = ({initialPatterns}: {initialPatterns: Patterns}) => {
     const debug = location.search.includes('debug=');
     const params = useParams();
 
+    const snapshotUrl = useCallback(
+        (id: string, ext: string) => `/fs/exports/${params.id!}-${id}.${ext}`,
+        [params],
+    );
+
     useEffect(() => {
         return sctx.onHistoryChange(() => {
             pctx.clearHistory();
@@ -371,7 +376,8 @@ const Inner = ({initialPatterns}: {initialPatterns: Patterns}) => {
             ) : (
                 <RenderExport
                     worker={worker}
-                    id={params.id!}
+                    namePrefix={params.id!}
+                    snapshotUrl={snapshotUrl}
                     state={state}
                     patterns={patternCache}
                     onChange={sctx.update}
@@ -379,7 +385,7 @@ const Inner = ({initialPatterns}: {initialPatterns: Patterns}) => {
             )}
             <div className="max-h-250 overflow-auto flex-1">
                 <StateEditor
-                    id={params.id!}
+                    snapshotUrl={snapshotUrl}
                     value={state}
                     patterns={patternCache}
                     update={sctx.update}

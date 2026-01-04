@@ -78,15 +78,17 @@ const ButtonSwitch = <T extends string>({
     ));
 
 const ExportSettingsForm = ({
-    id,
+    namePrefix,
     worker,
     patterns,
     cropCache,
     state,
     box,
     t,
+    snapshotUrl,
 }: {
-    id: string;
+    snapshotUrl: (id: string, ext: string) => string;
+    namePrefix: string;
     worker: WorkerSend;
     patterns: Patterns;
     cropCache: Ctx['cropCache'];
@@ -134,7 +136,7 @@ const ExportSettingsForm = ({
                         if (settings.kind === 'png' || settings.kind === 'svg') {
                             // make a small one
                             const small = runPNGExport(200, box, items, bg);
-                            saveAnnotation(id, small, ctx.tip(), ctx.updateAnnotations);
+                            saveAnnotation(snapshotUrl, small, ctx.tip(), ctx.updateAnnotations);
                         }
 
                         if (blob) {
@@ -143,7 +145,11 @@ const ExportSettingsForm = ({
                                 {
                                     url: URL.createObjectURL(blob),
                                     title:
-                                        id + '-' + new Date().toISOString() + '.' + settings.kind,
+                                        namePrefix +
+                                        '-' +
+                                        new Date().toISOString() +
+                                        '.' +
+                                        settings.kind,
                                 },
                             ]);
                         }
@@ -205,11 +211,13 @@ export function FrameExport({
     worker,
     state,
     t,
-    id,
+    namePrefix,
+    snapshotUrl,
 }: {
+    snapshotUrl: (id: string, ext: string) => string;
     box: Box;
     t: number;
-    id: string;
+    namePrefix: string;
     state: State;
     worker: WorkerSend;
     statusRef: React.RefObject<HTMLDivElement | null>;
@@ -220,7 +228,8 @@ export function FrameExport({
         <ProvideExportConfig initial={defaultExportSettings}>
             <div>
                 <ExportSettingsForm
-                    id={id}
+                    snapshotUrl={snapshotUrl}
+                    namePrefix={namePrefix}
                     state={state}
                     worker={worker}
                     t={t}

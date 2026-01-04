@@ -3,13 +3,13 @@ import {ExportAnnotation} from '../ExportHistory';
 import {genid} from '../genid';
 
 export async function saveAnnotation(
-    exportID: string,
+    snapshotUrl: (id: string, ext: string) => string,
     blob: Blob,
     tip: string,
     updateAnnotations: DiffBuilderA<Record<string, ExportAnnotation[]>, 'type', void, null>,
 ) {
     const aid = genid();
-    await fetch(`/fs/exports/${exportID}-${aid}.png`, {
+    await fetch(snapshotUrl(aid, 'png'), {
         method: 'POST',
         body: blob,
         headers: {'Content-type': 'application/binary'},
@@ -20,12 +20,12 @@ export async function saveAnnotation(
 }
 
 export async function deleteAnnotation(
-    exportID: string,
+    snapshotUrl: (id: string, ext: string) => string,
     tip: string,
     aid: string,
     updateAnnotations: DiffBuilderA<Record<string, ExportAnnotation[]>, 'type', void, null>,
 ) {
-    await fetch(`/fs/exports/${exportID}-${aid}.png`, {method: 'DELETE'});
+    await fetch(snapshotUrl(aid, 'png'), {method: 'DELETE'});
     updateAnnotations[tip]((v, up) => {
         const at = v.findIndex((n) => n.id === aid);
         if (at === -1) {
