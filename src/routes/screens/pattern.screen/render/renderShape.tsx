@@ -1,9 +1,9 @@
-import {BarePath} from '../../../types';
-import {parseColor} from './colors';
-import {PendingState, PendingStateUpdate} from './editState';
-import {RenderItem} from './evaluate';
-import {colorToRgb} from './export-types';
-import {Hover} from './resolveMods';
+import {BarePath} from '../../../../types';
+import {parseColor} from '../utils/colors';
+import {PendingState, PendingStateUpdate} from '../utils/editState';
+import {RenderItem} from '../eval/evaluate';
+import {colorToRgb} from '../export-types';
+import {Hover} from '../utils/resolveMods';
 
 export function renderShape(
     key: string,

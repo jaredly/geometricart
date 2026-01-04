@@ -1,5 +1,5 @@
 import React from 'react';
-import {parseColor, colorToString} from '../colors';
+import {parseColor, colorToString} from '../utils/colors';
 import {AnimatableColor, Color} from '../export-types';
 import {BlurInput} from './BlurInput';
 import {parseAnimatable} from './createLayerTemplate';

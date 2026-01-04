@@ -12,7 +12,7 @@ import {angleBetween} from '../rendering/isAngleBetween';
 import {transformSegment} from '../rendering/points';
 import {Coord, Tiling} from '../types';
 import {getNewPatternData, getPatternData, preTransformTiling} from './getPatternData';
-import {thinTiling} from './screens/pattern.screen/renderPattern';
+import {thinTiling} from './screens/pattern.screen/render/renderPattern';
 import {
     shouldFlipTriangle,
     getRectangleTransform,

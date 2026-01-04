@@ -1,5 +1,5 @@
-import {hslToRgb} from '../../../rendering/colorConvert';
-import {Color} from './export-types';
+import {hslToRgb} from '../../../../rendering/colorConvert';
+import {Color} from '../export-types';
 
 // Some colors now
 export const cssColors = [

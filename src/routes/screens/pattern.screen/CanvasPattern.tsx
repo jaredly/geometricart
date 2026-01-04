@@ -1,10 +1,9 @@
-import {useRef, useEffect} from 'react';
+import {useEffect} from 'react';
 import {Tiling} from '../../../types';
-import {drawShapes, drawLines, drawWoven, drawBounds} from '../../canvasDraw';
+import {drawBounds, drawLines, drawShapes, drawWoven} from '../../canvasDraw';
 import {getPatternData} from '../../getPatternData';
 import {pk} from '../../pk';
-import {Box} from './export-types';
-import {ZoomProps} from './useSVGZoom';
+import {ZoomProps} from './hooks/useSVGZoom';
 
 export const CanvasPattern = ({
     data,

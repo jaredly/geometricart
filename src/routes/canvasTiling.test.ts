@@ -5,7 +5,7 @@ import {Tiling} from '../types';
 import {canvasTiling} from './canvasTiling';
 import {getNewPatternData, getPatternData} from './getPatternData';
 import {normalizeTilingShape, tilingPoints} from '../editor/tilingPoints';
-import {thinTiling} from './screens/pattern.screen/renderPattern';
+import {thinTiling} from './screens/pattern.screen/render/renderPattern';
 
 const veryBasicTiling: Tiling = {
     shape: {

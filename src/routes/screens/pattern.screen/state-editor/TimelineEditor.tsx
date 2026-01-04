@@ -1,7 +1,7 @@
 import React, {useMemo} from 'react';
 import {Coord} from '../../../../types';
 import {shapeD} from '../../../shapeD';
-import {tlpos, evalLane} from '../evalEase';
+import {tlpos, evalLane} from '../eval/evalEase';
 import {State} from '../types/state-type';
 import {JsonEditor} from './JsonEditor';
 

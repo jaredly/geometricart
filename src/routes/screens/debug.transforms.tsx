@@ -22,7 +22,7 @@ import {
 } from '../getPatternData';
 import {pk} from '../pk';
 import {cmdsToSegments} from '../../gcode/cmdsToSegments';
-import {thinTiling} from './pattern.screen/renderPattern';
+import {thinTiling} from './pattern.screen/render/renderPattern';
 
 export function loader() {
     const ids = [

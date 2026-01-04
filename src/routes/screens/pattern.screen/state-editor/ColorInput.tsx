@@ -1,5 +1,5 @@
 import React, {useState} from 'react';
-import {colorToRgbString, parseColor} from '../colors';
+import {colorToRgbString, parseColor} from '../utils/colors';
 import {Color} from '../export-types';
 
 export const ColorInput = ({

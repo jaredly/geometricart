@@ -24,11 +24,11 @@ import {getNewPatternData} from '../../getPatternData';
 import {humanReadableRatio} from '../../humanReadableRatio';
 import {shapeD} from '../../shapeD';
 import {unique} from '../../shapesFromSegments';
-import {filterNull} from './filterNull';
+import {filterNull} from './utils/filterNull';
 import {IGuide} from './IGuide';
 import {ShowLabel} from './ShowLabel';
-import {sizeBox, svgCoord, useElementZoom} from './useSVGZoom';
-import {thinTiling} from './renderPattern';
+import {sizeBox, svgCoord, useElementZoom} from './hooks/useSVGZoom';
+import {thinTiling} from './render/renderPattern';
 
 type Selection = {type: 'shape'; i: number} | {type: 'seg'; i: number};
 

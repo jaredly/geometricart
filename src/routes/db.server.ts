@@ -6,7 +6,7 @@ import {migrateState} from '../state/migrateState';
 import {getNewPatternData, getPatternData, PatternData} from './getPatternData';
 import {unique} from './shapesFromSegments';
 import {State as Animated} from './screens/animator.screen/animator.utils';
-import {thinTiling} from './screens/pattern.screen/renderPattern';
+import {thinTiling} from './screens/pattern.screen/render/renderPattern';
 
 export const db = new Database(join(import.meta.dirname, '../../data.db'));
 

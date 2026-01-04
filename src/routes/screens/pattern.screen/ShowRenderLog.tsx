@@ -2,7 +2,7 @@ import {useMemo} from 'react';
 import {CheckboxChecked, CheckboxUnchecked} from '../../../icons/Icon';
 import {Box} from './export-types';
 import {matchPath} from './RenderDebug';
-import {LogItem, RenderLog} from './resolveMods';
+import {LogItem, RenderLog} from './utils/resolveMods';
 import {Bounds} from '../../../editor/Bounds';
 import {aabbContains} from '../../shapesFromSegments';
 

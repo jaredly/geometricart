@@ -1,11 +1,8 @@
-import {test, expect} from 'bun:test';
-import {memoryUsage, fullGC, heapStats} from 'bun:jsc';
 import {generateHeapSnapshot} from 'bun';
 import {Tiling} from '../types';
 import {canvasTiling} from './canvasTiling';
-import {getNewPatternData, getPatternData} from './getPatternData';
-import {normalizeTilingShape, tilingPoints} from '../editor/tilingPoints';
-import {thinTiling} from './screens/pattern.screen/renderPattern';
+import {getNewPatternData} from './getPatternData';
+import {thinTiling} from './screens/pattern.screen/render/renderPattern';
 
 const veryBasicTiling: Tiling = {
     shape: {

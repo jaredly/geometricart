@@ -12,9 +12,9 @@ import {BaselineDownload, BaselineFilterCenterFocus, BaselineZoomInMap} from '..
 import {useOnOpen} from '../../useOnOpen';
 import {InspectShape} from '../../InspectShape';
 import {normalizeCanonShape, Shape} from '../../getUniqueShapes';
-import {useElementZoom} from './useSVGZoom';
+import {useElementZoom} from './hooks/useSVGZoom';
 import {closeEnough} from '../../../rendering/epsilonToZero';
-import {thinTiling} from './renderPattern';
+import {thinTiling} from './render/renderPattern';
 
 type Display = {
     bounds: boolean;

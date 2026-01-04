@@ -1,6 +1,6 @@
-import {unique} from '../../shapesFromSegments';
-import {ExportHistory} from './ExportHistory';
-import {notNull} from './resolveMods';
+import {unique} from '../../../shapesFromSegments';
+import {ExportHistory} from '../ExportHistory';
+import {notNull} from '../utils/resolveMods';
 import {usePromise} from './usePromise';
 
 export function useInitialPatterns(state?: ExportHistory | null) {
