@@ -14,6 +14,7 @@ export default [
         route('pattern/:id', './screens/pattern.tsx'),
         route('pattern/:id/:img', './screens/pattern-svg.tsx'),
     ]),
+    route('isolated', './screens/pattern.screen/isolated/pattern-export-isolated.tsx'),
     route('export/:id?', './screens/pattern.screen/pattern-export.tsx'),
     route('animator', './screens/animators.tsx'),
     route('animator/:id', './screens/animator.tsx'),

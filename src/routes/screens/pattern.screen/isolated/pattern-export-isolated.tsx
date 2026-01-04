@@ -5,6 +5,7 @@ import {Page} from '../Page';
 import {useInitialPatterns} from '../useInitialPatterns';
 import {usePromise} from '../usePromise';
 import typia from 'typia';
+import {useLocation} from 'react-router';
 
 const validateHistory = typia.createValidate<ExportHistory>();
 
@@ -54,7 +55,8 @@ const saveToSrc = async (src: string, data: ExportHistory) => {
 };
 
 export const PatternExportIsolated = () => {
-    const src = new URL(window.location.href).searchParams.get('src');
+    const loc = useLocation();
+    const src = new URLSearchParams(loc.search).get('src');
 
     const state = usePromise(
         (signal) => (src ? loadFromSrc(src, signal) : Promise.resolve(null)),
@@ -97,7 +99,7 @@ export const PatternExportIsolated = () => {
         <Page
             breadcrumbs={[
                 {title: 'Geometric Art', href: '/'},
-                {title: 'Deprecated Editor', href: window.location.pathname},
+                {title: 'Deprecated Editor', href: loc.pathname},
             ]}
         >
             <PatternExport

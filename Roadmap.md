@@ -2,8 +2,12 @@
 ## Isolated pattern editor:
 
 - [x] basic loading
-- [ ] load/save snapshot images correctly
-  - [ ] either from the /fs/ or from localStorage
+- [x] load/save snapshot images correctly
+  - [x] from /fs/
+  - [ ] from localStorage
+- [x] add a path for /isolated
+- [ ] can we make localstorage work
+- [ ] upgrade all current exports to embed the tiling, so we're not loading tilings anymore
 - [ ] do the build, and like commit it probably
 
 ## Migrating state, are we ready?
