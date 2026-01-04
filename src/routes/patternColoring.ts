@@ -2,7 +2,7 @@ import {coordKey} from '../rendering/coordKey';
 import {closeEnough} from '../rendering/epsilonToZero';
 import {dist} from '../rendering/getMirrorTransforms';
 import {Coord} from '../types';
-import {barePathFromCoords, LogItems, RenderLog} from './screens/pattern.screen/resolveMods';
+import {barePathFromCoords, LogItems, RenderLog} from './screens/pattern.screen/utils/resolveMods';
 import {addToMap, unique} from './shapesFromSegments';
 
 // const debugColors:

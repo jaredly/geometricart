@@ -1,9 +1,9 @@
 import {useState} from 'react';
-import {Ctx} from './evaluate';
+import {Ctx} from './eval/evaluate';
 import {Box} from './export-types';
 import {State} from './types/state-type';
-import {recordVideo} from './recordVideo';
-import {WorkerSend} from './render-client';
+import {recordVideo} from './render/recordVideo';
+import {WorkerSend} from './render/render-client';
 import {SpinnerEarring} from '../../../icons/Icon';
 
 export function VideoExport({

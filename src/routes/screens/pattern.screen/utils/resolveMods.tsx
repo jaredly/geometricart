@@ -1,17 +1,17 @@
 import {Path as PKPath} from 'canvaskit-wasm';
-import {scalePos} from '../../../editor/scalePos';
-import {transformPKPath, transformShape} from '../../../editor/tilingPoints';
-import {cmdsToCoords, cmdsToSegments} from '../../../gcode/cmdsToSegments';
-import {epsilon} from '../../../rendering/epsilonToZero';
-import {Matrix} from '../../../rendering/getMirrorTransforms';
-import {pkPathToSegments} from '../../../sidebar/pkClipPaths';
-import {BarePath, Coord, Segment} from '../../../types';
-import {centroid} from '../../findReflectionAxes';
-import {calcPolygonArea, coordsFromBarePath, pkPathFromCoords} from '../../getPatternData';
-import {pk} from '../../pk';
-import {segmentsCmds} from '../animator.screen/cropPath';
-import {easeFn} from './evalEase';
-import {a, AnimCtx, Ctx, RenderItem} from './evaluate';
+import {scalePos} from '../../../../editor/scalePos';
+import {transformPKPath, transformShape} from '../../../../editor/tilingPoints';
+import {cmdsToCoords, cmdsToSegments} from '../../../../gcode/cmdsToSegments';
+import {epsilon} from '../../../../rendering/epsilonToZero';
+import {Matrix} from '../../../../rendering/getMirrorTransforms';
+import {pkPathToSegments} from '../../../../sidebar/pkClipPaths';
+import {BarePath, Coord, Segment} from '../../../../types';
+import {centroid} from '../../../findReflectionAxes';
+import {calcPolygonArea, coordsFromBarePath, pkPathFromCoords} from '../../../getPatternData';
+import {pk} from '../../../pk';
+import {segmentsCmds} from '../../animator.screen/cropPath';
+import {easeFn} from '../eval/evalEase';
+import {a, AnimCtx, Ctx, RenderItem} from '../eval/evaluate';
 import {
     AnimatableValue,
     Color,
@@ -22,7 +22,7 @@ import {
     insetPkPath,
     modMatrix,
     PMods,
-} from './export-types';
+} from '../export-types';
 import {
     dropNully,
     renderLine,
@@ -30,7 +30,7 @@ import {
     resolveFill,
     resolveLine,
     resolveShadow,
-} from './renderPattern';
+} from '../render/renderPattern';
 
 type CCrop = {type: 'crop'; id: string; mode?: CropMode; hole?: boolean};
 type CInset = {type: 'inset'; v: number};

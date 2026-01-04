@@ -1,6 +1,6 @@
 import {DiffBuilderA} from '../../../../json-diff/helper2';
 import {ExportAnnotation} from '../ExportHistory';
-import {genid} from '../genid';
+import {genid} from '../utils/genid';
 
 export async function saveAnnotation(
     snapshotUrl: (id: string, ext: string) => string,

@@ -3,13 +3,13 @@ import {AddIcon, BaselineFilterCenterFocus, BaselineZoomInMap} from '../../../ic
 import {Updater} from '../../../json-diff/Updater';
 import {closeEnough} from '../../../rendering/epsilonToZero';
 import {DeferredRender} from './DeferredRender';
-import {AnimCtx} from './evaluate';
+import {AnimCtx} from './eval/evaluate';
 import {FrameExport} from './FrameExport';
-import {WorkerSend} from './render-client';
+import {WorkerSend} from './render/render-client';
 import {State} from './types/state-type';
-import {useAnimate} from './useAnimate';
-import {useCropCache} from './useCropCache';
-import {useElementZoom} from './useSVGZoom';
+import {useAnimate} from './hooks/useAnimate';
+import {useCropCache} from './hooks/useCropCache';
+import {useElementZoom} from './hooks/useSVGZoom';
 import {VideoExport} from './VideoExport';
 
 export const RenderExport = ({

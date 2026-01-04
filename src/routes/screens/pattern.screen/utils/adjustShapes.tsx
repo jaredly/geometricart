@@ -1,20 +1,20 @@
-import {Bounds, boundsForCoords} from '../../../editor/Bounds';
-import {coordKey} from '../../../rendering/coordKey';
-import {closeEnough} from '../../../rendering/epsilonToZero';
-import {lineLine, lineToSlope, SlopeIntercept, slopeKey} from '../../../rendering/intersect';
-import {Coord, BarePath} from '../../../types';
-import {centroid} from '../../findReflectionAxes';
-import {coordsFromBarePath, coordToPolar, sortShapesByPolar} from '../../getPatternData';
+import {Bounds, boundsForCoords} from '../../../../editor/Bounds';
+import {coordKey} from '../../../../rendering/coordKey';
+import {closeEnough} from '../../../../rendering/epsilonToZero';
+import {lineLine, lineToSlope, SlopeIntercept, slopeKey} from '../../../../rendering/intersect';
+import {Coord, BarePath} from '../../../../types';
+import {centroid} from '../../../findReflectionAxes';
+import {coordsFromBarePath, coordToPolar, sortShapesByPolar} from '../../../getPatternData';
 import {
     unique,
     cutSegments,
     edgesByEndpoint,
     shapesFromSegments,
     EndPointMap,
-} from '../../shapesFromSegments';
+} from '../../../shapesFromSegments';
 import {coordPairOnShape, coordPairOnShape2, overlapping} from './coordPairOnShape';
-import {Ctx} from './evaluate';
-import {PMods, TChunk, AnimatableValue} from './export-types';
+import {Ctx} from '../eval/evaluate';
+import {PMods, TChunk, AnimatableValue} from '../export-types';
 import {
     resolveT,
     withShared,

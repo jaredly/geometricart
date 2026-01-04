@@ -1,35 +1,30 @@
-import {useCallback, useEffect, useMemo, useState} from 'react';
+import {useCallback, useEffect, useState} from 'react';
 import {ThinTiling, Tiling} from '../../../types';
 import {
     EditState,
     PendingState,
     ProvideEditState,
     ProvidePendingState,
-    useEditState,
     usePendingState,
-} from './editState';
-// import {example} from './example';
-import {ShapeStyle} from './export-types';
-import {State} from './types/state-type';
-import {RenderExport} from './RenderExport';
-import {StateEditor} from './state-editor/StateEditor';
-import type {Route} from './+types/pattern-export';
-import {useLocation, useParams} from 'react-router';
-import {getNewPatternData} from '../../getPatternData';
-import {sizeBox} from './useSVGZoom';
-import {parseColor} from './colors';
-import {genid} from './genid';
-import {RenderDebug} from './RenderDebug';
+} from './utils/editState';
+import {useLocation} from 'react-router';
 import {blankHistory} from '../../../json-diff/history';
-import {makeContext} from '../../../json-diff/react';
-import {usePromise} from './usePromise';
-import {thinTiling} from './renderPattern';
+import {getNewPatternData} from '../../getPatternData';
+import type {Route} from './+types/pattern-export';
+import {parseColor} from './utils/colors';
+import {ShapeStyle} from './export-types';
 import {ExportHistory, ProvideExportState, useExportState} from './ExportHistory';
-import {useWorker} from './render-client';
-import typia from 'typia';
-import {loadState} from './types/load-state';
-import {useInitialPatterns} from './useInitialPatterns';
+import {genid} from './utils/genid';
 import {Page} from './Page';
+import {useWorker} from './render/render-client';
+import {RenderDebug} from './RenderDebug';
+import {RenderExport} from './RenderExport';
+import {thinTiling} from './render/renderPattern';
+import {StateEditor} from './state-editor/StateEditor';
+import {loadState} from './types/load-state';
+import {State} from './types/state-type';
+import {usePromise} from './hooks/usePromise';
+import {sizeBox} from './hooks/useSVGZoom';
 
 const PatternPicker = () => {
     const all = usePromise((signal) => fetch('/gallery.json', {signal}).then((r) => r.json()));

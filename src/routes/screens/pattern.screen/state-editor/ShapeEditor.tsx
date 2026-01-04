@@ -1,10 +1,10 @@
 import React from 'react';
 import {BarePath, Coord} from '../../../../types';
-import {useEditState, usePendingState} from '../editState';
+import {useEditState, usePendingState} from '../utils/editState';
 import {JsonEditor} from './JsonEditor';
 import {Updater} from '../../../../json-diff/Updater';
 import {useExportState} from '../ExportHistory';
-import {notNull} from '../resolveMods';
+import {notNull} from '../utils/resolveMods';
 
 export const ShapeEditor = ({
     shape,

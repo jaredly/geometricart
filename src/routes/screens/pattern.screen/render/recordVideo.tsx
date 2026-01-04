@@ -1,11 +1,11 @@
-import {cmdsForCoords} from '../../getPatternData';
-import {pk} from '../../pk';
-import {generateVideo} from '../animator.screen/muxer';
-import {Ctx} from './evaluate';
-import {Box} from './export-types';
-import {State} from './types/state-type';
+import {cmdsForCoords} from '../../../getPatternData';
+import {pk} from '../../../pk';
+import {generateVideo} from '../../animator.screen/muxer';
+import {Ctx} from '../eval/evaluate';
+import {Box} from '../export-types';
+import {State} from '../types/state-type';
 import {svgItems} from './svgItems';
-import {pkPathWithCmds} from '../animator.screen/cropPath';
+import {pkPathWithCmds} from '../../animator.screen/cropPath';
 import {renderItems} from './renderItems';
 
 export const recordVideo = async (

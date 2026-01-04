@@ -47,7 +47,7 @@ import {pkPathToSegments} from '../sidebar/pkClipPaths';
 import {coordsEqual} from '../rendering/pathsAreIdentical';
 import {evalQuad} from './screens/animator.screen/splitSegment';
 import {centroid} from './findReflectionAxes';
-import {RenderLog} from './screens/pattern.screen/resolveMods';
+import {RenderLog} from './screens/pattern.screen/utils/resolveMods';
 
 export const cmdsForCoords = (coords: Coord[], open = true) => {
     return [

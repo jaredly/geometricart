@@ -1,9 +1,9 @@
 import {useRef} from 'react';
-import {BarePath, Coord} from '../../../types';
+import {BarePath, Coord} from '../../../../types';
 // import {makeContext} from './diffStateManager';
 import {Hover} from './resolveMods';
-import {DiffBuilderA} from '../../../json-diff/helper2';
-import {makeContext, makeHistoryContext} from '../../../json-diff/react';
+import {DiffBuilderA} from '../../../../json-diff/helper2';
+import {makeContext, makeHistoryContext} from '../../../../json-diff/react';
 
 export const useLatest = <T,>(v: T) => {
     const l = useRef(v);

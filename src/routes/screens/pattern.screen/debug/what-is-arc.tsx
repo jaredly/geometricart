@@ -1,11 +1,11 @@
 import {useState} from 'react';
-import {calcPathD} from '../../../editor/calcPathD';
-import {angleIsBetween, negPiToPi} from '../../../rendering/epsilonToZero';
-import {angleTo, dist, push} from '../../../rendering/getMirrorTransforms';
-import {angleBetween} from '../../../rendering/isAngleBetween';
-import {ArcSegment, BarePath, Coord, Segment} from '../../../types';
-import {pk} from '../../pk';
-import {shapeD} from '../../shapeD';
+import {calcPathD} from '../../../../editor/calcPathD';
+import {angleIsBetween, negPiToPi} from '../../../../rendering/epsilonToZero';
+import {angleTo, dist, push} from '../../../../rendering/getMirrorTransforms';
+import {angleBetween} from '../../../../rendering/isAngleBetween';
+import {ArcSegment, BarePath, Coord, Segment} from '../../../../types';
+import {pk} from '../../../pk';
+import {shapeD} from '../../../shapeD';
 
 export const WhatIsArc = () => {
     const [t1, setT1] = useState(0);

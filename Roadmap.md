@@ -6,10 +6,11 @@
   - [x] from /fs/
   - [ ] from localStorage
 - [x] add a path for /isolated
+- [x] upgrade all current exports to embed the tiling, so we're not loading tilings anymore
 - [ ] can we make localstorage work
-- [ ] upgrade all current exports to embed the tiling, so we're not loading tilings anymore
-  -> oh that will need the upgrade I guess
+  -> want a button to like move a thing into localstorage?
 - [ ] do the build, and like commit it probably
+- [ ] make an 'archive' button
 
 ## Migrating state, are we ready?
 

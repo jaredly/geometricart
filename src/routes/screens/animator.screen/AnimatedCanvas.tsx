@@ -7,7 +7,7 @@ import {pk} from '../../pk';
 import {Config} from '../animator';
 import {State} from './animator.utils';
 import {recordVideo, renderFrame} from './renderFrame';
-import {thinTiling} from '../pattern.screen/renderPattern';
+import {thinTiling} from '../pattern.screen/render/renderPattern';
 
 export const AnimatedCanvas = ({
     patternMap,

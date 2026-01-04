@@ -1,9 +1,9 @@
-import {Coord} from '../../../types';
-import {PKPath} from '../../pk';
-import {cacheCrops} from './cacheCrops';
-import {RenderItem} from './evaluate';
-import {Box, Color, Crop} from './export-types';
-import {State} from './types/state-type';
+import {Coord} from '../../../../types';
+import {PKPath} from '../../../pk';
+import {cacheCrops} from '../utils/cacheCrops';
+import {RenderItem} from '../eval/evaluate';
+import {Box, Color, Crop} from '../export-types';
+import {State} from '../types/state-type';
 import {recordVideo} from './recordVideo';
 import {svgItems} from './svgItems';
 

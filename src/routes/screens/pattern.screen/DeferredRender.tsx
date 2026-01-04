@@ -1,16 +1,16 @@
 import {useEffect, useMemo, useRef, useState} from 'react';
 import {Coord} from '../../../types';
-import {PendingState, PendingStateUpdate, useEditState, usePendingState} from './editState';
-import {RenderItem} from './evaluate';
+import {PendingState, PendingStateUpdate, useEditState, usePendingState} from './utils/editState';
+import {RenderItem} from './eval/evaluate';
 import {Color} from './export-types';
 import {State} from './types/state-type';
-import {WorkerSend} from './render-client';
-import {MessageResponse, MessageToWorker} from './render-worker';
-import {renderShape} from './renderShape';
-import {Hover} from './resolveMods';
+import {WorkerSend} from './render/render-client';
+import {MessageResponse, MessageToWorker} from './render/render-worker';
+import {renderShape} from './render/renderShape';
+import {Hover} from './utils/resolveMods';
 import {Canvas, SVGCanvas} from './SVGCanvas';
-import {ZoomProps} from './useSVGZoom';
-import {expandShapes} from './expandShapes';
+import {ZoomProps} from './hooks/useSVGZoom';
+import {expandShapes} from './utils/expandShapes';
 
 export const renderShapes = (
     shapes: State['shapes'],

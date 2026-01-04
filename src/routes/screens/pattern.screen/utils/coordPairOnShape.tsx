@@ -1,6 +1,6 @@
-import {closeEnough, withinLimit} from '../../../rendering/epsilonToZero';
-import {lineToSlope, SlopeIntercept} from '../../../rendering/intersect';
-import {Coord} from '../../../types';
+import {closeEnough, withinLimit} from '../../../../rendering/epsilonToZero';
+import {lineToSlope, SlopeIntercept} from '../../../../rendering/intersect';
+import {Coord} from '../../../../types';
 
 const sq = (v: number) => v * v;
 

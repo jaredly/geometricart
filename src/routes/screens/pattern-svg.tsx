@@ -5,7 +5,7 @@ import {canvasTiling} from '../canvasTiling';
 import {getNewPatternData, getPatternData} from '../getPatternData';
 import {TilingPattern} from '../ShowTiling';
 import {flipPattern} from '../flipPattern';
-import {thinTiling} from './pattern.screen/renderPattern';
+import {thinTiling} from './pattern.screen/render/renderPattern';
 
 const pngCache: Record<string, Buffer<ArrayBuffer>> = {};
 

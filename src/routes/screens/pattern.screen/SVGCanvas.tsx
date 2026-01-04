@@ -2,24 +2,24 @@ import {useEffect, useMemo, useState} from 'react';
 import {BarePath, Coord, shapeKey} from '../../../types';
 import {Path, pk} from '../../pk';
 import {shapeD} from '../../shapeD';
-import {colorToString} from './colors';
-import {RenderItem, RenderShadow} from './evaluate';
+import {colorToString} from './utils/colors';
+import {RenderItem, RenderShadow} from './eval/evaluate';
 import {Box, Color, ConcreteShadow, shadowKey} from './export-types';
 import {State} from './types/state-type';
-import {renderItems} from './renderItems';
-import {percentToWorld, worldToPercent, svgCoord, ZoomProps} from './useSVGZoom';
+import {renderItems} from './render/renderItems';
+import {percentToWorld, worldToPercent, svgCoord, ZoomProps} from './hooks/useSVGZoom';
 import {coordKey} from '../../../rendering/coordKey';
-import {useEditState, usePendingState} from './editState';
+import {useEditState, usePendingState} from './utils/editState';
 import {coordsEqual} from '../../../rendering/pathsAreIdentical';
 import {calcPathD} from '../../../editor/calcPathD';
 import {transformBarePath} from '../../../rendering/points';
 import {translationMatrix} from '../../../rendering/getMirrorTransforms';
 import {edgesByEndpoint, unique} from '../../shapesFromSegments';
-import {coordPairKey, sortCoordPair} from './adjustShapes';
+import {coordPairKey, sortCoordPair} from './utils/adjustShapes';
 import {pathsFromSegments} from '../../pathsFromSegments';
 import {outerBoundary} from '../../outerBoundary';
 import {followPath} from '../../weaveIntersections';
-import {barePathFromCoords} from './resolveMods';
+import {barePathFromCoords} from './utils/resolveMods';
 
 export const Canvas = ({
     items,

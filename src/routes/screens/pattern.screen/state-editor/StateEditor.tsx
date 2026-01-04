@@ -5,12 +5,12 @@ import {Updater} from '../../../../json-diff/Updater';
 import {angleTo, dist, push, translationMatrix} from '../../../../rendering/getMirrorTransforms';
 import {transformBarePath} from '../../../../rendering/points';
 import {BarePath, Coord} from '../../../../types';
-import {useEditState, usePendingState} from '../editState';
+import {useEditState, usePendingState} from '../utils/editState';
 import {State} from '../types/state-type';
 import {useExportState} from '../ExportHistory';
-import {genid} from '../genid';
-import {WorkerSend} from '../render-client';
-import {runPNGExport} from '../runPNGExport';
+import {genid} from '../utils/genid';
+import {WorkerSend} from '../render/render-client';
+import {runPNGExport} from '../render/runPNGExport';
 import {AnimColor} from './AnimColor';
 import {BoxField} from './BoxField';
 import {createLayerTemplate, parseAnimatable} from './createLayerTemplate';
@@ -23,7 +23,7 @@ import {Section} from './Section';
 import {ShapeEditor} from './ShapeEditor';
 import {TextField} from './TextField';
 import {TimelineEditor} from './TimelineEditor';
-import {barePathFromCoords} from '../resolveMods';
+import {barePathFromCoords} from '../utils/resolveMods';
 import {HistoryView} from './HistoryView';
 
 type StateEditorProps = {

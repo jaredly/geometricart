@@ -1,11 +1,11 @@
 import {renderToStaticMarkup} from 'react-dom/server';
-import {pk} from '../../pk';
-import {colorToString} from './colors';
-import {RenderItem} from './evaluate';
-import {Box, Color} from './export-types';
-import {ExportSettings} from './FrameExport';
+import {pk} from '../../../pk';
+import {colorToString} from '../utils/colors';
+import {RenderItem} from '../eval/evaluate';
+import {Box, Color} from '../export-types';
+import {ExportSettings} from '../FrameExport';
 import {renderItems} from './renderItems';
-import {generateSvgItems} from './SVGCanvas';
+import {generateSvgItems} from '../SVGCanvas';
 
 export const runSVGExport = (ex: ExportSettings, box: Box, items: RenderItem[], bg: Color) => {
     const lw = box.width / 10;

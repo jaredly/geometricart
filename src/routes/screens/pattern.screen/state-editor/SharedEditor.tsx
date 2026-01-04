@@ -3,12 +3,12 @@ import {AnimatableValue} from '../export-types';
 import {BlurInput} from './BlurInput';
 import {cmp} from './cmp';
 import {nextKey} from './PatternEditor';
-import {processScript} from '../process-script';
+import {processScript} from '../eval/process-script';
 import {GraphUp} from '../../../../icons/Icon';
 import {Coord} from '../../../../types';
 import {shapeD} from '../../../shapeD';
-import {AnimCtx, getScript} from '../evaluate';
-import {globals} from '../eval-globals';
+import {AnimCtx, getScript} from '../eval/evaluate';
+import {globals} from '../eval/eval-globals';
 import {FrontSide} from 'three';
 
 export const SharedEditor = ({

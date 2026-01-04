@@ -1,8 +1,8 @@
 import {Surface, ImageFilter} from 'canvaskit-wasm';
-import {pk} from '../../pk';
-import {segmentsCmds} from '../animator.screen/cropPath';
-import {RenderItem} from './evaluate';
-import {Box, Color, colorToRgb} from './export-types';
+import {pk} from '../../../pk';
+import {segmentsCmds} from '../../animator.screen/cropPath';
+import {RenderItem} from '../eval/evaluate';
+import {Box, Color, colorToRgb} from '../export-types';
 
 export const renderItems = (
     surface: Surface,

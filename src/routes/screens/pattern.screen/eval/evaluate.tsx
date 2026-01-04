@@ -1,7 +1,7 @@
 // biome-ignore-all lint/suspicious/noExplicitAny : this is internal and fine
-import {BarePath, Coord, Tiling} from '../../../types';
-import {PKPath} from '../../pk';
-import {parseColor, Rgb} from './colors';
+import {BarePath, Coord, Tiling} from '../../../../types';
+import {PKPath} from '../../../pk';
+import {parseColor, Rgb} from '../utils/colors';
 import {
     Layer,
     AnimatableNumber,
@@ -11,10 +11,10 @@ import {
     Crop,
     AnimatableValue,
     Color,
-} from './export-types';
-import {State} from './types/state-type';
+} from '../export-types';
+import {State} from '../types/state-type';
 import {processScript} from './process-script';
-import {RenderLog} from './resolveMods';
+import {RenderLog} from '../utils/resolveMods';
 
 export type AnimCtx = {
     accessedValues?: Set<string>;

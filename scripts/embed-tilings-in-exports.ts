@@ -3,7 +3,7 @@ import {join} from 'path';
 import {ExportHistory} from '../src/routes/screens/pattern.screen/ExportHistory';
 import {getAllPatterns} from '../src/routes/db.server';
 import {State} from '../src/routes/screens/pattern.screen/types/state-type';
-import {thinTiling} from '../src/routes/screens/pattern.screen/renderPattern';
+import {thinTiling} from '../src/routes/screens/pattern.screen/render/renderPattern';
 
 const patterns = getAllPatterns();
 const byHash = Object.fromEntries(patterns.map((p) => [p.hash, p.tiling]));

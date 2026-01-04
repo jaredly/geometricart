@@ -22,9 +22,9 @@ import {
     sortCoordPair,
     truncateCoordKey,
     truncateSame,
-} from './screens/pattern.screen/adjustShapes';
-import {RenderItem} from './screens/pattern.screen/evaluate';
-import {LogItem, LogItems, RenderLog} from './screens/pattern.screen/resolveMods';
+} from './screens/pattern.screen/utils/adjustShapes';
+import {RenderItem} from './screens/pattern.screen/eval/evaluate';
+import {LogItem, LogItems, RenderLog} from './screens/pattern.screen/utils/resolveMods';
 
 const gte = (a: number, b: number) => a >= b - epsilon;
 const lte = (a: number, b: number) => a <= b + epsilon;

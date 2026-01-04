@@ -7,8 +7,8 @@ import {EntityEditor} from './EntityEditor';
 import {TextField} from './TextField';
 import {SharedEditor} from './SharedEditor';
 import {Updater} from '../../../../json-diff/Updater';
-import {genid} from '../genid';
-import {usePendingState} from '../editState';
+import {genid} from '../utils/genid';
+import {usePendingState} from '../utils/editState';
 
 export const LayerEditor = ({
     layer,

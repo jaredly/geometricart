@@ -1,13 +1,13 @@
-import {eigenShapeTransform} from '../../../editor/eigenShapeTransform';
-import {tilingPoints, applyTilingTransformsG} from '../../../editor/tilingPoints';
-import {coordKey} from '../../../rendering/coordKey';
-import {isClockwise, reversePath} from '../../../rendering/pathToPoints';
-import {transformBarePath} from '../../../rendering/points';
-import {segmentKey} from '../../../rendering/segmentKey';
-import {Coord, Segment, BarePath} from '../../../types';
-import {centroid} from '../../findReflectionAxes';
-import {coordsFromBarePath, simpleSize} from '../../getPatternData';
-import {State} from './types/state-type';
+import {eigenShapeTransform} from '../../../../editor/eigenShapeTransform';
+import {tilingPoints, applyTilingTransformsG} from '../../../../editor/tilingPoints';
+import {coordKey} from '../../../../rendering/coordKey';
+import {isClockwise, reversePath} from '../../../../rendering/pathToPoints';
+import {transformBarePath} from '../../../../rendering/points';
+import {segmentKey} from '../../../../rendering/segmentKey';
+import {Coord, Segment, BarePath} from '../../../../types';
+import {centroid} from '../../../findReflectionAxes';
+import {coordsFromBarePath, simpleSize} from '../../../getPatternData';
+import {State} from '../types/state-type';
 
 const findPattern = (layers: State['layers'], id: string) => {
     for (let layer of Object.values(layers)) {

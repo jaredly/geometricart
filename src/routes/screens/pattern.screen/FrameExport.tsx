@@ -2,11 +2,11 @@ import {useState} from 'react';
 import {BlurInt} from '../../../editor/Forms';
 import {BaselineDownload} from '../../../icons/Icon';
 import {makeContext} from '../../../json-diff/react';
-import {Ctx} from './evaluate';
+import {Ctx} from './eval/evaluate';
 import {Box} from './export-types';
 import {useExportState} from './ExportHistory';
-import {WorkerSend} from './render-client';
-import {runPNGExport, runSVGExport} from './runPNGExport';
+import {WorkerSend} from './render/render-client';
+import {runPNGExport, runSVGExport} from './render/runPNGExport';
 import {saveAnnotation} from './state-editor/saveAnnotation';
 import {State} from './types/state-type';
 

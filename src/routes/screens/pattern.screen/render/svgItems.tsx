@@ -1,10 +1,10 @@
-import {Coord} from '../../../types';
-import {globals, mulberry32} from './eval-globals';
-import {evalTimeline} from './evalEase';
-import {AnimCtx, Ctx, RenderItem, a} from './evaluate';
-import {expandShapes} from './expandShapes';
-import {State} from './types/state-type';
-import {RenderLog, renderGroup, handleShadowAndZSorting} from './resolveMods';
+import {Coord} from '../../../../types';
+import {globals, mulberry32} from '../eval/eval-globals';
+import {evalTimeline} from '../eval/evalEase';
+import {AnimCtx, Ctx, RenderItem, a} from '../eval/evaluate';
+import {expandShapes} from '../utils/expandShapes';
+import {State} from '../types/state-type';
+import {RenderLog, renderGroup, handleShadowAndZSorting} from '../utils/resolveMods';
 
 export const svgItems = (
     state: State,

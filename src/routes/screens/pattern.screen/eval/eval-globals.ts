@@ -1,6 +1,6 @@
-import {closeEnough} from '../../../rendering/epsilonToZero';
-import {angleTo, dist} from '../../../rendering/getMirrorTransforms';
-import {ease, easeInOutCubic} from '../animator.screen/easeInOutCubic';
+import {closeEnough} from '../../../../rendering/epsilonToZero';
+import {angleTo, dist} from '../../../../rendering/getMirrorTransforms';
+import {ease, easeInOutCubic} from '../../animator.screen/easeInOutCubic';
 import {easeFn} from './evalEase';
 
 const clamp = (a: number, b: number, c: number) => (a < b ? b : a > c ? c : a);

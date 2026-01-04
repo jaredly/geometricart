@@ -1,12 +1,12 @@
-import {scalePos} from '../../../editor/scalePos';
-import {dist} from '../../../rendering/getMirrorTransforms';
-import {Coord, ThinTiling, Tiling} from '../../../types';
-import {centroid} from '../../findReflectionAxes';
-import {getSimplePatternData, getShapeColors} from '../../getPatternData';
-import {EndPointMap} from '../../shapesFromSegments';
-import {adjustShapes, adjustShapes2, coordPairs} from './adjustShapes';
-import {parseColor} from './colors';
-import {AnimCtx, Ctx, RenderItem, RenderShadow, a, isColor, isCoord} from './evaluate';
+import {scalePos} from '../../../../editor/scalePos';
+import {dist} from '../../../../rendering/getMirrorTransforms';
+import {Coord, ThinTiling, Tiling} from '../../../../types';
+import {centroid} from '../../../findReflectionAxes';
+import {getSimplePatternData, getShapeColors} from '../../../getPatternData';
+import {EndPointMap} from '../../../shapesFromSegments';
+import {adjustShapes, adjustShapes2, coordPairs} from '../utils/adjustShapes';
+import {parseColor} from '../utils/colors';
+import {AnimCtx, Ctx, RenderItem, RenderShadow, a, isColor, isCoord} from '../eval/evaluate';
 import {
     Pattern,
     colorToRgb,
@@ -16,7 +16,7 @@ import {
     Line,
     Shadow,
     ShapeKind,
-} from './export-types';
+} from '../export-types';
 import {
     CropsAndMatrices,
     resolveEnabledPMods,
@@ -26,7 +26,7 @@ import {
     barePathFromCoords,
     notNull,
     numToCoord,
-} from './resolveMods';
+} from '../utils/resolveMods';
 
 export const thinTiling = (t: Tiling): ThinTiling => ({segments: t.cache.segments, shape: t.shape});
 

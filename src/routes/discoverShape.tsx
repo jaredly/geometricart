@@ -3,7 +3,7 @@ import {negPiToPi} from '../rendering/epsilonToZero';
 import {angleBetween} from '../rendering/isAngleBetween';
 import {coordsEqual} from '../rendering/pathsAreIdentical';
 import {Coord} from '../types';
-import {barePathFromCoords, LogItem, RenderLog} from './screens/pattern.screen/resolveMods';
+import {barePathFromCoords, LogItem, RenderLog} from './screens/pattern.screen/utils/resolveMods';
 import {EndPointMap} from './shapesFromSegments';
 
 export const discoverShape = (

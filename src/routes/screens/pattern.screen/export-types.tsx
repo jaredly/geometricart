@@ -9,8 +9,8 @@ import {
 } from '../../../rendering/getMirrorTransforms';
 import {GuideGeom, Coord, Segment, BarePath, Tiling, ThinTiling} from '../../../types';
 import {pk, PKPath} from '../../pk';
-import {colorToString} from './colors';
-import {CropsAndMatrices} from './resolveMods';
+import {colorToString} from './utils/colors';
+import {CropsAndMatrices} from './utils/resolveMods';
 
 export type AnimatableNumber = number | string;
 export type AnimatableBoolean = boolean | string;

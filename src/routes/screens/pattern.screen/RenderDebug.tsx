@@ -3,16 +3,16 @@ import {AddIcon, BaselineFilterCenterFocus, BaselineZoomInMap} from '../../../ic
 import {closeEnough} from '../../../rendering/epsilonToZero';
 import {push} from '../../../rendering/getMirrorTransforms';
 import {BarePath, Coord} from '../../../types';
-import {AnimCtx, RenderItem} from './evaluate';
+import {AnimCtx, RenderItem} from './eval/evaluate';
 import {colorToRgb} from './export-types';
 import {State} from './types/state-type';
-import {LogItem, LogItems, RenderLog} from './resolveMods';
-import {svgItems} from './svgItems';
+import {LogItem, LogItems, RenderLog} from './utils/resolveMods';
+import {svgItems} from './render/svgItems';
 import {SVGCanvas} from './SVGCanvas';
-import {useCropCache} from './useCropCache';
-import {useElementZoom} from './useSVGZoom';
-import {useEditState} from './editState';
-import {renderShape} from './renderShape';
+import {useCropCache} from './hooks/useCropCache';
+import {useElementZoom} from './hooks/useSVGZoom';
+import {useEditState} from './utils/editState';
+import {renderShape} from './render/renderShape';
 import {Updater} from '../../../json-diff/Updater';
 import {ShowRenderLog} from './ShowRenderLog';
 

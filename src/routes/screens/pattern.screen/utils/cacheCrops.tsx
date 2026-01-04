@@ -1,12 +1,12 @@
 import {Path as PKPath} from 'canvaskit-wasm';
-import {pkPathWithCmds} from '../animator.screen/cropPath';
-import {AnimCtx} from './evaluate';
-import {Crop} from './export-types';
-import {State} from './types/state-type';
+import {pkPathWithCmds} from '../../animator.screen/cropPath';
+import {AnimCtx} from '../eval/evaluate';
+import {Crop} from '../export-types';
+import {State} from '../types/state-type';
 import {resolveEnabledPMods, pathMod} from './resolveMods';
-import {globals} from './eval-globals';
-import {centroid} from '../../findReflectionAxes';
-import {coordsFromBarePath} from '../../getPatternData';
+import {globals} from '../eval/eval-globals';
+import {centroid} from '../../../findReflectionAxes';
+import {coordsFromBarePath} from '../../../getPatternData';
 
 export function cacheCrops(
     crops: State['crops'],
