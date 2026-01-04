@@ -178,6 +178,11 @@ const LoadPattern = ({id, state}: {id: string; state: ExportHistory}) => {
         [id],
     );
 
+    const snapshotUrl = useCallback(
+        (aid: string, ext: string) => `/fs/exports/${id}-${aid}.${ext}`,
+        [id],
+    );
+
     const initialPatterns = useInitialPatterns(state);
 
     const bcr = [
@@ -208,6 +213,8 @@ const LoadPattern = ({id, state}: {id: string; state: ExportHistory}) => {
                 initial={state}
                 onSave={onSave}
                 initialPatterns={initialPatterns.value}
+                snapshotUrl={snapshotUrl}
+                namePrefix={id}
             />
         </Page>
     );
@@ -311,34 +318,44 @@ export const PatternExport = ({
     initial,
     onSave,
     initialPatterns,
+    snapshotUrl,
+    namePrefix,
 }: {
     initial: ExportHistory;
     onSave: (s: ExportHistory) => void;
     initialPatterns: Patterns;
+    namePrefix: string;
+    snapshotUrl: (id: string, ext: string) => string;
 }) => {
     return (
         <ProvideExportState initial={initial} save={onSave}>
             <ProvidePendingState initial={initialPendingStateHistory}>
                 <ProvideEditState initial={initialEditState}>
-                    <Inner initialPatterns={initialPatterns} />
+                    <Inner
+                        initialPatterns={initialPatterns}
+                        snapshotUrl={snapshotUrl}
+                        namePrefix={namePrefix}
+                    />
                 </ProvideEditState>
             </ProvidePendingState>
         </ProvideExportState>
     );
 };
 
-const Inner = ({initialPatterns}: {initialPatterns: Patterns}) => {
+const Inner = ({
+    initialPatterns,
+    snapshotUrl,
+    namePrefix,
+}: {
+    initialPatterns: Patterns;
+    snapshotUrl: (id: string, ext: string) => string;
+    namePrefix: string;
+}) => {
     const sctx = useExportState();
     const state = sctx.use((v) => v);
     const patternCache = useMemo<Patterns>(() => initialPatterns, [initialPatterns]);
     const pctx = usePendingState();
     const debug = location.search.includes('debug=');
-    const params = useParams();
-
-    const snapshotUrl = useCallback(
-        (id: string, ext: string) => `/fs/exports/${params.id!}-${id}.${ext}`,
-        [params],
-    );
 
     useEffect(() => {
         return sctx.onHistoryChange(() => {
@@ -376,7 +393,7 @@ const Inner = ({initialPatterns}: {initialPatterns: Patterns}) => {
             ) : (
                 <RenderExport
                     worker={worker}
-                    namePrefix={params.id!}
+                    namePrefix={namePrefix}
                     snapshotUrl={snapshotUrl}
                     state={state}
                     patterns={patternCache}

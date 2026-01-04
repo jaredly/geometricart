@@ -68,6 +68,11 @@ export const PatternExportIsolated = () => {
 
     const initialPatterns = useInitialPatterns(state?.type === 'res' ? state.value : undefined);
 
+    const snapshotUrl = useCallback(
+        (aid: string, ext: string) => src?.replace('.json', `-${aid}.${ext}`) ?? '',
+        [src],
+    );
+
     if (!src) {
         return <div>No `?src` provided.</div>;
     }
@@ -99,6 +104,8 @@ export const PatternExportIsolated = () => {
                 initial={state.value}
                 onSave={onSave}
                 initialPatterns={initialPatterns.value}
+                namePrefix="deprecated-editor-"
+                snapshotUrl={snapshotUrl}
             />
         </Page>
     );
