@@ -15,7 +15,10 @@
 
 # what is this
 
-
+chunks?
+something where it's like...
+for each moving chunk,
+break it up into N bits.
 
 
 ## Migrating state, are we ready?

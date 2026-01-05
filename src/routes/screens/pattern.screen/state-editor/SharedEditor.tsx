@@ -126,7 +126,8 @@ const TimePreview = ({s}: {s: string}) => {
         if (!f) return 'get script failed';
         const items: React.ReactNode[] = [];
 
-        {
+        const zero = f(0);
+        if (typeof zero === 'number') {
             const pts: Coord[] = [];
             for (let t = 0; t <= 1; t += 0.001) {
                 try {
@@ -137,21 +138,49 @@ const TimePreview = ({s}: {s: string}) => {
             }
             const min = pts.reduce((a, b) => Math.min(a, b.y), Infinity);
             const max = pts.reduce((a, b) => Math.max(a, b.y), -Infinity);
+            const moved = pts.map(({x, y}) => ({
+                x: m + x * w,
+                y: m + (1 - (y - min) / (max - min)) * h,
+            }));
             items.push(
                 <path
                     key="time-preview"
-                    d={shapeD(
-                        pts.map(({x, y}) => ({
-                            x: m + x * w,
-                            y: m + (1 - (y - min) / (max - min)) * h,
-                        })),
-                        false,
-                    )}
+                    d={shapeD(moved, false)}
                     stroke="white"
                     strokeWidth={1}
                     fill="none"
                 />,
             );
+        } else if (Array.isArray(zero) && zero.length && zero.every((n) => typeof n === 'number')) {
+            const manypts: Coord[][] = zero.map(() => []);
+            for (let t = 0; t <= 1; t += 0.001) {
+                try {
+                    (f(t) as number[]).forEach((y, j) => {
+                        manypts[j].push({x: t, y});
+                    });
+                } catch (err) {
+                    return err + '';
+                }
+            }
+
+            zero.forEach((_, j) => {
+                const pts = manypts[j];
+                const min = pts.reduce((a, b) => Math.min(a, b.y), Infinity);
+                const max = pts.reduce((a, b) => Math.max(a, b.y), -Infinity);
+                const moved = pts.map(({x, y}) => ({
+                    x: m + x * w,
+                    y: m + (1 - (y - min) / (max - min)) * h,
+                }));
+                items.push(
+                    <path
+                        key="time-preview"
+                        d={shapeD(moved, false)}
+                        stroke="white"
+                        strokeWidth={1}
+                        fill="none"
+                    />,
+                );
+            });
         }
 
         return items;

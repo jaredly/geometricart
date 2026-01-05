@@ -18,15 +18,13 @@ const tsplit = (t: number, count: number, by: number, ease = easeInOutCubic) => 
     return ok((count - 1) * section);
 };
 
-export const chunk = (
-    config: (
-        | number
-        | [number, number]
-        | [number, number, string]
-        | [number, number, string, number]
-    )[],
-    t: number,
-) => {
+type Chunk =
+    | number
+    | [number, number]
+    | [number, number, string]
+    | [number, number, string, number];
+
+export const chunk = (config: Chunk[], t: number) => {
     if (t == null) return 0;
     const weights = config.map((item) => (Array.isArray(item) ? (item[3] ?? 1) : 1));
     const totalWeight = weights.reduce((a, b) => a + b, 0);
@@ -57,47 +55,56 @@ export const chunk = (
     }
 };
 
-export const chunks = (
-    config: (
-        | number
-        | [number, number]
-        | [number, number, string]
-        | [number, number, string, number]
-    )[],
-    t: number,
-): number[] => {
-    if (t == null) return config.map(() => 0);
-
-    const weights = config.map((item) => (Array.isArray(item) ? (item[3] ?? 1) : 1));
-    const totalWeight = weights.reduce((a, b) => a + b, 0);
-    const scaled = weights.map((w) => w / totalWeight);
-    let soFar = 0;
-    let at = scaled.findIndex((weight) => {
-        if (soFar + weight > t) {
-            return true;
-        }
-        soFar += weight;
-    });
-    let self = 0;
-    if (at === -1) {
-        at = config.length - 1;
-        self = 1;
-    } else {
-        self = (t - soFar) / scaled[at];
-        if (closeEnough(self, 1)) {
-            self = 1;
-        }
+export const chunks = (num: number, config: Chunk[], t: number) => {
+    const values: number[] = [];
+    for (let i = 0; i < num; i++) {
+        const expanded: Chunk[] = [];
+        config.forEach((item) => {
+            for (let j = 0; j < num; j++) {
+                if (typeof item === 'number') {
+                    expanded.push(item);
+                } else {
+                    expanded.push(j < i ? item[0] : j > i ? item[1] : item);
+                }
+            }
+        });
+        values.push(chunk(expanded, t));
     }
-    return config.map((current, i) => {
-        const iself = i === at ? self : i < at ? 1 : 0;
-        if (typeof current === 'number') {
-            return current;
-        } else {
-            const [min, max, ease = 'straight'] = current;
-            return easeFn(ease)(iself) * (max - min) + min;
-        }
-    });
+    return values;
 };
+
+// export const chunks = (config: Chunk[], t: number): number[] => {
+//     if (t == null) return config.map(() => 0);
+//     const weights = config.map((item) => (Array.isArray(item) ? (item[3] ?? 1) : 1));
+//     const totalWeight = weights.reduce((a, b) => a + b, 0);
+//     const scaled = weights.map((w) => w / totalWeight);
+//     let soFar = 0;
+//     let at = scaled.findIndex((weight) => {
+//         if (soFar + weight > t) {
+//             return true;
+//         }
+//         soFar += weight;
+//     });
+//     let self = 0;
+//     if (at === -1) {
+//         at = config.length - 1;
+//         self = 1;
+//     } else {
+//         self = (t - soFar) / scaled[at];
+//         if (closeEnough(self, 1)) {
+//             self = 1;
+//         }
+//     }
+//     return config.map((current, i) => {
+//         const iself = i === at ? self : i < at ? 1 : 0;
+//         if (typeof current === 'number') {
+//             return current;
+//         } else {
+//             const [min, max, ease = 'straight'] = current;
+//             return easeFn(ease)(iself) * (max - min) + min;
+//         }
+//     });
+// };
 
 export function mulberry32(seed: number) {
     let a = seed >>> 0; // force to unsigned 32-bit
