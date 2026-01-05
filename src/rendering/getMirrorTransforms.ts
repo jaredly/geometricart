@@ -223,6 +223,7 @@ export const posOffset = (p1: Coord, p2: Coord) => ({
 
 /**
  * Calculate the angle from `p1`, pointing at `p2`.
+ * Returns a value between -PI .. PI
  */
 export const angleTo = (p1: Coord, p2: Coord) => Math.atan2(p2.y - p1.y, p2.x - p1.x);
 

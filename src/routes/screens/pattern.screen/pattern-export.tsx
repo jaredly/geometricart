@@ -1,5 +1,17 @@
 import {useCallback, useEffect, useState} from 'react';
-import {ThinTiling, Tiling} from '../../../types';
+import {useLocation} from 'react-router';
+import {blankHistory} from '../../../json-diff/history';
+import {Tiling} from '../../../types';
+import type {Route} from './+types/pattern-export';
+import {ExportHistory, ProvideExportState, useExportState} from './ExportHistory';
+import {usePromise} from './hooks/usePromise';
+import {Page} from './Page';
+import {useWorker} from './render/render-client';
+import {thinTiling} from './render/renderPattern';
+import {RenderDebug} from './RenderDebug';
+import {RenderExport} from './RenderExport';
+import {StateEditor} from './state-editor/StateEditor';
+import {loadState} from './types/load-state';
 import {
     EditState,
     PendingState,
@@ -7,94 +19,30 @@ import {
     ProvidePendingState,
     usePendingState,
 } from './utils/editState';
-import {useLocation} from 'react-router';
-import {blankHistory} from '../../../json-diff/history';
-import {getNewPatternData} from '../../getPatternData';
-import type {Route} from './+types/pattern-export';
-import {parseColor} from './utils/colors';
-import {ShapeStyle} from './export-types';
-import {ExportHistory, ProvideExportState, useExportState} from './ExportHistory';
 import {genid} from './utils/genid';
-import {Page} from './Page';
-import {useWorker} from './render/render-client';
-import {RenderDebug} from './RenderDebug';
-import {RenderExport} from './RenderExport';
-import {thinTiling} from './render/renderPattern';
-import {StateEditor} from './state-editor/StateEditor';
-import {loadState} from './types/load-state';
-import {State} from './types/state-type';
-import {usePromise} from './hooks/usePromise';
-import {sizeBox} from './hooks/useSVGZoom';
+import {makeForPattern} from './utils/makeForPattern';
+import {ListExports} from './ListExports';
 
-const PatternPicker = () => {
-    const all = usePromise((signal) => fetch('/gallery.json', {signal}).then((r) => r.json()));
-    if (all?.type === 'err') {
-        return <div>No bueno</div>;
-    }
-    return <div>Pick a pattern you cowards {all?.value.length} options</div>;
-};
+const lsprefix = 'localstorage:';
 
-const colorsRaw = '1f77b4ff7f0e2ca02cd627289467bd8c564be377c27f7f7fbcbd2217becf';
-export const colors: Array<string> = [];
-for (let i = 0; i < colorsRaw.length; i += 6) {
-    colors.push('#' + colorsRaw.slice(i, i + 6));
-}
-
-const makeForPattern = (tiling: ThinTiling, hash: string): State => {
-    const pd = getNewPatternData(tiling);
-    const styles: Record<string, ShapeStyle> = {};
-    for (let i = 0; i <= pd.colorInfo.maxColor; i++) {
-        styles[`alt-${i}`] = {
-            id: `alt-${i}`,
-            fills: {
-                [`fill-${i}`]: {
-                    id: `fill-${i}`,
-                    mods: [],
-                    color: i,
-                },
-            },
-            lines: {},
-            kind: {type: 'alternating', index: i},
-            mods: [],
-            order: i,
+const CreateAndRedirectLocalStorage = ({id}: {id: string}) => {
+    const [error, setError] = useState<null | Error>(null);
+    useEffect(() => {
+        const controller = new AbortController();
+        const ok = async () => {
+            const v: Tiling = await fetch(`/gallery/pattern/${id}/json`).then((r) => r.json());
+            const state = makeForPattern(thinTiling(v), id);
+            const sid = genid();
+            localStorage[sid] = JSON.stringify(state, null, 2);
+            location.replace(`/export/${lsprefix}${sid}`);
         };
+        ok().catch(setError);
+        return () => controller.abort();
+    }, [id]);
+    if (error) {
+        return <div>Unable to load pattern and create new document: {error.message}</div>;
     }
-    return {
-        shapes: {},
-        layers: {
-            root: {
-                id: 'root',
-                rootGroup: 'root-group',
-                entities: {
-                    'root-group': {
-                        type: 'Group',
-                        id: 'root-group',
-                        entities: {'one-pattern': 0},
-                    },
-                    'one-pattern': {
-                        type: 'Pattern',
-                        adjustments: {},
-                        id: 'one-pattern',
-                        mods: [],
-                        psize: 3,
-                        contents: {type: 'shapes', styles},
-                        tiling: {id: hash, tiling},
-                    },
-                },
-                guides: [],
-                opacity: 1,
-                order: 0,
-                shared: {},
-            },
-        },
-        crops: {},
-        styleConfig: {
-            seed: 0,
-            palette: colors.map((color) => parseColor(color)!),
-            timeline: {ts: [], lanes: []},
-        },
-        view: {box: sizeBox(3), ppi: 1},
-    };
+    return <div>Loading pattern...</div>;
 };
 
 const CreateAndRedirect = ({id}: {id: string}) => {
@@ -124,9 +72,11 @@ const CreateAndRedirect = ({id}: {id: string}) => {
 
 const LoadAndMigratePattern = ({id}: {id: string}) => {
     const state = usePromise((signal) =>
-        fetch(`/fs/exports/${id}.json`, {signal})
-            .then((r) => r.json())
-            .then(loadState),
+        id.startsWith(lsprefix)
+            ? Promise.resolve(loadState(JSON.parse(localStorage[id.slice(lsprefix.length)])))
+            : fetch(`/fs/exports/${id}.json`, {signal})
+                  .then((r) => r.json())
+                  .then(loadState),
     );
 
     const bcr = [
@@ -160,9 +110,18 @@ const LoadAndMigratePattern = ({id}: {id: string}) => {
     return <LoadPattern state={state.value.value} id={id} />;
 };
 
+const loadLSUrl = (key: string) => {
+    return localStorage[key];
+};
+
 const LoadPattern = ({id, state}: {id: string; state: ExportHistory}) => {
     const onSave = useCallback(
         (state: ExportHistory) => {
+            if (id.startsWith(lsprefix)) {
+                const lid = id.slice(lsprefix.length);
+                localStorage[lid] = JSON.stringify(state);
+                return;
+            }
             return fetch(`/fs/exports/${id}.json`, {
                 method: 'POST',
                 body: JSON.stringify(state, null, 2),
@@ -173,7 +132,10 @@ const LoadPattern = ({id, state}: {id: string; state: ExportHistory}) => {
     );
 
     const snapshotUrl = useCallback(
-        (aid: string, ext: string) => `/fs/exports/${id}-${aid}.${ext}`,
+        (aid: string, ext: string) =>
+            id.startsWith(lsprefix)
+                ? loadLSUrl(id.slice(lsprefix.length) + `${aid}.${ext}`)
+                : `/fs/exports/${id}-${aid}.${ext}`,
         [id],
     );
 
@@ -195,78 +157,6 @@ const LoadPattern = ({id, state}: {id: string; state: ExportHistory}) => {
     );
 };
 
-const ListExports = () => {
-    const all = usePromise((signal) =>
-        fetch('/fs/exports', {signal})
-            .then((r) => r.json())
-            .then((v: {name: string; created: number; modified: number}[]) => {
-                const patterns: Record<
-                    string,
-                    {id: string; icon?: {id: string; created: number}; modified: number}
-                > = {};
-                v.forEach(({name, created, modified}) => {
-                    if (name.endsWith('.json')) {
-                        const id = name.slice(0, -'.json'.length);
-                        if (!patterns[id]) {
-                            patterns[id] = {id, modified};
-                        } else {
-                            patterns[id].modified = modified;
-                        }
-                    } else if (name.endsWith('.png')) {
-                        const parts = name.slice(0, -'.png'.length).split('-');
-                        const iid = parts.pop()!;
-                        const id = parts.join('-');
-                        if (!patterns[id]) {
-                            patterns[id] = {id, modified: created, icon: {id: iid, created}};
-                        } else if (!patterns[id].icon || patterns[id].icon.created < created) {
-                            patterns[id].icon = {id: iid, created};
-                        }
-                    }
-                });
-                return Object.values(patterns).sort((a, b) => b.modified - a.modified);
-            }),
-    );
-    if (!all) return 'Loading...';
-    if (all.type === 'err') {
-        return (
-            <Page
-                breadcrumbs={[
-                    {title: 'Geometric Art', href: '/'},
-                    {title: 'Exports', href: '/export/'},
-                ]}
-            >
-                <div>Failed to load exports</div>
-            </Page>
-        );
-    }
-    return (
-        <Page
-            breadcrumbs={[
-                {title: 'Geometric Art', href: '/'},
-                {title: 'Exports', href: '/export/'},
-            ]}
-        >
-            <div className="flex flex-row flex-wrap gap-4 p-4">
-                {all.value.map(({id, icon}) => (
-                    <div>
-                        <a className="link" href={`/export/${id}`}>
-                            {icon ? (
-                                <img
-                                    width={200}
-                                    height={200}
-                                    src={`/assets/exports/${id}-${icon.id}.png`}
-                                />
-                            ) : (
-                                id
-                            )}
-                        </a>
-                    </div>
-                ))}
-            </div>
-        </Page>
-    );
-};
-
 export default function PatternExportScreen({params}: Route.ComponentProps) {
     const loc = useLocation();
     const sparams = new URLSearchParams(loc.search);
@@ -277,7 +167,8 @@ export default function PatternExportScreen({params}: Route.ComponentProps) {
     }
 
     if (pattern) {
-        return <CreateAndRedirect id={pattern} />;
+        return <CreateAndRedirectLocalStorage id={pattern} />;
+        // return <CreateAndRedirect id={pattern} />;
     }
 
     return <ListExports />;

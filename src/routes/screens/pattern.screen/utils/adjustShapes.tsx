@@ -1,6 +1,6 @@
 import {Bounds, boundsForCoords} from '../../../../editor/Bounds';
 import {coordKey} from '../../../../rendering/coordKey';
-import {closeEnough} from '../../../../rendering/epsilonToZero';
+import {closeEnough, closeEnoughAngle, negPiToPi} from '../../../../rendering/epsilonToZero';
 import {lineLine, lineToSlope, SlopeIntercept, slopeKey} from '../../../../rendering/intersect';
 import {Coord, BarePath} from '../../../../types';
 import {centroid} from '../../../findReflectionAxes';
@@ -11,6 +11,7 @@ import {
     edgesByEndpoint,
     shapesFromSegments,
     EndPointMap,
+    addToMap,
 } from '../../../shapesFromSegments';
 import {coordPairOnShape, coordPairOnShape2, overlapping} from './coordPairOnShape';
 import {Ctx} from '../eval/evaluate';
@@ -23,7 +24,11 @@ import {
     RenderLog,
     barePathFromCoords,
     notNull,
+    LogItem,
+    LogItems,
 } from './resolveMods';
+import {angleTo} from '../../../../rendering/getMirrorTransforms';
+import {angleBetween} from '../../../../rendering/isAngleBetween';
 
 export const truncateValue = (v: number, amt: number) => Math.round(v * amt) / amt;
 export const truncateSame = (a: number, b: number, amt: number) =>
@@ -153,17 +158,41 @@ export const adjustShapes2 = (
             item: {type: 'seg', prev: seg[0], seg: {type: 'Line', to: seg[1]}},
         })),
     });
-
     segments = cutSegments(
         segments, //.map((seg) => truncatePair(seg, amt)),
         amt,
         prec,
         outerDebug,
-    ).map((seg) => truncatePair(seg, amt));
+    );
 
     outerDebug?.push({
         type: 'items',
         title: 'Post Cut Segments',
+        items: segments.map((seg) => ({
+            item: {type: 'seg', prev: seg[0], seg: {type: 'Line', to: seg[1]}},
+        })),
+    });
+
+    segments = joinAdjacentInlineSegments(
+        segments,
+        amt, // * 10,
+        outerDebug,
+    ); // .map((seg) => truncatepair(seg, amt));
+    // SOO the problem is that "truncatePair" ahhh first needs to like, join adjacent lines I think.
+
+    outerDebug?.push({
+        type: 'items',
+        title: 'Post Join Segments',
+        items: segments.map((seg) => ({
+            item: {type: 'seg', prev: seg[0], seg: {type: 'Line', to: seg[1]}},
+        })),
+    });
+
+    segments = segments.map((seg) => truncatePair(seg, amt));
+
+    outerDebug?.push({
+        type: 'items',
+        title: 'Post Truncate Segments',
         items: segments.map((seg) => ({
             item: {type: 'seg', prev: seg[0], seg: {type: 'Line', to: seg[1]}},
         })),
@@ -526,3 +555,84 @@ function logByEndPoint(debug: RenderLog[], byEndPoint: EndPointMap) {
         ],
     });
 }
+
+export const joinAdjacentInlineSegments = (
+    segments: [Coord, Coord][],
+    amt: number,
+    log?: RenderLog[],
+): [Coord, Coord][] => {
+    // SO we want:
+    // for any (join points) with 2 exits that are more or less parallel, join them.
+    const byEndpoint: Record<
+        string,
+        {theta: number; idx: number; first: boolean; self: Coord; other: Coord}[]
+    > = {};
+
+    segments.forEach(([a, b], idx) => {
+        const ka = truncateCoordKey(a, amt);
+        const theta = angleTo(a, b);
+        const kb = truncateCoordKey(b, amt);
+        addToMap(byEndpoint, ka, {theta, idx, first: true, self: a, other: b});
+        addToMap(byEndpoint, kb, {
+            theta: negPiToPi(theta + Math.PI),
+            idx,
+            first: false,
+            self: b,
+            other: a,
+        });
+    });
+
+    const updated: ([Coord, Coord] | number)[] = [...segments];
+
+    const toJoin: {a: number; b: number; nw: [Coord, Coord]}[] = [];
+    // const toRemove: number[] = []
+
+    const getOther = (idx: number, self: Coord) => {
+        let v = updated[idx];
+        while (typeof v === 'number') {
+            v = updated[v];
+        }
+        if (v[0] === self) return v[1];
+        if (v[1] !== self) {
+            console.log(self, v);
+            throw new Error('wrong other');
+        }
+        return v[0];
+        // return v[0] === self ? v[1] : v[0];
+    };
+
+    const logs: LogItems[] | undefined = log ? [] : undefined;
+    log?.push({type: 'items', items: logs!, title: 'Joinings'});
+
+    Object.values(byEndpoint).forEach((items) => {
+        if (items.length !== 2) return;
+        if (closeEnough(angleBetween(items[0].theta, items[1].theta, true), Math.PI, 0.01)) {
+            const ai = items[0].idx;
+            const bi = items[1].idx;
+
+            logs?.push({
+                item: [
+                    {type: 'seg', prev: items[0].self, seg: {type: 'Line', to: items[0].other}},
+                    {type: 'seg', prev: items[1].self, seg: {type: 'Line', to: items[1].other}},
+                ],
+            });
+
+            updated[ai] = [getOther(ai, items[0].self), getOther(bi, items[1].self)];
+            updated[bi] = ai;
+
+            // toRemove.push(items[0].idx, items[1].idx)
+            toJoin.push({a: items[0].idx, b: items[1].idx, nw: updated[ai]});
+            logs?.push({
+                item: [
+                    {type: 'seg', prev: updated[ai][0], seg: {type: 'Line', to: updated[ai][1]}},
+                    {type: 'point', p: items[0].self, color: {r: 0, g: 255, b: 0}},
+                    {type: 'point', p: items[1].self, color: {r: 0, g: 0, b: 255}},
+                ],
+            });
+        }
+    });
+
+    // console.log('joined', toJoin);
+    // return segments;
+    return updated.filter((f) => typeof f !== 'number');
+};

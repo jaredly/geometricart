@@ -1,7 +1,7 @@
 import {useState, useRef, useEffect, useCallback} from 'react';
 import {Coord} from '../../../../types';
 import {Box} from '../export-types';
-import {useLatest} from '../utils/editState';
+import {useLatest} from '../utils/useLatest';
 
 export const percentToWorld = (percent: Coord, viewBox: Box) => {
     const x = viewBox.width * percent.x + viewBox.x;

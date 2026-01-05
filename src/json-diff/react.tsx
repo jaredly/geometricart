@@ -13,7 +13,7 @@ import {
 } from './helper2';
 import {blankHistory, dispatch, History} from './history';
 import {asFlat, MaybeNested, resolveAndApply} from './make2';
-import {useLatest} from '../routes/screens/pattern.screen/utils/editState';
+import {useLatest} from '../routes/screens/pattern.screen/utils/useLatest';
 import {_get} from './internal2';
 
 type C<T> = {
