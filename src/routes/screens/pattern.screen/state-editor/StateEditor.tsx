@@ -1,4 +1,4 @@
-import {useEffect, useMemo, useRef, useState} from 'react';
+import {useEffect, useMemo, useRef} from 'react';
 import {JsonPatchOp, Path} from '../../../../json-diff/helper2';
 import {History} from '../../../../json-diff/history';
 import {Updater} from '../../../../json-diff/Updater';
@@ -7,10 +7,8 @@ import {transformBarePath} from '../../../../rendering/points';
 import {BarePath, Coord} from '../../../../types';
 import {useEditState, usePendingState} from '../utils/editState';
 import {State} from '../types/state-type';
-import {useExportState} from '../ExportHistory';
 import {genid} from '../utils/genid';
 import {WorkerSend} from '../render/render-client';
-import {runPNGExport} from '../render/runPNGExport';
 import {AnimColor} from './AnimColor';
 import {BoxField} from './BoxField';
 import {createLayerTemplate, parseAnimatable} from './createLayerTemplate';
@@ -18,13 +16,13 @@ import {ModsEditor} from './FillEditor';
 import {LayerEditor} from './LayerEditor';
 import {NumberField} from './NumberField';
 import {PaletteEditor} from './PaletteEditor';
-import {deleteAnnotation, saveAnnotation} from './saveAnnotation';
 import {Section} from './Section';
 import {ShapeEditor} from './ShapeEditor';
 import {TextField} from './TextField';
 import {TimelineEditor} from './TimelineEditor';
 import {barePathFromCoords} from '../utils/resolveMods';
 import {HistoryView} from './HistoryView';
+import {SnapshotAnnotations} from './SnapshotAnnotations';
 
 type StateEditorProps = {
     value: State;
@@ -348,78 +346,6 @@ export const StateEditor = ({value, worker, update, snapshotUrl}: StateEditorPro
                 <SnapshotAnnotations snapshotUrl={snapshotUrl} worker={worker} />
                 <HistoryView snapshotUrl={snapshotUrl} />
             </Section>
-        </div>
-    );
-};
-
-const SnapshotAnnotations = ({
-    worker,
-    snapshotUrl,
-}: {
-    worker: WorkerSend;
-    snapshotUrl: (id: string, ext: string) => string;
-}) => {
-    const ctx = useExportState();
-    const history = ctx.useHistory();
-    const [loading, setLoading] = useState(false);
-
-    return (
-        <div>
-            <button
-                className="btn"
-                onClick={() => {
-                    setLoading(true);
-                    worker({type: 'frame', state: ctx.latest(), t: 0}, (res) => {
-                        if (res.type !== 'frame') return setLoading(false);
-                        const blob = runPNGExport(100, ctx.latest().view.box, res.items, res.bg);
-                        saveAnnotation(snapshotUrl, blob, history.tip, ctx.updateAnnotations).then(
-                            () => {
-                                setLoading(false);
-                            },
-                        );
-                    });
-                }}
-            >
-                {loading ? 'Loading...' : 'Take Snapshot'}
-            </button>
-            <div className="flex flex-row flex-wrap p-4 gap-4">
-                {Object.entries(history.annotations).map(([key, ans]) => (
-                    <div key={key} className="contents">
-                        {ans.map((an, i) => (
-                            <div key={i} className="relative">
-                                {an.type === 'img' ? (
-                                    <img
-                                        key={i}
-                                        style={{width: 100, height: 100}}
-                                        src={snapshotUrl(an.id, 'png')}
-                                    />
-                                ) : (
-                                    <video key={i} src={snapshotUrl(an.id, 'mp4')} />
-                                )}
-                                <button
-                                    className="btn btn-sm btn-square absolute top-0 right-0"
-                                    onClick={() => {
-                                        if (
-                                            confirm(
-                                                `Are you sure you want to delete this annotation?`,
-                                            )
-                                        ) {
-                                            deleteAnnotation(
-                                                snapshotUrl,
-                                                key,
-                                                an.id,
-                                                ctx.updateAnnotations,
-                                            );
-                                        }
-                                    }}
-                                >
-                                    &times;
-                                </button>
-                            </div>
-                        ))}
-                    </div>
-                ))}
-            </div>
         </div>
     );
 };

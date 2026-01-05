@@ -2,6 +2,7 @@ import {useCallback, useMemo, useState} from 'react';
 import {addToMap} from '../../../shapesFromSegments';
 import {useOnOpen} from '../../../useOnOpen';
 import {useExportState, ExportHistory} from '../ExportHistory';
+import {AnnotationView} from './AnnotationView';
 
 export const HistoryView = ({snapshotUrl}: {snapshotUrl: (id: string, ext: string) => string}) => {
     const ctx = useExportState();
@@ -105,7 +106,7 @@ const renderNode = (id: string, ctx: NCtx) => {
     const {history, byParent, sizes, snapshotUrl, jump} = ctx;
 
     const self = (
-        <div className="flex flex-row items-center">
+        <div className="flex flex-row items-center" key={id}>
             {id === history.root ? null : (
                 <div
                     style={{
@@ -147,13 +148,9 @@ const renderNode = (id: string, ctx: NCtx) => {
                 id={`annotation-${id}`}
             >
                 <div className="font-mono">{id}</div>
-                {history.annotations[id]?.map((an, i) =>
-                    an.type === 'img' ? (
-                        <img key={i} src={snapshotUrl(an.id, 'png')} />
-                    ) : (
-                        <video key={i} src={snapshotUrl(an.id, 'mp4')} />
-                    ),
-                )}
+                {history.annotations[id]?.map((an, i) => (
+                    <AnnotationView key={i} an={an} snapshotUrl={snapshotUrl} />
+                ))}
             </div>
         </div>
     );
@@ -162,7 +159,7 @@ const renderNode = (id: string, ctx: NCtx) => {
     }
     if (sizes[id].skipTo && sizes[id].skipTo.count > 5) {
         return (
-            <div className="flex flex-row items-center">
+            <div className="flex flex-row items-center" key={id}>
                 {self}
                 <div
                     style={{
@@ -187,7 +184,7 @@ const renderNode = (id: string, ctx: NCtx) => {
     const lineHeight = sizes[id].size - y0 - y1;
     // sizes[id].size
     return (
-        <div className="flex flex-row items-center">
+        <div className="flex flex-row items-center" key={id}>
             {self}
             <div
                 style={{

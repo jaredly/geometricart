@@ -22,8 +22,7 @@ import {
 import {genid} from './utils/genid';
 import {makeForPattern} from './utils/makeForPattern';
 import {ListExports} from './ListExports';
-
-const lsprefix = 'localstorage:';
+import {idbprefix, lsprefix} from './state-editor/saveAnnotation';
 
 const CreateAndRedirectLocalStorage = ({id}: {id: string}) => {
     const [error, setError] = useState<null | Error>(null);
@@ -110,9 +109,9 @@ const LoadAndMigratePattern = ({id}: {id: string}) => {
     return <LoadPattern state={state.value.value} id={id} />;
 };
 
-const loadLSUrl = (key: string) => {
-    return localStorage[key];
-};
+// const loadLSUrl = (key: string) => {
+//     return localStorage[key];
+// };
 
 const LoadPattern = ({id, state}: {id: string; state: ExportHistory}) => {
     const onSave = useCallback(
@@ -134,7 +133,7 @@ const LoadPattern = ({id, state}: {id: string; state: ExportHistory}) => {
     const snapshotUrl = useCallback(
         (aid: string, ext: string) =>
             id.startsWith(lsprefix)
-                ? loadLSUrl(id.slice(lsprefix.length) + `${aid}.${ext}`)
+                ? idbprefix + id.slice(lsprefix.length) + `-${aid}.${ext}`
                 : `/fs/exports/${id}-${aid}.${ext}`,
         [id],
     );

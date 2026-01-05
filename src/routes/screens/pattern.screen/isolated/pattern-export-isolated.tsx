@@ -6,6 +6,7 @@ import {useInitialPatterns} from '../hooks/useInitialPatterns';
 import {usePromise} from '../hooks/usePromise';
 import typia from 'typia';
 import {useLocation} from 'react-router';
+import {idbprefix} from '../state-editor/saveAnnotation';
 
 const validateHistory = typia.createValidate<ExportHistory>();
 
@@ -69,7 +70,8 @@ export const PatternExportIsolated = () => {
     );
 
     const snapshotUrl = useCallback(
-        (aid: string, ext: string) => src?.replace('.json', `-${aid}.${ext}`) ?? '',
+        (aid: string, ext: string) =>
+            src?.replace(lsprefix, idbprefix).replace('.json', `-${aid}.${ext}`) ?? '',
         [src],
     );
 
