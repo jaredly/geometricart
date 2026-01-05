@@ -601,14 +601,25 @@ export const joinAdjacentInlineSegments = (
         // return v[0] === self ? v[1] : v[0];
     };
 
+    const getFinalIdx = (idx: number) => {
+        for (let i = 0; i < 100; i++) {
+            const next = updated[idx];
+            if (typeof next !== 'number') {
+                return idx;
+            }
+            idx = next;
+        }
+        throw new Error(`loop? way too deeply nested`);
+    };
+
     const logs: LogItems[] | undefined = log ? [] : undefined;
     log?.push({type: 'items', items: logs!, title: 'Joinings'});
 
     Object.values(byEndpoint).forEach((items) => {
         if (items.length !== 2) return;
         if (closeEnough(angleBetween(items[0].theta, items[1].theta, true), Math.PI, 0.01)) {
-            const ai = items[0].idx;
-            const bi = items[1].idx;
+            const ai = getFinalIdx(items[0].idx);
+            const bi = getFinalIdx(items[1].idx);
 
             logs?.push({
                 item: [
@@ -621,7 +632,7 @@ export const joinAdjacentInlineSegments = (
             updated[bi] = ai;
 
             // toRemove.push(items[0].idx, items[1].idx)
-            toJoin.push({a: items[0].idx, b: items[1].idx, nw: updated[ai]});
+            toJoin.push({a: ai, b: bi, nw: updated[ai]});
             logs?.push({
                 item: [
                     {type: 'seg', prev: updated[ai][0], seg: {type: 'Line', to: updated[ai][1]}},

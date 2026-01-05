@@ -67,14 +67,20 @@ export const resolvePMod = (ctx: AnimCtx, mod: PMods): CropsAndMatrices[0] => {
 
 const insetShape = (shape: Coord[], inset: number) => {
     if (!shape.length) return [];
-    const path = pkPathFromCoords(shape, false)!;
-    if (!path) return [];
     if (Math.abs(inset) < 0.01) return [shape];
-    insetPkPath(path, inset / 100);
+    const by = 10;
+    const path = pkPathFromCoords(
+        shape.map((s) => ({x: s.x * by, y: s.y * by})),
+        false,
+    )!;
+    if (!path) return [];
+    insetPkPath(path, (inset / 100) * by);
     path.simplify();
     const items = pkPathToSegments(path);
     path.delete();
-    return items.map(coordsFromBarePath);
+    return items
+        .map(coordsFromBarePath)
+        .map((shape) => shape.map((s) => ({x: s.x / by, y: s.y / by})));
 };
 
 const clipShape = (shape: Coord[], mod: CCrop, crop: PKPath) => {

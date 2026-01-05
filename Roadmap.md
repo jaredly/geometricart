@@ -7,10 +7,16 @@
   - [ ] from localStorage
 - [x] add a path for /isolated
 - [x] upgrade all current exports to embed the tiling, so we're not loading tilings anymore
-- [ ] can we make localstorage work
-  -> want a button to like move a thing into localstorage?
+- [x] can we make localstorage work
+  - [x] save and load normal thing here we are
+  - [ ] want a button to like move a thing into localstorage?
 - [ ] do the build, and like commit it probably
-- [ ] make an 'archive' button
+- [ ] make an 'archive' button for exports to move to a different directory
+
+# what is this
+
+
+
 
 ## Migrating state, are we ready?
 

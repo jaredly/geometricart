@@ -168,7 +168,7 @@ const renderNode = (id: string, ctx: NCtx) => {
                     style={{
                         width: 20 * 3,
                         height: 4,
-                        flex: 1,
+                        // flex: 1,
                         background: '#aaa',
                     }}
                     className="flex items-center justify-center"
