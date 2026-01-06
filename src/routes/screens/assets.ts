@@ -5,7 +5,6 @@ import type {Route} from './+types/assets';
 const assetsDir = join(import.meta.dirname, '../../../assets');
 
 export async function loader({params}: Route.LoaderArgs) {
-    console.log('LOADING');
     const {'*': fname} = params;
     if (fname!.includes('..')) return new Response('Invalid path', {status: 400});
     const full = join(assetsDir, fname!);

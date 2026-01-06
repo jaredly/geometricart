@@ -1,19 +1,18 @@
 import {useEffect, useMemo, useRef, useState} from 'react';
-import {useFetcher} from 'react-router';
 import type {Route} from '../+types/pattern';
-import {shapeKey, State} from '../../../types';
-import {canonicalShape, getNewPatternData, getPatternData} from '../../getPatternData';
-import {humanReadableFraction} from '../../findCommonFractions';
-import {normShape} from '../../normShape';
-import {CanvasPattern} from './CanvasPattern';
-import {canvasRender} from '../../../rendering/CanvasRender';
 import {exportPNG} from '../../../editor/ExportPng';
 import {BaselineDownload, BaselineFilterCenterFocus, BaselineZoomInMap} from '../../../icons/Icon';
-import {useOnOpen} from '../../useOnOpen';
-import {InspectShape} from '../../InspectShape';
-import {normalizeCanonShape, Shape} from '../../getUniqueShapes';
-import {useElementZoom} from './hooks/useSVGZoom';
+import {canvasRender} from '../../../rendering/CanvasRender';
 import {closeEnough} from '../../../rendering/epsilonToZero';
+import {shapeKey, State} from '../../../types';
+import {InspectShape} from '../../InspectShape';
+import {humanReadableFraction} from '../../findCommonFractions';
+import {getNewPatternData} from '../../getPatternData';
+import {normalizeCanonShape, Shape} from '../../getUniqueShapes';
+import {normShape} from '../../normShape';
+import {useOnOpen} from '../../useOnOpen';
+import {CanvasPattern} from './CanvasPattern';
+import {useElementZoom} from './hooks/useSVGZoom';
 import {thinTiling} from './render/renderPattern';
 
 type Display = {
