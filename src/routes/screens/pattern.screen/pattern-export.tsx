@@ -22,7 +22,8 @@ import {
 import {genid} from './utils/genid';
 import {makeForPattern} from './utils/makeForPattern';
 import {ListExports} from './ListExports';
-import {idbprefix, lsprefix, SnapshotUrl} from './state-editor/saveAnnotation';
+import {idbprefix, SnapshotUrl} from './state-editor/saveAnnotation';
+import db from './state-editor/kv-idb';
 
 const CreateAndRedirectLocalStorage = ({id}: {id: string}) => {
     const [error, setError] = useState<null | Error>(null);
@@ -32,8 +33,11 @@ const CreateAndRedirectLocalStorage = ({id}: {id: string}) => {
             const v: Tiling = await fetch(`/gallery/pattern/${id}/json`).then((r) => r.json());
             const state = makeForPattern(thinTiling(v), id);
             const sid = genid();
-            localStorage[sid] = JSON.stringify(state, null, 2);
-            location.replace(`/export/${lsprefix}${sid}`);
+            await db.transaction('readwrite', (tx) => {
+                tx.set('exports', sid, blankHistory(state));
+                tx.set('exportMeta', sid, {created: Date.now(), updated: Date.now()});
+            });
+            location.replace(`/export/${idbprefix}${sid}`);
         };
         ok().catch(setError);
         return () => controller.abort();
@@ -71,8 +75,8 @@ const CreateAndRedirect = ({id}: {id: string}) => {
 
 const LoadAndMigratePattern = ({id}: {id: string}) => {
     const state = usePromise((signal) =>
-        id.startsWith(lsprefix)
-            ? Promise.resolve(loadState(JSON.parse(localStorage[id.slice(lsprefix.length)])))
+        id.startsWith(idbprefix)
+            ? db.get('exports', id.slice(idbprefix.length)).then(loadState)
             : fetch(`/fs/exports/${id}.json`, {signal})
                   .then((r) => r.json())
                   .then(loadState),
@@ -115,10 +119,13 @@ const LoadAndMigratePattern = ({id}: {id: string}) => {
 
 const LoadPattern = ({id, state}: {id: string; state: ExportHistory}) => {
     const onSave = useCallback(
-        (state: ExportHistory) => {
-            if (id.startsWith(lsprefix)) {
-                const lid = id.slice(lsprefix.length);
-                localStorage[lid] = JSON.stringify(state);
+        async (state: ExportHistory) => {
+            if (id.startsWith(idbprefix)) {
+                const lid = id.slice(idbprefix.length);
+                await db.transaction('readwrite', (tx) => {
+                    tx.set('exports', lid, state);
+                    tx.update('exportMeta', lid, (meta) => ({...meta, updated: Date.now()}));
+                });
                 return;
             }
             return fetch(`/fs/exports/${id}.json`, {
@@ -160,10 +167,10 @@ const LoadPattern = ({id, state}: {id: string; state: ExportHistory}) => {
  * On localhost, we can use the `/fs/` api, but in prod we just use localStorage
  */
 const CreateAndRedirectSwitch = ({id}: {id: string}) => {
-    const [onLocal, setOnLocal] = useState<null | boolean>(null);
-    useEffect(() => {
-        setOnLocal(window.location.hostname === 'localhost');
-    }, []);
+    const [onLocal, setOnLocal] = useState<null | boolean>(false);
+    // useEffect(() => {
+    //     setOnLocal(window.location.hostname === 'localhost');
+    // }, []);
     if (onLocal == null) return null;
     return onLocal ? <CreateAndRedirect id={id} /> : <CreateAndRedirectLocalStorage id={id} />;
 };

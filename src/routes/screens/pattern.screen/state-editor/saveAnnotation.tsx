@@ -3,7 +3,7 @@ import {ExportAnnotation} from '../ExportHistory';
 import {genid} from '../utils/genid';
 import db from './kv-idb';
 
-export const lsprefix = 'localstorage:';
+// export const lsprefix = 'localstorage:';
 export const idbprefix = 'idb:';
 
 const blobToDataUrl = (blob: Blob) => {

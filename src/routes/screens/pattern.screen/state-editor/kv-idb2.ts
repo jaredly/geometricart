@@ -18,6 +18,14 @@ export type TableSpec<TTables extends Record<string, any>> = {
     [K in keyof TTables]: Validator<TTables[K]>;
 };
 
+export interface TxContext<TTables extends Record<string, any>> {
+    set<K extends keyof TTables>(table: K, key: KVKey, value: TTables[K]): void;
+    del<K extends keyof TTables>(table: K, key: KVKey): void;
+
+    /** Update existing value; throws (via abort) if missing/invalid */
+    update<K extends keyof TTables>(table: K, key: KVKey, fn: (v: TTables[K]) => TTables[K]): void;
+}
+
 export interface TypedKVOptions {
     dbName?: string;
     storeName?: string;
@@ -146,6 +154,186 @@ export class TypedKV<TTables extends Record<string, any>> {
         throw new Error(
             `Invalid stored value for table "${String(table)}" and key ${JSON.stringify(key)} (failed validation).`,
         );
+    }
+
+    /**
+     * Update an existing value atomically within a single readwrite transaction.
+     * Throws if missing or if the updated value fails validation.
+     */
+    async update<K extends keyof TTables>(
+        table: K,
+        key: KVKey,
+        fn: (v: TTables[K]) => TTables[K],
+    ): Promise<void> {
+        const db = await this.getDB();
+        const tx = db.transaction(this.storeName, 'readwrite');
+        const store = tx.objectStore(this.storeName);
+
+        const compound = this.makeKey(table, key);
+        const validate = this.validators[table];
+
+        return new Promise<void>((resolve, reject) => {
+            tx.oncomplete = () => resolve();
+            tx.onerror = () => reject(tx.error);
+            tx.onabort = () => reject(tx.error ?? new Error('Transaction aborted'));
+
+            const getReq = store.get(compound);
+
+            getReq.onerror = () => reject(getReq.error);
+
+            getReq.onsuccess = () => {
+                const raw = getReq.result;
+
+                if (raw === undefined) {
+                    // No existing value: your signature implies this is an error.
+                    reject(
+                        new Error(
+                            `Cannot update missing value in table "${String(table)}" for key ${JSON.stringify(key)}`,
+                        ),
+                    );
+                    // Abort to avoid committing any accidental work
+                    try {
+                        tx.abort();
+                    } catch {}
+                    return;
+                }
+
+                if (!validate(raw)) {
+                    reject(
+                        new Error(
+                            `Invalid stored value for table "${String(table)}" and key ${JSON.stringify(key)} (failed validation).`,
+                        ),
+                    );
+                    try {
+                        tx.abort();
+                    } catch {}
+                    return;
+                }
+
+                let next: TTables[K];
+                try {
+                    next = fn(raw);
+                } catch (e) {
+                    reject(e instanceof Error ? e : new Error(String(e)));
+                    try {
+                        tx.abort();
+                    } catch {}
+                    return;
+                }
+
+                if (!validate(next)) {
+                    reject(
+                        new Error(
+                            `Validation failed for updated value in table "${String(table)}" (refusing to store).`,
+                        ),
+                    );
+                    try {
+                        tx.abort();
+                    } catch {}
+                    return;
+                }
+
+                const putReq = store.put(next as any, compound);
+                putReq.onerror = () => reject(putReq.error);
+                // success -> tx.oncomplete will resolve
+            };
+        });
+    }
+
+    /**
+     * Run multiple operations in a single transaction.
+     *
+     * IMPORTANT: `fn` must be synchronous (do not `await` inside).
+     * If any operation fails, the transaction aborts and the promise rejects.
+     */
+    async transaction<R>(mode: IDBTransactionMode, fn: (tx: TxContext<TTables>) => R): Promise<R> {
+        const db = await this.getDB();
+        const tx = db.transaction(this.storeName, mode);
+        const store = tx.objectStore(this.storeName);
+
+        let result!: R;
+
+        const validateOnWrite = <K extends keyof TTables>(
+            table: K,
+            value: unknown,
+        ): value is TTables[K] => this.validators[table](value);
+
+        const ctx: TxContext<TTables> = {
+            set: (table, key, value) => {
+                if (!validateOnWrite(table, value)) {
+                    tx.abort();
+                    throw new Error(
+                        `Validation failed for table "${String(table)}" (refusing to store value).`,
+                    );
+                }
+                store.put(value as any, this.makeKey(table, key));
+            },
+
+            del: (table, key) => {
+                store.delete(this.makeKey(table, key));
+            },
+
+            update: (table, key, fn2) => {
+                const compound = this.makeKey(table, key);
+
+                const getReq = store.get(compound);
+                getReq.onerror = () => {
+                    try {
+                        tx.abort();
+                    } catch {}
+                };
+
+                getReq.onsuccess = () => {
+                    const raw = getReq.result;
+
+                    if (raw === undefined) {
+                        try {
+                            tx.abort();
+                        } catch {}
+                        return;
+                    }
+                    if (!this.validators[table](raw)) {
+                        try {
+                            tx.abort();
+                        } catch {}
+                        return;
+                    }
+
+                    let next: TTables[typeof table];
+                    try {
+                        next = fn2(raw);
+                    } catch {
+                        try {
+                            tx.abort();
+                        } catch {}
+                        return;
+                    }
+
+                    if (!this.validators[table](next)) {
+                        try {
+                            tx.abort();
+                        } catch {}
+                        return;
+                    }
+
+                    store.put(next as any, compound);
+                };
+            },
+        };
+
+        // Run user code synchronously to enqueue requests on this tx.
+        try {
+            result = fn(ctx);
+        } catch (e) {
+            try {
+                tx.abort();
+            } catch {}
+            throw e;
+        }
+
+        // Wait for commit/abort
+        await this.txDone(tx);
+        return result;
     }
 
     /** List [key, value] pairs in a table (values validated & typed) */

@@ -1,8 +1,8 @@
-import {useState, useEffect} from 'react';
+import {useEffect, useState} from 'react';
 import {SpinnerEarring} from '../../../../icons/Icon';
 import {ExportAnnotation} from '../ExportHistory';
 import db from './kv-idb';
-import {lsprefix, idbprefix, SnapshotUrl, makeSnapshotUrl} from './saveAnnotation';
+import {makeSnapshotUrl, SnapshotUrl} from './saveAnnotation';
 
 export const anSnapshot = (an: ExportAnnotation, snapshotUrl: SnapshotUrl): AnSrc =>
     snapshotUrl.type === 'idb'

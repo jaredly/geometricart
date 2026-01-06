@@ -2,11 +2,11 @@ import {usePromise} from './hooks/usePromise';
 import {Page} from './Page';
 import db from './state-editor/kv-idb';
 import {addToMap} from '../../addToMap';
-import {lsprefix} from './state-editor/saveAnnotation';
 import {AnnotationView} from './state-editor/AnnotationView';
 import {notNull} from './utils/notNull';
 import {isValidHistory} from './types/load-state';
 import {BaselineDownload} from '../../../icons/Icon';
+import {idbprefix} from './state-editor/saveAnnotation';
 
 type Listing = {id: string; icon?: {id: string; created: number}; modified: number};
 
@@ -119,7 +119,7 @@ export const ListExports = () => {
             <div className="flex flex-row flex-wrap gap-4 p-4">
                 {fromLS.value.map(({id, icon}) => (
                     <div className="relative">
-                        <a className="link" href={`/export/${lsprefix}${id}`}>
+                        <a className="link" href={`/export/${idbprefix}${id}`}>
                             {icon ? (
                                 <AnnotationView
                                     size={200}

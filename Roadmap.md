@@ -20,6 +20,8 @@
   -> yeahhhh ok so: we do a /prefix/ and
   -> oh nice, compound keys.
 
+- [ ] I reeeeeally want to be able to specify "these mods run after inner mods"
+
 So, we need to:
 - download localstorage dealios
 - switch over to idb
