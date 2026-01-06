@@ -4,7 +4,7 @@ import {useEditState, usePendingState} from '../utils/editState';
 import {JsonEditor} from './JsonEditor';
 import {Updater} from '../../../../json-diff/Updater';
 import {useExportState} from '../ExportHistory';
-import {notNull} from '../utils/resolveMods';
+import {notNull} from '../utils/notNull';
 
 export const ShapeEditor = ({
     shape,

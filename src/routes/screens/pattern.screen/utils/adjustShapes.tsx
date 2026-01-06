@@ -11,8 +11,8 @@ import {
     edgesByEndpoint,
     shapesFromSegments,
     EndPointMap,
-    addToMap,
 } from '../../../shapesFromSegments';
+import {addToMap} from '../../../addToMap';
 import {coordPairOnShape, coordPairOnShape2, overlapping} from './coordPairOnShape';
 import {Ctx} from '../eval/evaluate';
 import {PMods, TChunk, AnimatableValue} from '../export-types';
@@ -23,10 +23,10 @@ import {
     modsToShapes,
     RenderLog,
     barePathFromCoords,
-    notNull,
     LogItem,
     LogItems,
 } from './resolveMods';
+import {notNull} from './notNull';
 import {angleTo} from '../../../../rendering/getMirrorTransforms';
 import {angleBetween} from '../../../../rendering/isAngleBetween';
 

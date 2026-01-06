@@ -24,9 +24,9 @@ import {
     modsToShapes,
     resolveT,
     barePathFromCoords,
-    notNull,
     numToCoord,
 } from '../utils/resolveMods';
+import {notNull} from '../utils/notNull';
 
 export const thinTiling = (t: Tiling): ThinTiling => ({segments: t.cache.segments, shape: t.shape});
 

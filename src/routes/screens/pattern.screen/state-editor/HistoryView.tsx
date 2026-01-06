@@ -1,8 +1,8 @@
 import {useCallback, useMemo, useState} from 'react';
-import {addToMap} from '../../../shapesFromSegments';
+import {addToMap} from '../../../addToMap';
 import {useOnOpen} from '../../../useOnOpen';
 import {useExportState, ExportHistory} from '../ExportHistory';
-import {AnnotationView} from './AnnotationView';
+import {AnnotationView, anSnapshot} from './AnnotationView';
 
 export const HistoryView = ({snapshotUrl}: {snapshotUrl: (id: string, ext: string) => string}) => {
     const ctx = useExportState();
@@ -149,7 +149,11 @@ const renderNode = (id: string, ctx: NCtx) => {
             >
                 <div className="font-mono">{id}</div>
                 {history.annotations[id]?.map((an, i) => (
-                    <AnnotationView key={i} an={an} snapshotUrl={snapshotUrl} />
+                    <AnnotationView
+                        key={i}
+                        src={anSnapshot(an, snapshotUrl)}
+                        image={an.type === 'img'}
+                    />
                 ))}
             </div>
         </div>

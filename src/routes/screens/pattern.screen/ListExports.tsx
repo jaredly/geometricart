@@ -1,5 +1,12 @@
+import {useState} from 'react';
 import {usePromise} from './hooks/usePromise';
 import {Page} from './Page';
+import {keys} from './state-editor/kv-idb';
+import {addToMap} from '../../addToMap';
+import {lsprefix} from './state-editor/saveAnnotation';
+import {AnnotationView} from './state-editor/AnnotationView';
+import {notNull} from './utils/notNull';
+import {isValidHistory} from './types/load-state';
 
 export const ListExports = () => {
     const all = usePromise((signal) =>
@@ -32,6 +39,32 @@ export const ListExports = () => {
                 return Object.values(patterns).sort((a, b) => b.modified - a.modified);
             }),
     );
+
+    const fromLS = usePromise(async () => {
+        const all = Object.keys(localStorage);
+        const idbkeys = await keys();
+        const byid: Record<string, string[]> = {};
+        idbkeys.forEach((key) => {
+            if (typeof key === 'string') {
+                const parts = key.split('-');
+                const id = parts.slice(0, -1).join('-');
+                addToMap(byid, id, key);
+            }
+        });
+        return all
+            .map((id) => {
+                try {
+                    const data = JSON.parse(localStorage[id]);
+                    if (isValidHistory(data)) {
+                        const matching = byid[id] ?? [];
+                        return {id, icon: matching.length ? matching[0] : null};
+                    }
+                } catch (err) {}
+                return null;
+            })
+            .filter(notNull);
+    });
+
     const bcr = [
         {
             title: 'Geometric Art',
@@ -40,20 +73,21 @@ export const ListExports = () => {
         },
         {title: 'Exports', href: '/export/'},
     ];
-    if (!all) {
+    if (!all || !fromLS) {
         return (
             <Page breadcrumbs={bcr}>
                 <div>Loading...</div>
             </Page>
         );
     }
-    if (all.type === 'err') {
+    if (all.type === 'err' || fromLS.type === 'err') {
         return (
             <Page breadcrumbs={bcr}>
                 <div>Failed to load exports</div>
             </Page>
         );
     }
+
     return (
         <Page breadcrumbs={bcr}>
             <div className="flex flex-row flex-wrap gap-4 p-4">
@@ -69,6 +103,15 @@ export const ListExports = () => {
                             ) : (
                                 id
                             )}
+                        </a>
+                    </div>
+                ))}
+            </div>
+            <div className="flex flex-row flex-wrap gap-4 p-4">
+                {fromLS.value.map(({id, icon}) => (
+                    <div>
+                        <a className="link" href={`/export/${lsprefix}${id}`}>
+                            {icon ? <AnnotationView size={200} src={`idb:${icon}`} image /> : id}
                         </a>
                     </div>
                 ))}

@@ -4,14 +4,30 @@
 - [x] basic loading
 - [x] load/save snapshot images correctly
   - [x] from /fs/
-  - [ ] from localStorage
+  - [x] from localStorage (ok idb)
 - [x] add a path for /isolated
 - [x] upgrade all current exports to embed the tiling, so we're not loading tilings anymore
 - [x] can we make localstorage work
   - [x] save and load normal thing here we are
-  - [ ] want a button to like move a thing into localstorage?
+  - [x] list exports that are in localstorage
+  - [ ] want a button to like move a thing into localstorage? and back? idk. maybe like download it from localstorage
 - [ ] do the build, and like commit it probably
 - [ ] make an 'archive' button for exports to move to a different directory
+- [ ] ugh I probably want to store like a 'meta' file or whatever for each snapshot image
+- [ ] ok but btw I've done this thing where there are a ton of things in localstorage.
+  -> and not all of them are in good shape y'all.
+  -> so do I need to make an indexeddb? And just store the stuff in there? probably folks.
+  -> yeahhhh ok so: we do a /prefix/ and
+  -> oh nice, compound keys.
+
+So, we need to:
+- download localstorage dealios
+- switch over to idb
+- upload/import I guess who knows
+
+#
+
+Should I call "exports" instead "creations"?
 
 # what is this
 

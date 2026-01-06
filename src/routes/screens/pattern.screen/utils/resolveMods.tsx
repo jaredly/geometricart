@@ -305,8 +305,6 @@ export const withShared = (
     return {...anim, values: {...anim.values, ...values}};
 };
 
-export const notNull = <T,>(v: T): v is NonNullable<T> => v != null;
-
 export const numToCoord = (num: number | Coord) =>
     typeof num === 'number' ? {x: num, y: num} : num;
 

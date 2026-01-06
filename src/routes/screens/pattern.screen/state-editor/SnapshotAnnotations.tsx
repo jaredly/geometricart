@@ -3,7 +3,7 @@ import {useExportState} from '../ExportHistory';
 import {WorkerSend} from '../render/render-client';
 import {runPNGExport} from '../render/runPNGExport';
 import {saveAnnotation, deleteAnnotation, lsprefix} from './saveAnnotation';
-import {AnnotationView} from './AnnotationView';
+import {AnnotationView, anSnapshot} from './AnnotationView';
 
 export const SnapshotAnnotations = ({
     worker,
@@ -44,7 +44,10 @@ export const SnapshotAnnotations = ({
                     <div key={key} className="contents">
                         {ans.map((an, i) => (
                             <div key={i} className="relative">
-                                <AnnotationView an={an} snapshotUrl={snapshotUrl} />
+                                <AnnotationView
+                                    src={anSnapshot(an, snapshotUrl)}
+                                    image={an.type === 'img'}
+                                />
                                 <button
                                     className="btn btn-sm btn-square absolute top-0 right-0"
                                     onClick={() => {

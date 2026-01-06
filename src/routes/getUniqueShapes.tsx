@@ -15,7 +15,8 @@ import {pointsAngles} from '../rendering/pathToPoints';
 import {Coord} from '../types';
 import {Axis, centroid, findReflectionAxes} from './findReflectionAxes';
 import {canonicalShape} from './getPatternData';
-import {addToMap, calcPolygonArea, joinAdjacentShapeSegments} from './shapesFromSegments';
+import {calcPolygonArea, joinAdjacentShapeSegments} from './shapesFromSegments';
+import {addToMap} from './addToMap';
 
 const shapeClasses = ['Stars', 'Regular', 'Symmetrical', 'Other'] as const;
 

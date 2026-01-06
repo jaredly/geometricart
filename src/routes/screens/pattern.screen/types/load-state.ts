@@ -3,9 +3,9 @@ import {ExportHistory} from '../ExportHistory';
 import {State} from './state-type';
 import {blankHistory} from '../../../../json-diff/history';
 
-const isValidHistory = typia.createIs<ExportHistory>();
+export const isValidHistory = typia.createIs<ExportHistory>();
 const isValidState = typia.createIs<State>();
-const validateHistory = typia.createValidate<ExportHistory>();
+export const validateHistory = typia.createValidate<ExportHistory>();
 
 // {version: 0, value: StateV0} | {version: 1, value: StateV1} ...
 type OldVersions = never;

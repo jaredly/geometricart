@@ -3,7 +3,8 @@ import {closeEnough} from '../rendering/epsilonToZero';
 import {dist} from '../rendering/getMirrorTransforms';
 import {Coord} from '../types';
 import {barePathFromCoords, LogItems, RenderLog} from './screens/pattern.screen/utils/resolveMods';
-import {addToMap, unique} from './shapesFromSegments';
+import {unique} from './shapesFromSegments';
+import {addToMap} from './addToMap';
 
 // const debugColors:
 

@@ -25,6 +25,7 @@ import {
 } from './screens/pattern.screen/utils/adjustShapes';
 import {RenderItem} from './screens/pattern.screen/eval/evaluate';
 import {LogItem, LogItems, RenderLog} from './screens/pattern.screen/utils/resolveMods';
+import {addToMap} from './addToMap';
 
 const gte = (a: number, b: number) => a >= b - epsilon;
 const lte = (a: number, b: number) => a <= b + epsilon;
@@ -454,11 +455,6 @@ export const shapesFromSegments = (
         }
     });
     return {shapes, used, backwards, extras};
-};
-
-export const addToMap = <T,>(map: Record<string | number, T[]>, k: string | number, t: T) => {
-    if (!map[k]) map[k] = [t];
-    else map[k].push(t);
 };
 
 export const unique = <T,>(l: T[], k: (t: T) => string) => {
