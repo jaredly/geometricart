@@ -48,11 +48,13 @@ export const ListExports = () => {
     const fromLS = usePromise(async () => {
         const patterns: Record<string, Listing> = {};
         for (let [key, meta] of await db.entries('exportMeta')) {
+            console.log('got ex', key, meta);
             if (typeof key === 'string') {
                 patterns[key] = {id: key, modified: meta.updated};
             }
         }
         for (let [key, meta] of await db.entries('snapshotMeta')) {
+            console.log('snmeta', key, meta);
             if (
                 Array.isArray(key) &&
                 key.length === 2 &&
@@ -65,6 +67,7 @@ export const ListExports = () => {
                 }
             }
         }
+        console.log('lss', patterns);
         return Object.values(patterns).sort((a, b) => b.modified - a.modified);
     });
 

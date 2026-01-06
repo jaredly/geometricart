@@ -336,50 +336,49 @@ export class TypedKV<TTables extends Record<string, any>> {
         return result;
     }
 
-    /** List [key, value] pairs in a table (values validated & typed) */
     async entries<K extends keyof TTables>(table: K): Promise<Array<[KVKey, TTables[K]]>> {
         const db = await this.getDB();
         const tx = db.transaction(this.storeName, 'readonly');
         const store = tx.objectStore(this.storeName);
 
         const t = String(table);
-        const range = IDBKeyRange.bound([t], [t, []]);
-
-        // Get all compound keys + all values for the table range.
-        // IndexedDB guarantees both are ordered by key, so indices align.
-        const [allKeys, allValues] = await Promise.all([
-            this.reqToPromise<IDBValidKey[]>(store.getAllKeys(range)),
-            this.reqToPromise<any[]>(store.getAll(range)),
-        ]);
-
-        await this.txDone(tx);
-
         const validate = this.validators[table];
         const out: Array<[KVKey, TTables[K]]> = [];
 
-        const n = Math.min(allKeys.length, allValues.length);
-        for (let i = 0; i < n; i++) {
-            const ck = allKeys[i];
-            if (!Array.isArray(ck) || ck.length < 2) continue;
+        return new Promise((resolve, reject) => {
+            tx.oncomplete = () => resolve(out);
+            tx.onerror = () => reject(tx.error);
+            tx.onabort = () => reject(tx.error ?? new Error('Transaction aborted'));
 
-            const innerKey = (ck as unknown as [string, KVKey])[1];
-            const rawVal = allValues[i];
+            const req = store.openCursor(IDBKeyRange.lowerBound([t]));
 
-            if (rawVal === undefined) continue;
+            req.onerror = () => reject(req.error);
+            req.onsuccess = () => {
+                const cursor = req.result;
+                if (!cursor) return;
 
-            if (validate(rawVal)) {
-                out.push([innerKey, rawVal]);
-            } else {
-                if (this.onInvalidValue === 'throw') {
-                    throw new Error(
-                        `Invalid stored value for table "${t}" at key ${JSON.stringify(innerKey)} (failed validation).`,
+                const ck = cursor.key;
+                if (!Array.isArray(ck) || ck[0] !== t) return; // prefix changed => done
+
+                const innerKey = (ck as unknown as [string, KVKey])[1];
+                const rawVal = cursor.value;
+
+                if (validate(rawVal)) {
+                    out.push([innerKey, rawVal]);
+                } else if (this.onInvalidValue === 'throw') {
+                    try {
+                        tx.abort();
+                    } catch {}
+                    reject(
+                        new Error(
+                            `Invalid stored value for table "${t}" at key ${JSON.stringify(innerKey)} (failed validation).`,
+                        ),
                     );
+                    return;
                 }
-                // onInvalidValue === "undefined" => skip invalid entries
-            }
-        }
-
-        return out;
+                cursor.continue();
+            };
+        });
     }
 
     /** Delete a single key */
@@ -390,36 +389,61 @@ export class TypedKV<TTables extends Record<string, any>> {
         await this.txDone(tx);
     }
 
-    /** List keys in a table (returns the “inner” keys, not [table,key]) */
     async keys<K extends keyof TTables>(table: K): Promise<KVKey[]> {
         const db = await this.getDB();
         const tx = db.transaction(this.storeName, 'readonly');
         const store = tx.objectStore(this.storeName);
 
         const t = String(table);
+        const out: KVKey[] = [];
 
-        // All compound keys with first element === t
-        const range = IDBKeyRange.bound([t], [t, []]);
+        return new Promise<KVKey[]>((resolve, reject) => {
+            tx.oncomplete = () => resolve(out);
+            tx.onerror = () => reject(tx.error);
+            tx.onabort = () => reject(tx.error ?? new Error('Transaction aborted'));
 
-        const all = await this.reqToPromise<IDBValidKey[]>(store.getAllKeys(range));
-        await this.txDone(tx);
+            const req = store.openKeyCursor(IDBKeyRange.lowerBound([t]));
 
-        return all
-            .map((k) => (Array.isArray(k) ? (k as unknown as CompoundKey)[1] : undefined))
-            .filter((k): k is KVKey => k !== undefined);
+            req.onerror = () => reject(req.error);
+            req.onsuccess = () => {
+                const cursor = req.result;
+                if (!cursor) return; // tx.oncomplete will resolve
+
+                const ck = cursor.key;
+                if (!Array.isArray(ck) || ck[0] !== t) return; // prefix changed => done
+
+                out.push((ck as unknown as [string, KVKey])[1]);
+                cursor.continue();
+            };
+        });
     }
 
-    /** Delete everything in a table */
     async clear<K extends keyof TTables>(table: K): Promise<void> {
         const db = await this.getDB();
         const tx = db.transaction(this.storeName, 'readwrite');
         const store = tx.objectStore(this.storeName);
 
         const t = String(table);
-        const range = IDBKeyRange.bound([t], [t, []]);
-        store.delete(range);
 
-        await this.txDone(tx);
+        return new Promise((resolve, reject) => {
+            tx.oncomplete = () => resolve();
+            tx.onerror = () => reject(tx.error);
+            tx.onabort = () => reject(tx.error ?? new Error('Transaction aborted'));
+
+            const req = store.openKeyCursor(IDBKeyRange.lowerBound([t]));
+
+            req.onerror = () => reject(req.error);
+            req.onsuccess = () => {
+                const cursor = req.result;
+                if (!cursor) return;
+
+                const ck = cursor.key;
+                if (!Array.isArray(ck) || ck[0] !== t) return; // prefix changed => done
+
+                cursor.delete();
+                cursor.continue();
+            };
+        });
     }
 
     /** Optional: close the underlying connection */
