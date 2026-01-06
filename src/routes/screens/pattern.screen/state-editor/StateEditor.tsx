@@ -23,12 +23,13 @@ import {TimelineEditor} from './TimelineEditor';
 import {barePathFromCoords} from '../utils/resolveMods';
 import {HistoryView} from './HistoryView';
 import {SnapshotAnnotations} from './SnapshotAnnotations';
+import {SnapshotUrl} from './saveAnnotation';
 
 type StateEditorProps = {
     value: State;
     update: Updater<State>;
     worker: WorkerSend;
-    snapshotUrl: (id: string, ext: string) => string;
+    snapshotUrl: SnapshotUrl;
 };
 
 export const StateEditor = ({value, worker, update, snapshotUrl}: StateEditorProps) => {

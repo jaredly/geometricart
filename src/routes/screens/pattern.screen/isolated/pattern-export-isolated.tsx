@@ -1,4 +1,4 @@
-import {useCallback} from 'react';
+import {useCallback, useMemo} from 'react';
 import {ExportHistory} from '../ExportHistory';
 import {PatternExport} from '../pattern-export';
 import {Page} from '../Page';
@@ -6,7 +6,7 @@ import {useInitialPatterns} from '../hooks/useInitialPatterns';
 import {usePromise} from '../hooks/usePromise';
 import typia from 'typia';
 import {useLocation} from 'react-router';
-import {idbprefix} from '../state-editor/saveAnnotation';
+import {idbprefix, SnapshotUrl} from '../state-editor/saveAnnotation';
 
 const validateHistory = typia.createValidate<ExportHistory>();
 
@@ -69,9 +69,11 @@ export const PatternExportIsolated = () => {
         [src],
     );
 
-    const snapshotUrl = useCallback(
-        (aid: string, ext: string) =>
-            src?.replace(lsprefix, idbprefix).replace('.json', `-${aid}.${ext}`) ?? '',
+    const snapshotUrl = useMemo(
+        (): SnapshotUrl =>
+            src?.startsWith(idbprefix)
+                ? {type: 'idb', id: src.slice(idbprefix.length)}
+                : {type: 'remote-src', src: src!},
         [src],
     );
 

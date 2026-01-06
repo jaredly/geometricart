@@ -1,68 +1,71 @@
-import {useState} from 'react';
 import {usePromise} from './hooks/usePromise';
 import {Page} from './Page';
-import {keys} from './state-editor/kv-idb';
+import db from './state-editor/kv-idb';
 import {addToMap} from '../../addToMap';
 import {lsprefix} from './state-editor/saveAnnotation';
 import {AnnotationView} from './state-editor/AnnotationView';
 import {notNull} from './utils/notNull';
 import {isValidHistory} from './types/load-state';
+import {BaselineDownload} from '../../../icons/Icon';
+
+type Listing = {id: string; icon?: {id: string; created: number}; modified: number};
+
+const organizeExportFiles = (v: {name: string; created: number; modified: number}[]) => {
+    const patterns: Record<string, Listing> = {};
+    v.forEach(({name, created, modified}) => {
+        if (name.endsWith('.json')) {
+            const id = name.slice(0, -'.json'.length);
+            if (!patterns[id]) {
+                patterns[id] = {id, modified};
+            } else {
+                patterns[id].modified = modified;
+            }
+        } else if (name.endsWith('.png')) {
+            const parts = name.slice(0, -'.png'.length).split('-');
+            const iid = parts.pop()!;
+            const id = parts.join('-');
+            if (!patterns[id]) {
+                patterns[id] = {id, modified: created, icon: {id: iid, created}};
+            } else if (!patterns[id].icon || patterns[id].icon.created < created) {
+                patterns[id].icon = {id: iid, created};
+            }
+        }
+    });
+    return patterns;
+};
 
 export const ListExports = () => {
     const all = usePromise((signal) =>
         fetch('/fs/exports', {signal})
             .then((r) => r.json())
-            .then((v: {name: string; created: number; modified: number}[]) => {
-                const patterns: Record<
-                    string,
-                    {id: string; icon?: {id: string; created: number}; modified: number}
-                > = {};
-                v.forEach(({name, created, modified}) => {
-                    if (name.endsWith('.json')) {
-                        const id = name.slice(0, -'.json'.length);
-                        if (!patterns[id]) {
-                            patterns[id] = {id, modified};
-                        } else {
-                            patterns[id].modified = modified;
-                        }
-                    } else if (name.endsWith('.png')) {
-                        const parts = name.slice(0, -'.png'.length).split('-');
-                        const iid = parts.pop()!;
-                        const id = parts.join('-');
-                        if (!patterns[id]) {
-                            patterns[id] = {id, modified: created, icon: {id: iid, created}};
-                        } else if (!patterns[id].icon || patterns[id].icon.created < created) {
-                            patterns[id].icon = {id: iid, created};
-                        }
-                    }
-                });
-                return Object.values(patterns).sort((a, b) => b.modified - a.modified);
+            .then((v) => {
+                return Object.values(organizeExportFiles(v)).sort(
+                    (a, b) => b.modified - a.modified,
+                );
             }),
     );
 
     const fromLS = usePromise(async () => {
-        const all = Object.keys(localStorage);
-        const idbkeys = await keys();
-        const byid: Record<string, string[]> = {};
-        idbkeys.forEach((key) => {
+        const patterns: Record<string, Listing> = {};
+        for (let [key, meta] of await db.entries('exportMeta')) {
             if (typeof key === 'string') {
-                const parts = key.split('-');
-                const id = parts.slice(0, -1).join('-');
-                addToMap(byid, id, key);
+                patterns[key] = {id: key, modified: meta.updated};
             }
-        });
-        return all
-            .map((id) => {
-                try {
-                    const data = JSON.parse(localStorage[id]);
-                    if (isValidHistory(data)) {
-                        const matching = byid[id] ?? [];
-                        return {id, icon: matching.length ? matching[0] : null};
-                    }
-                } catch (err) {}
-                return null;
-            })
-            .filter(notNull);
+        }
+        for (let [key, meta] of await db.entries('snapshotMeta')) {
+            if (
+                Array.isArray(key) &&
+                key.length === 2 &&
+                typeof key[0] === 'string' &&
+                typeof key[1] === 'string'
+            ) {
+                const current = patterns[key[0]].icon;
+                if (!current || current.created < meta.created) {
+                    patterns[key[0]].icon = {created: meta.created, id: key[1]};
+                }
+            }
+        }
+        return Object.values(patterns).sort((a, b) => b.modified - a.modified);
     });
 
     const bcr = [
@@ -101,7 +104,13 @@ export const ListExports = () => {
                                     src={`/assets/exports/${id}-${icon.id}.png`}
                                 />
                             ) : (
-                                id
+                                <div
+                                    style={{width: 200, height: 200}}
+                                    className="flex flex-col items-center justify-center"
+                                >
+                                    <div>{id}</div>
+                                    <div>no snapshots</div>
+                                </div>
                             )}
                         </a>
                     </div>
@@ -109,10 +118,32 @@ export const ListExports = () => {
             </div>
             <div className="flex flex-row flex-wrap gap-4 p-4">
                 {fromLS.value.map(({id, icon}) => (
-                    <div>
+                    <div className="relative">
                         <a className="link" href={`/export/${lsprefix}${id}`}>
-                            {icon ? <AnnotationView size={200} src={`idb:${icon}`} image /> : id}
+                            {icon ? (
+                                <AnnotationView
+                                    size={200}
+                                    src={{type: 'idb', id, aid: icon.id}}
+                                    image
+                                />
+                            ) : (
+                                id
+                            )}
                         </a>
+                        {/*<button
+                            className="btn btn-square mr-4 absolute top-2 right-2"
+                            onClick={() => {
+                                // const v = localStorage[id];
+                                // const blob = new Blob([v], {type: 'application/json'});
+                                // const url = URL.createObjectURL(blob);
+                                // const link = document.createElement('a');
+                                // link.download = `${id}.json`;
+                                // link.href = url;
+                                // link.click();
+                            }}
+                        >
+                            <BaselineDownload />
+                        </button>*/}
                     </div>
                 ))}
             </div>

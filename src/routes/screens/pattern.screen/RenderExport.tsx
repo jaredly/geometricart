@@ -11,6 +11,7 @@ import {useAnimate} from './hooks/useAnimate';
 import {useCropCache} from './hooks/useCropCache';
 import {useElementZoom} from './hooks/useSVGZoom';
 import {VideoExport} from './VideoExport';
+import {SnapshotUrl} from './state-editor/saveAnnotation';
 
 export const RenderExport = ({
     namePrefix,
@@ -23,7 +24,7 @@ export const RenderExport = ({
     namePrefix: string;
     state: State;
     onChange: Updater<State>;
-    snapshotUrl: (id: string, ext: string) => string;
+    snapshotUrl: SnapshotUrl;
 }) => {
     const [t, setT] = useState(0); // animateeeee
     const animCache = useMemo<AnimCtx['cache']>(() => new Map(), []);

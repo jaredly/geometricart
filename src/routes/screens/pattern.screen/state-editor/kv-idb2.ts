@@ -148,6 +148,52 @@ export class TypedKV<TTables extends Record<string, any>> {
         );
     }
 
+    /** List [key, value] pairs in a table (values validated & typed) */
+    async entries<K extends keyof TTables>(table: K): Promise<Array<[KVKey, TTables[K]]>> {
+        const db = await this.getDB();
+        const tx = db.transaction(this.storeName, 'readonly');
+        const store = tx.objectStore(this.storeName);
+
+        const t = String(table);
+        const range = IDBKeyRange.bound([t], [t, []]);
+
+        // Get all compound keys + all values for the table range.
+        // IndexedDB guarantees both are ordered by key, so indices align.
+        const [allKeys, allValues] = await Promise.all([
+            this.reqToPromise<IDBValidKey[]>(store.getAllKeys(range)),
+            this.reqToPromise<any[]>(store.getAll(range)),
+        ]);
+
+        await this.txDone(tx);
+
+        const validate = this.validators[table];
+        const out: Array<[KVKey, TTables[K]]> = [];
+
+        const n = Math.min(allKeys.length, allValues.length);
+        for (let i = 0; i < n; i++) {
+            const ck = allKeys[i];
+            if (!Array.isArray(ck) || ck.length < 2) continue;
+
+            const innerKey = (ck as unknown as [string, KVKey])[1];
+            const rawVal = allValues[i];
+
+            if (rawVal === undefined) continue;
+
+            if (validate(rawVal)) {
+                out.push([innerKey, rawVal]);
+            } else {
+                if (this.onInvalidValue === 'throw') {
+                    throw new Error(
+                        `Invalid stored value for table "${t}" at key ${JSON.stringify(innerKey)} (failed validation).`,
+                    );
+                }
+                // onInvalidValue === "undefined" => skip invalid entries
+            }
+        }
+
+        return out;
+    }
+
     /** Delete a single key */
     async del<K extends keyof TTables>(table: K, key: KVKey): Promise<void> {
         const db = await this.getDB();

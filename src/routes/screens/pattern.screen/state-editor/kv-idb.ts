@@ -1,69 +1,96 @@
-let db: IDBDatabase | undefined;
+import typia from 'typia';
+import {ExportHistory} from '../ExportHistory';
+import {isValidHistory} from '../types/load-state';
+import {TypedKV} from './kv-idb2';
 
-async function getDB() {
-    if (db) return db;
+type ExportMeta = {updated: number; created: number; preview?: string};
+type SnapshotMeta = {updated: number; created: number; size: number};
+const isExportMeta = typia.createIs<ExportMeta>();
 
-    db = await new Promise<IDBDatabase>((resolve, reject) => {
-        const req = indexedDB.open('kv-db', 1);
+const isSnapshotMeta = typia.createIs<SnapshotMeta>();
 
-        req.onupgradeneeded = () => {
-            req.result.createObjectStore('kv');
-        };
+export const db = new TypedKV<{
+    exports: ExportHistory; // | StateV0 | StateV1 etc...
+    exportMeta: ExportMeta;
+    snapshots: Blob;
+    snapshotMeta: SnapshotMeta;
+}>(
+    {
+        exports: isValidHistory,
+        exportMeta: isExportMeta,
+        snapshots: (v) => v instanceof Blob,
+        snapshotMeta: isSnapshotMeta,
+    },
+    {dbName: 'geometric-art', storeName: 'kv', onInvalidValue: 'undefined'},
+);
 
-        req.onsuccess = () => {
-            const d = req.result;
-            d.onversionchange = () => {
-                d.close();
-                db = undefined;
-            };
-            resolve(d);
-        };
+export default db;
+// let db: IDBDatabase | undefined;
 
-        req.onerror = () => reject(req.error);
-    });
+// async function getDB() {
+//     if (db) return db;
 
-    return db;
-}
+//     db = await new Promise<IDBDatabase>((resolve, reject) => {
+//         const req = indexedDB.open('kv-db', 1);
 
-export async function set(key: string, value: Blob) {
-    const db = await getDB();
-    const tx = db.transaction('kv', 'readwrite');
+//         req.onupgradeneeded = () => {
+//             req.result.createObjectStore('kv');
+//         };
 
-    return new Promise((res) => {
-        tx.oncomplete = res;
-        tx.objectStore('kv').put(value, key);
-    });
-}
+//         req.onsuccess = () => {
+//             const d = req.result;
+//             d.onversionchange = () => {
+//                 d.close();
+//                 db = undefined;
+//             };
+//             resolve(d);
+//         };
 
-export async function get(key: string) {
-    const db = await getDB();
-    const tx = db.transaction('kv', 'readonly');
+//         req.onerror = () => reject(req.error);
+//     });
 
-    return new Promise<Blob>((resolve) => {
-        const req = tx.objectStore('kv').get(key);
-        req.onsuccess = () => resolve(req.result);
-    });
-}
+//     return db;
+// }
 
-export async function del(key: string) {
-    const db = await getDB();
-    const tx = db.transaction('kv', 'readwrite');
+// export async function set(key: string, value: Blob) {
+//     const db = await getDB();
+//     const tx = db.transaction('kv', 'readwrite');
 
-    return new Promise((resolve, reject) => {
-        tx.objectStore('kv').delete(key);
-        tx.oncomplete = () => resolve(null);
-        tx.onerror = () => reject(tx.error);
-    });
-}
+//     return new Promise((res) => {
+//         tx.oncomplete = res;
+//         tx.objectStore('kv').put(value, key);
+//     });
+// }
 
-export async function keys() {
-    const db = await getDB();
-    const tx = db.transaction('kv', 'readonly');
-    const store = tx.objectStore('kv');
+// export async function get(key: string) {
+//     const db = await getDB();
+//     const tx = db.transaction('kv', 'readonly');
 
-    return new Promise<IDBValidKey[]>((resolve, reject) => {
-        const req = store.getAllKeys();
-        req.onsuccess = () => resolve(req.result);
-        req.onerror = () => reject(req.error);
-    });
-}
+//     return new Promise<Blob>((resolve) => {
+//         const req = tx.objectStore('kv').get(key);
+//         req.onsuccess = () => resolve(req.result);
+//     });
+// }
+
+// export async function del(key: string) {
+//     const db = await getDB();
+//     const tx = db.transaction('kv', 'readwrite');
+
+//     return new Promise((resolve, reject) => {
+//         tx.objectStore('kv').delete(key);
+//         tx.oncomplete = () => resolve(null);
+//         tx.onerror = () => reject(tx.error);
+//     });
+// }
+
+// export async function keys() {
+//     const db = await getDB();
+//     const tx = db.transaction('kv', 'readonly');
+//     const store = tx.objectStore('kv');
+
+//     return new Promise<IDBValidKey[]>((resolve, reject) => {
+//         const req = store.getAllKeys();
+//         req.onsuccess = () => resolve(req.result);
+//         req.onerror = () => reject(req.error);
+//     });
+// }

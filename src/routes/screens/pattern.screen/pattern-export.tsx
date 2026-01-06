@@ -1,4 +1,4 @@
-import {useCallback, useEffect, useState} from 'react';
+import {useCallback, useEffect, useMemo, useState} from 'react';
 import {useLocation} from 'react-router';
 import {blankHistory} from '../../../json-diff/history';
 import {Tiling} from '../../../types';
@@ -22,7 +22,7 @@ import {
 import {genid} from './utils/genid';
 import {makeForPattern} from './utils/makeForPattern';
 import {ListExports} from './ListExports';
-import {idbprefix, lsprefix} from './state-editor/saveAnnotation';
+import {idbprefix, lsprefix, SnapshotUrl} from './state-editor/saveAnnotation';
 
 const CreateAndRedirectLocalStorage = ({id}: {id: string}) => {
     const [error, setError] = useState<null | Error>(null);
@@ -130,11 +130,11 @@ const LoadPattern = ({id, state}: {id: string; state: ExportHistory}) => {
         [id],
     );
 
-    const snapshotUrl = useCallback(
-        (aid: string, ext: string) =>
-            id.startsWith(lsprefix)
-                ? idbprefix + id.slice(lsprefix.length) + `-${aid}.${ext}`
-                : `/fs/exports/${id}-${aid}.${ext}`,
+    const snapshotUrl = useMemo(
+        (): SnapshotUrl =>
+            id.startsWith(idbprefix)
+                ? {type: 'idb', id: id.slice(idbprefix.length)}
+                : {type: 'localhost', id},
         [id],
     );
 
@@ -199,7 +199,7 @@ export const PatternExport = ({
     initial: ExportHistory;
     onSave: (s: ExportHistory) => void;
     namePrefix: string;
-    snapshotUrl: (id: string, ext: string) => string;
+    snapshotUrl: SnapshotUrl;
 }) => {
     return (
         <ProvideExportState initial={initial} save={onSave}>
@@ -212,13 +212,7 @@ export const PatternExport = ({
     );
 };
 
-const Inner = ({
-    snapshotUrl,
-    namePrefix,
-}: {
-    snapshotUrl: (id: string, ext: string) => string;
-    namePrefix: string;
-}) => {
+const Inner = ({snapshotUrl, namePrefix}: {snapshotUrl: SnapshotUrl; namePrefix: string}) => {
     const sctx = useExportState();
     const state = sctx.use((v) => v);
     const pctx = usePendingState();

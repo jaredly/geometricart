@@ -3,8 +3,9 @@ import {addToMap} from '../../../addToMap';
 import {useOnOpen} from '../../../useOnOpen';
 import {useExportState, ExportHistory} from '../ExportHistory';
 import {AnnotationView, anSnapshot} from './AnnotationView';
+import {SnapshotUrl} from './saveAnnotation';
 
-export const HistoryView = ({snapshotUrl}: {snapshotUrl: (id: string, ext: string) => string}) => {
+export const HistoryView = ({snapshotUrl}: {snapshotUrl: SnapshotUrl}) => {
     const ctx = useExportState();
     const history = ctx.useHistory();
     const [showDialog, setShowDialog] = useState(false);
@@ -44,7 +45,7 @@ const HistoryViewDialog = ({
 }: {
     jump: (id: string) => void;
     history: ExportHistory;
-    snapshotUrl: (id: string, ext: string) => string;
+    snapshotUrl: SnapshotUrl;
 }) => {
     // const ref = useRef<HTMLCanvasElement>(null);
     const {byParent, sizes} = useMemo(() => {
@@ -97,7 +98,7 @@ type NCtx = {
     history: ExportHistory;
     byParent: Record<string, string[]>;
     sizes: Record<string, SizeInfo>;
-    snapshotUrl: (id: string, ext: string) => string;
+    snapshotUrl: SnapshotUrl;
     jump: (id: string) => void;
 };
 

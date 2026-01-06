@@ -1,20 +1,23 @@
 import {useState, useEffect} from 'react';
 import {SpinnerEarring} from '../../../../icons/Icon';
 import {ExportAnnotation} from '../ExportHistory';
-import {get} from './kv-idb';
-import {lsprefix, idbprefix} from './saveAnnotation';
+import db from './kv-idb';
+import {lsprefix, idbprefix, SnapshotUrl, makeSnapshotUrl} from './saveAnnotation';
 
-export const anSnapshot = (
-    an: ExportAnnotation,
-    snapshotUrl: (id: string, ext: string) => string,
-) => snapshotUrl(an.id, an.type === 'img' ? 'png' : 'mp4');
+export const anSnapshot = (an: ExportAnnotation, snapshotUrl: SnapshotUrl): AnSrc =>
+    snapshotUrl.type === 'idb'
+        ? {type: 'idb', id: snapshotUrl.id, aid: an.id}
+        : {
+              type: 'url',
+              url: makeSnapshotUrl(snapshotUrl, an.id, an.type === 'img' ? 'png' : 'mp4'),
+          };
 
 export const AnnotationView = ({
     src,
     image,
     size = 100,
 }: {
-    src: string;
+    src: AnSrc;
     image: boolean;
     size?: number;
 }) => {
@@ -34,18 +37,14 @@ export const AnnotationView = ({
     );
 };
 
-const useAnSrc = (src: string) => {
-    const [url, setUrl] = useState(
-        src.startsWith(lsprefix)
-            ? localStorage[src.slice(lsprefix.length)]
-            : src.startsWith(idbprefix)
-              ? null
-              : src,
-    );
+export type AnSrc = {type: 'idb'; id: string; aid: string} | {type: 'url'; url: string};
+
+const useAnSrc = (src: AnSrc) => {
+    const [url, setUrl] = useState(src.type === 'idb' ? null : src.url);
     useEffect(() => {
         let toRelease: null | string = null;
-        if (src.startsWith(idbprefix)) {
-            get(src.slice(idbprefix.length)).then((blob) => {
+        if (src.type === 'idb') {
+            db.get('snapshots', [src.id, src.aid]).then((blob) => {
                 if (!blob) {
                     console.log('nothing there', src);
                     return;

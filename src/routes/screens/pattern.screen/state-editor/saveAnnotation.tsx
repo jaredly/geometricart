@@ -1,7 +1,7 @@
 import {DiffBuilderA} from '../../../../json-diff/helper2';
 import {ExportAnnotation} from '../ExportHistory';
 import {genid} from '../utils/genid';
-import {del, set} from './kv-idb';
+import db from './kv-idb';
 
 export const lsprefix = 'localstorage:';
 export const idbprefix = 'idb:';
@@ -19,21 +19,32 @@ const blobToDataUrl = (blob: Blob) => {
     });
 };
 
+type FetchUrls = {type: 'remote-src'; src: string} | {type: 'localhost'; id: string};
+
+export type SnapshotUrl = FetchUrls | {type: 'idb'; id: string};
+// (id: string, ext: string) => string;
+
+export const makeSnapshotUrl = (config: FetchUrls, aid: string, ext: string) =>
+    config.type === 'remote-src'
+        ? config.src.replace('.json', `-${aid}.${ext}`)
+        : `/fs/exports/${config.id}-${aid}.${ext}`;
+
 export async function saveAnnotation(
-    snapshotUrl: (id: string, ext: string) => string,
+    snapshotUrl: SnapshotUrl,
     blob: Blob,
     tip: string,
     updateAnnotations: DiffBuilderA<Record<string, ExportAnnotation[]>, 'type', void, null>,
 ) {
     const aid = genid();
-    const url = snapshotUrl(aid, 'png');
-    if (url.startsWith(lsprefix)) {
-        localStorage[url.slice(lsprefix.length)] = await blobToDataUrl(blob);
-    } else if (url.startsWith(idbprefix)) {
-        console.log('saving now', url, blob);
-        await set(url.slice(idbprefix.length), blob);
+    if (snapshotUrl.type === 'idb') {
+        await db.set('snapshots', [snapshotUrl.id, aid], blob);
+        await db.set('snapshotMeta', [snapshotUrl.id, aid], {
+            created: Date.now(),
+            updated: Date.now(),
+            size: blob.size,
+        });
     } else {
-        await fetch(url, {
+        await fetch(makeSnapshotUrl(snapshotUrl, aid, 'png'), {
             method: 'POST',
             body: blob,
             headers: {'Content-type': 'application/binary'},
@@ -45,18 +56,16 @@ export async function saveAnnotation(
 }
 
 export async function deleteAnnotation(
-    snapshotUrl: (id: string, ext: string) => string,
+    snapshotUrl: SnapshotUrl,
     tip: string,
     aid: string,
     updateAnnotations: DiffBuilderA<Record<string, ExportAnnotation[]>, 'type', void, null>,
 ) {
-    const url = snapshotUrl(aid, 'png');
-    if (url.startsWith(lsprefix)) {
-        localStorage.removeItem(url.slice(lsprefix.length));
-    } else if (url.startsWith(idbprefix)) {
-        await del(url.slice(idbprefix.length));
+    if (snapshotUrl.type === 'idb') {
+        await db.del('snapshots', [snapshotUrl.id, aid]);
+        await db.del('snapshotMeta', [snapshotUrl.id, aid]);
     } else {
-        await fetch(url, {method: 'DELETE'});
+        await fetch(makeSnapshotUrl(snapshotUrl, aid, 'png'), {method: 'DELETE'});
     }
     updateAnnotations[tip]((v, up) => {
         const at = v.findIndex((n) => n.id === aid);

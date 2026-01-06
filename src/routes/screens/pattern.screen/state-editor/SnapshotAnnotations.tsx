@@ -2,7 +2,7 @@ import {useState} from 'react';
 import {useExportState} from '../ExportHistory';
 import {WorkerSend} from '../render/render-client';
 import {runPNGExport} from '../render/runPNGExport';
-import {saveAnnotation, deleteAnnotation, lsprefix} from './saveAnnotation';
+import {saveAnnotation, deleteAnnotation, lsprefix, SnapshotUrl} from './saveAnnotation';
 import {AnnotationView, anSnapshot} from './AnnotationView';
 
 export const SnapshotAnnotations = ({
@@ -10,7 +10,7 @@ export const SnapshotAnnotations = ({
     snapshotUrl,
 }: {
     worker: WorkerSend;
-    snapshotUrl: (id: string, ext: string) => string;
+    snapshotUrl: SnapshotUrl;
 }) => {
     const ctx = useExportState();
     const history = ctx.useHistory();

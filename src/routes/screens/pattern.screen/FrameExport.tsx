@@ -7,7 +7,7 @@ import {Box} from './export-types';
 import {useExportState} from './ExportHistory';
 import {WorkerSend} from './render/render-client';
 import {runPNGExport, runSVGExport} from './render/runPNGExport';
-import {saveAnnotation} from './state-editor/saveAnnotation';
+import {saveAnnotation, SnapshotUrl} from './state-editor/saveAnnotation';
 import {State} from './types/state-type';
 
 /*
@@ -81,7 +81,7 @@ const ExportSettingsForm = ({
     t,
     snapshotUrl,
 }: {
-    snapshotUrl: (id: string, ext: string) => string;
+    snapshotUrl: SnapshotUrl;
     namePrefix: string;
     worker: WorkerSend;
     cropCache: Ctx['cropCache'];
@@ -206,7 +206,7 @@ export function FrameExport({
     namePrefix,
     snapshotUrl,
 }: {
-    snapshotUrl: (id: string, ext: string) => string;
+    snapshotUrl: SnapshotUrl;
     box: Box;
     t: number;
     namePrefix: string;
