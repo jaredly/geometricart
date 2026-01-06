@@ -14,6 +14,7 @@ import {useOnOpen} from '../../useOnOpen';
 import {CanvasPattern} from './CanvasPattern';
 import {useElementZoom} from './hooks/useSVGZoom';
 import {thinTiling} from './render/renderPattern';
+import {Box} from './export-types';
 
 type Display = {
     bounds: boolean;
@@ -29,6 +30,8 @@ const useIsLocal = () => {
     }, []);
     return isLocal;
 };
+
+const defaultBox: Box = {x: -2, y: -2, width: 4, height: 4};
 
 export const PatternView = ({
     loaderData: {pattern, similar},
@@ -58,7 +61,7 @@ export const PatternView = ({
         }
     });
 
-    const {zoomProps, box, reset: resetZoom} = useElementZoom({x: -2, y: -2, width: 4, height: 4});
+    const {zoomProps, box, reset: resetZoom} = useElementZoom(defaultBox);
     const [inspect, setInspect] = useState(null as null | string);
     const [showDialog, setShowDialog] = useState(false);
     const dialogRef = useOnOpen(setShowDialog);

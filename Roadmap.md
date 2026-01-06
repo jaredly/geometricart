@@ -22,6 +22,8 @@
 
 - [ ] I reeeeeally want to be able to specify "these mods run after inner mods"
 
+- [ ] history undo/redo vertical stack view pls.
+
 So, we need to:
 - download localstorage dealios
 - switch over to idb
