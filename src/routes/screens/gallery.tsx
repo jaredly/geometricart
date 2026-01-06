@@ -9,6 +9,7 @@ import {getUniqueShapes} from '../getUniqueShapes';
 import {useSearchParams} from 'react-router';
 import {useOnOpen} from '../useOnOpen';
 import {ShowShape} from '../ShowShape';
+import {Page} from './pattern.screen/Page';
 
 export async function loader(data: Route.LoaderArgs) {
     const limit = new URL(data.request.url).searchParams.get('limit');
@@ -97,19 +98,16 @@ export const Gallery = ({loaderData}: Route.ComponentProps) => {
     );
 
     return (
-        <div className="mx-auto w-6xl p-4 pt-0 bg-base-200 shadow-base-300 shadow-md">
-            <div className="sticky top-0 py-2 mb-2 bg-base-200 shadow-md shadow-base-200 z-10">
-                <div className="breadcrumbs text-sm">
-                    <ul>
-                        <li>
-                            <a href="/">Geometric Art</a>
-                        </li>
-                        <li>Gallery ({loaderData.patterns.length} patterns)</li>
-                    </ul>
-                </div>
-                {/* <h1 className="text-4xl">Pattern View</h1> */}
-            </div>
-
+        <Page
+            breadcrumbs={[
+                {
+                    title: 'Geometric Art',
+                    href: '/',
+                    dropdown: [{title: 'Exports', href: '/export/'}],
+                },
+                {title: `Gallery (${loaderData.patterns.length} patterns)`, href: '/gallery/'},
+            ]}
+        >
             <div className="gap-4 flex items-center p-4">
                 Group
                 <button
@@ -206,7 +204,7 @@ export const Gallery = ({loaderData}: Route.ComponentProps) => {
                         </div>
                     ))}
             </div>
-        </div>
+        </Page>
     );
 };
 

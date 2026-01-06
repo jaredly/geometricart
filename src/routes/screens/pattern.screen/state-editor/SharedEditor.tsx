@@ -9,7 +9,6 @@ import {Coord} from '../../../../types';
 import {shapeD} from '../../../shapeD';
 import {AnimCtx, getScript} from '../eval/evaluate';
 import {globals} from '../eval/eval-globals';
-import {FrontSide} from 'three';
 
 export const SharedEditor = ({
     shared,

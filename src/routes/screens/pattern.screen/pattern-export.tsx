@@ -79,7 +79,7 @@ const LoadAndMigratePattern = ({id}: {id: string}) => {
     );
 
     const bcr = [
-        {title: 'Geometric Art', href: '/'},
+        {title: 'Geometric Art', href: '/', dropdown: [{title: 'Gallery', href: '/gallery/'}]},
         {title: 'Export', href: '/export/'},
         {title: id, href: '/export/' + id},
     ];
@@ -139,7 +139,7 @@ const LoadPattern = ({id, state}: {id: string; state: ExportHistory}) => {
     );
 
     const bcr = [
-        {title: 'Geometric Art', href: '/'},
+        {title: 'Geometric Art', href: '/', dropdown: [{title: 'Gallery', href: '/gallery/'}]},
         {title: 'Export', href: '/export/'},
         {title: id, href: '/export/' + id},
     ];
@@ -156,6 +156,18 @@ const LoadPattern = ({id, state}: {id: string; state: ExportHistory}) => {
     );
 };
 
+/**
+ * On localhost, we can use the `/fs/` api, but in prod we just use localStorage
+ */
+const CreateAndRedirectSwitch = ({id}: {id: string}) => {
+    const [onLocal, setOnLocal] = useState<null | boolean>(null);
+    useEffect(() => {
+        setOnLocal(window.location.hostname === 'localhost');
+    }, []);
+    if (onLocal == null) return null;
+    return onLocal ? <CreateAndRedirect id={id} /> : <CreateAndRedirectLocalStorage id={id} />;
+};
+
 export default function PatternExportScreen({params}: Route.ComponentProps) {
     const loc = useLocation();
     const sparams = new URLSearchParams(loc.search);
@@ -166,8 +178,7 @@ export default function PatternExportScreen({params}: Route.ComponentProps) {
     }
 
     if (pattern) {
-        return <CreateAndRedirectLocalStorage id={pattern} />;
-        // return <CreateAndRedirect id={pattern} />;
+        return <CreateAndRedirectSwitch id={pattern} />;
     }
 
     return <ListExports />;

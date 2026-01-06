@@ -32,26 +32,30 @@ export const ListExports = () => {
                 return Object.values(patterns).sort((a, b) => b.modified - a.modified);
             }),
     );
-    if (!all) return 'Loading...';
+    const bcr = [
+        {
+            title: 'Geometric Art',
+            href: '/',
+            dropdown: [{title: 'Gallery', href: '/gallery/'}],
+        },
+        {title: 'Exports', href: '/export/'},
+    ];
+    if (!all) {
+        return (
+            <Page breadcrumbs={bcr}>
+                <div>Loading...</div>
+            </Page>
+        );
+    }
     if (all.type === 'err') {
         return (
-            <Page
-                breadcrumbs={[
-                    {title: 'Geometric Art', href: '/'},
-                    {title: 'Exports', href: '/export/'},
-                ]}
-            >
+            <Page breadcrumbs={bcr}>
                 <div>Failed to load exports</div>
             </Page>
         );
     }
     return (
-        <Page
-            breadcrumbs={[
-                {title: 'Geometric Art', href: '/'},
-                {title: 'Exports', href: '/export/'},
-            ]}
-        >
+        <Page breadcrumbs={bcr}>
             <div className="flex flex-row flex-wrap gap-4 p-4">
                 {all.value.map(({id, icon}) => (
                     <div>

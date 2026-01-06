@@ -5,9 +5,6 @@ import {runPNGExport} from '../render/runPNGExport';
 import {saveAnnotation, deleteAnnotation, lsprefix} from './saveAnnotation';
 import {AnnotationView} from './AnnotationView';
 
-const maybeLocalStorage = (url: string) =>
-    url.startsWith(lsprefix) ? localStorage[url.slice(lsprefix.length)] : url;
-
 export const SnapshotAnnotations = ({
     worker,
     snapshotUrl,
@@ -48,31 +45,6 @@ export const SnapshotAnnotations = ({
                         {ans.map((an, i) => (
                             <div key={i} className="relative">
                                 <AnnotationView an={an} snapshotUrl={snapshotUrl} />
-                                {/*{an.type === 'img' ? (
-                                    <LoadSrc key={i} src={snapshotUrl(an.id, 'png')}>
-                                        {(url) =>
-                                            url ? (
-                                                <img
-                                                    key={i}
-                                                    style={{width: 100, height: 100}}
-                                                    src={url}
-                                                />
-                                            ) : (
-                                                <div
-                                                    style={{width: 100, height: 100}}
-                                                    className="flex items-center justify-center"
-                                                >
-                                                    <SpinnerEarring className="animate-spin" />
-                                                </div>
-                                            )
-                                        }
-                                    </LoadSrc>
-                                ) : (
-                                    <video
-                                        key={i}
-                                        src={maybeLocalStorage(snapshotUrl(an.id, 'mp4'))}
-                                    />
-                                )}*/}
                                 <button
                                     className="btn btn-sm btn-square absolute top-0 right-0"
                                     onClick={() => {
