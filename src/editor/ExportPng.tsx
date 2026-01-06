@@ -171,7 +171,7 @@ export function renderTexture(
 export async function addMetadata(blob: Blob | null, state: State, gcode?: string) {
     const buffer = await blob!.arrayBuffer();
     const uint8Array = new Uint8Array(buffer);
-    const raw = JSON.stringify(state).replaceAll(/[^\u0000-\u007f]/g, '*');
+    const raw = JSON.stringify(state).replaceAll(/[^\x00-\x7f]/g, '*');
     const meta: any = {
         tEXt: {
             Source: 'Geometric Art',

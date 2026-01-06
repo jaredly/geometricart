@@ -10,7 +10,7 @@
 - [x] can we make localstorage work
   - [x] save and load normal thing here we are
   - [x] list exports that are in localstorage
-  - [ ] want a button to like move a thing into localstorage? and back? idk. maybe like download it from localstorage
+  - [x] download it from localstorage
 - [ ] do the build, and like commit it probably
 - [ ] make an 'archive' button for exports to move to a different directory
 - [ ] ugh I probably want to store like a 'meta' file or whatever for each snapshot image

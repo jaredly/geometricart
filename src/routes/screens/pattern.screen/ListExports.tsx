@@ -7,6 +7,7 @@ import {notNull} from './utils/notNull';
 import {isValidHistory} from './types/load-state';
 import {BaselineDownload} from '../../../icons/Icon';
 import {idbprefix} from './state-editor/saveAnnotation';
+import {addMetadata} from './addPngMetadata';
 
 type Listing = {id: string; icon?: {id: string; created: number}; modified: number};
 
@@ -133,20 +134,47 @@ export const ListExports = () => {
                                 id
                             )}
                         </a>
-                        {/*<button
-                            className="btn btn-square mr-4 absolute top-2 right-2"
+                        <button
+                            className="btn btn-square absolute top-2 right-2"
                             onClick={() => {
-                                // const v = localStorage[id];
-                                // const blob = new Blob([v], {type: 'application/json'});
-                                // const url = URL.createObjectURL(blob);
-                                // const link = document.createElement('a');
-                                // link.download = `${id}.json`;
-                                // link.href = url;
-                                // link.click();
+                                Promise.all([
+                                    db.get('exports', id),
+                                    icon
+                                        ? db.get('snapshots', [id, icon.id])
+                                        : Promise.resolve(null),
+                                ]).then(async ([state, icon]) => {
+                                    let blob: Blob | undefined;
+                                    let fname: string;
+                                    if (icon) {
+                                        try {
+                                            blob = await addMetadata(icon, {
+                                                Source: 'Geometric Art:Export',
+                                                ExportState: JSON.stringify(state).replaceAll(
+                                                    /[^\x00-\x7f]/g,
+                                                    '*',
+                                                ),
+                                            });
+                                            fname = `${id}.${icon.type === 'image/png' ? 'png' : 'mp4'}`;
+                                        } catch (err) {
+                                            // idk didnt work
+                                        }
+                                    }
+                                    if (!blob) {
+                                        blob = new Blob([JSON.stringify(state)], {
+                                            type: 'application/json',
+                                        });
+                                        fname = `${id}.json`;
+                                    }
+                                    const url = URL.createObjectURL(blob);
+                                    const link = document.createElement('a');
+                                    link.download = fname!;
+                                    link.href = url;
+                                    link.click();
+                                });
                             }}
                         >
                             <BaselineDownload />
-                        </button>*/}
+                        </button>
                     </div>
                 ))}
             </div>
