@@ -23,6 +23,34 @@ export function SpinnerEarring(props: SVGProps<SVGSVGElement>) {
     );
 }
 
+export function OutlinePlayArrow(props: SVGProps<SVGSVGElement>) {
+    return (
+        <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            width="1em"
+            height="1em"
+            {...props}
+        >
+            <path fill="currentColor" d="M10 8.64L15.27 12L10 15.36zM8 5v14l11-7z"></path>
+        </svg>
+    );
+}
+
+export function BaselinePlayArrow(props: SVGProps<SVGSVGElement>) {
+    return (
+        <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            width="1em"
+            height="1em"
+            {...props}
+        >
+            <path fill="currentColor" d="M8 5v14l11-7z"></path>
+        </svg>
+    );
+}
+
 export function GraphUp(props: SVGProps<SVGSVGElement>) {
     return (
         <svg

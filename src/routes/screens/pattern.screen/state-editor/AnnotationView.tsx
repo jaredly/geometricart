@@ -1,5 +1,5 @@
-import {useEffect, useState} from 'react';
-import {SpinnerEarring} from '../../../../icons/Icon';
+import {useEffect, useRef, useState} from 'react';
+import {BaselinePlayArrow, OutlinePlayArrow, SpinnerEarring} from '../../../../icons/Icon';
 import {ExportAnnotation} from '../ExportHistory';
 import db from './kv-idb';
 import {makeSnapshotUrl, SnapshotUrl} from './saveAnnotation';
@@ -33,7 +33,43 @@ export const AnnotationView = ({
     return image ? (
         <img style={{width: size, height: size}} src={url} />
     ) : (
-        <video src={url} style={{width: size, height: size}} controls loop />
+        <AutoplayVideo src={url} style={{width: size, height: size}} loop />
+    );
+};
+
+const AutoplayVideo = (props: React.ComponentProps<'video'>) => {
+    const ref = useRef<HTMLVideoElement>(null);
+
+    return (
+        <div
+            style={{position: 'relative'}}
+            onMouseOverCapture={(evt) => {
+                evt.preventDefault();
+                evt.stopPropagation();
+                ref.current?.play();
+            }}
+            onMouseLeave={(evt) => {
+                evt.preventDefault();
+                evt.stopPropagation();
+                ref.current?.pause();
+            }}
+        >
+            <video {...props} ref={ref} />
+            <div
+                style={{
+                    position: 'absolute',
+                    inset: 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: 50,
+                    color: 'white',
+                }}
+                className="group hover:hidden"
+            >
+                <OutlinePlayArrow className="group-hover:hidden" />
+            </div>
+        </div>
     );
 };
 
