@@ -15,6 +15,7 @@ export function cacheCrops(
     t: number,
     animCache: Map<string, {fn: (ctx: AnimCtx['values']) => any; needs: string[]}>,
 ) {
+    const allAccessed = new Set<string>();
     for (let crop of Object.values(crops)) {
         const current = cropCache.get(crop.id);
         if (current?.crop === crop && (current.t == null || current.t === t)) continue;
@@ -42,8 +43,9 @@ export function cacheCrops(
                 remove = remove || pathMod(cropCache, mod, path);
             });
 
-            cropCache.set(crop.id, {path, crop, t: actx.accessedValues?.size ? t : undefined});
+            cropCache.set(crop.id, {path, crop, t: actx.accessedValues?.has('t') ? t : undefined});
+            actx.accessedValues?.forEach((key) => allAccessed.add(key));
         }
     }
-    // console.log('cached crops', cropCache);
+    return allAccessed;
 }

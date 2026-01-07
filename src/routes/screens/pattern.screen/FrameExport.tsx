@@ -129,7 +129,13 @@ const ExportSettingsForm = ({
                         if (settings.kind === 'png' || settings.kind === 'svg') {
                             // make a small one
                             const small = runPNGExport(200, box, items, bg);
-                            saveAnnotation(snapshotUrl, small, ctx.tip(), ctx.updateAnnotations);
+                            saveAnnotation(
+                                snapshotUrl,
+                                small,
+                                ctx.tip(),
+                                ctx.updateAnnotations,
+                                true,
+                            );
                         }
 
                         if (blob) {

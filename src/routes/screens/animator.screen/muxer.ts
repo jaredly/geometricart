@@ -146,12 +146,6 @@ export const generateVideo = async (
 
         await output?.cancel();
 
-        // clearInterval(progressInterval);
-        // errorElement.textContent = String(error);
-        // progressBarContainer.style.display = 'none';
-        // progressText.style.display = 'none';
-    } finally {
-        // renderButton.disabled = false;
-        // renderButton.textContent = 'Generate video';
+        throw error;
     }
 };

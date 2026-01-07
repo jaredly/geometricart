@@ -33,7 +33,7 @@ export const AnnotationView = ({
     return image ? (
         <img style={{width: size, height: size}} src={url} />
     ) : (
-        <video src={url} style={{width: size, height: size}} />
+        <video src={url} style={{width: size, height: size}} controls loop />
     );
 };
 

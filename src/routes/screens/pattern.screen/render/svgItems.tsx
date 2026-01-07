@@ -12,6 +12,7 @@ export const svgItems = (
     cropCache: Ctx['cropCache'],
     t: number,
     debug = false,
+    trackValues?: Set<string>,
 ) => {
     const warnings: string[] = [];
     const warn = (v: string) => warnings.push(v);
@@ -22,7 +23,13 @@ export const svgItems = (
     // biome-ignore lint: this one is fine
     const values: Record<string, any> = {...globals, t, ...fromtl};
     const seed = a.number(
-        {cache: animCache, values, palette: state.styleConfig.palette, warn},
+        {
+            cache: animCache,
+            values,
+            palette: state.styleConfig.palette,
+            warn,
+            accessedValues: trackValues,
+        },
         state.styleConfig.seed,
     );
     values.rand = mulberry32(seed);
@@ -33,7 +40,8 @@ export const svgItems = (
         if (group.type !== 'Group') {
             throw new Error(`root not a group`);
         }
-        const anim = {
+        const anim: AnimCtx = {
+            accessedValues: trackValues,
             cache: animCache,
             values,
             palette: state.styleConfig.palette,
@@ -63,7 +71,13 @@ export const svgItems = (
     handleShadowAndZSorting(items);
 
     const bg = a.color(
-        {cache: animCache, values, palette: state.styleConfig.palette, warn() {}},
+        {
+            cache: animCache,
+            values,
+            palette: state.styleConfig.palette,
+            warn() {},
+            accessedValues: trackValues,
+        },
         state.view.background ?? '#000',
     );
 

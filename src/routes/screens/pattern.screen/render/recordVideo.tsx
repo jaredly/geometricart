@@ -15,10 +15,9 @@ export const recordVideo = async (
     duration: number,
     onStatus: (progress: number) => void,
     cropCache: Ctx['cropCache'],
+    frameRate = 24,
 ) => {
     const canvas = new OffscreenCanvas(size * 2, size * 2);
-    const frameRate = 24;
-    // const step = 0.01;
     const totalFrames = frameRate * duration;
 
     const animCache = new Map();
@@ -42,14 +41,6 @@ export const recordVideo = async (
         } else {
             renderItems(surface, box, items, bg);
         }
-        // const ctx = surface.getCanvas();
-        // const paint = new pk.Paint();
-        // paint.setColor(pk.RED);
-        // paint.setStyle(pk.PaintStyle.Fill);
-        // const font = new pk.Font();
-        // // font.setSize()
-        // ctx.drawText(currentFrame / totalFrames + '', size / 2, size / 2, paint, font);
-        // surface.flush();
     });
-    return blob ? URL.createObjectURL(blob) : null;
+    return blob;
 };

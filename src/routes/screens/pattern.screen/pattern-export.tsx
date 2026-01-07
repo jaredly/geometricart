@@ -78,7 +78,7 @@ const LoadAndMigratePattern = ({id}: {id: string}) => {
         id.startsWith(idbprefix)
             ? db.get('exports', id.slice(idbprefix.length)).then(loadState)
             : fetch(`/fs/exports/${id}.json`, {signal})
-                  .then((r) => r.json())
+                  .then((r) => (r.status === 200 ? r.json() : null))
                   .then(loadState),
     );
 

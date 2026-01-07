@@ -22,10 +22,16 @@ export const SnapshotAnnotations = ({
                 className="btn"
                 onClick={() => {
                     setLoading(true);
-                    worker({type: 'frame', state: ctx.latest(), t: 0}, (res) => {
-                        if (res.type !== 'frame') return setLoading(false);
-                        const blob = runPNGExport(100, ctx.latest().view.box, res.items, res.bg);
-                        saveAnnotation(snapshotUrl, blob, history.tip, ctx.updateAnnotations).then(
+                    // umm is it a videoable thing/
+                    worker({type: 'snapshot', state: ctx.latest()}, (res) => {
+                        if (res.type !== 'snapshot') return setLoading(false);
+                        saveAnnotation(
+                            snapshotUrl,
+                            res.blob,
+                            history.tip,
+                            ctx.updateAnnotations,
+                            res.ext === 'png',
+                        ).then(
                             () => {
                                 setLoading(false);
                             },
@@ -35,6 +41,20 @@ export const SnapshotAnnotations = ({
                             },
                         );
                     });
+
+                    // worker({type: 'frame', state: ctx.latest(), t: 0}, (res) => {
+                    //     if (res.type !== 'frame') return setLoading(false);
+                    //     const blob = runPNGExport(100, ctx.latest().view.box, res.items, res.bg);
+                    //     saveAnnotation(snapshotUrl, blob, history.tip, ctx.updateAnnotations).then(
+                    //         () => {
+                    //             setLoading(false);
+                    //         },
+                    //         (err) => {
+                    //             console.error('Failed to save');
+                    //             console.error(err);
+                    //         },
+                    //     );
+                    // });
                 }}
             >
                 {loading ? 'Loading...' : 'Take Snapshot'}
@@ -47,6 +67,7 @@ export const SnapshotAnnotations = ({
                                 <AnnotationView
                                     src={anSnapshot(an, snapshotUrl)}
                                     image={an.type === 'img'}
+                                    size={200}
                                 />
                                 <button
                                     className="btn btn-sm btn-square absolute top-0 right-0"

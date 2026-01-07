@@ -11,6 +11,9 @@ export const validateHistory = typia.createValidate<ExportHistory>();
 type OldVersions = never;
 
 export const loadState = (value: unknown): {version: null; value: ExportHistory} | OldVersions => {
+    if (!value) {
+        throw new Error(`Document doesn't exist.`);
+    }
     if (isValidHistory(value)) {
         return {version: null, value};
     }

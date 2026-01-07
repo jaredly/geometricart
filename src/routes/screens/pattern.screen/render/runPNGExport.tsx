@@ -5,7 +5,7 @@ import {RenderItem} from '../eval/evaluate';
 import {Box, Color} from '../export-types';
 import {ExportSettings} from '../FrameExport';
 import {renderItems} from './renderItems';
-import {generateSvgItems} from '../SVGCanvas';
+import {generateSvgItems} from '../generateSvgItems';
 
 export const runSVGExport = (ex: ExportSettings, box: Box, items: RenderItem[], bg: Color) => {
     const lw = box.width / 10;
