@@ -97,8 +97,6 @@ const ObjectEditor = ({
     update: Updater<EObject>;
     expandedShapes: string[];
 }) => {
-    const st = useExportState();
-
     return (
         <div className="space-y-2">
             <div className="form-control">
@@ -117,7 +115,7 @@ const ObjectEditor = ({
                         value={value.shape ?? ''}
                     >
                         <option value="">Select a shape id</option>
-                        {Object.keys(expandedShapes).map((id) => (
+                        {expandedShapes.map((id) => (
                             <option value={id} key={id}>
                                 {id}
                             </option>
