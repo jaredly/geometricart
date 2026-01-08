@@ -6,7 +6,7 @@ export function _get(base: any, at: PathSegment[]) {
     for (let i = 0; i < at.length; i++) {
         const key = at[i];
         if (!base) {
-            throw new Error(`missing base ${at.join(',')}`);
+            throw new Error(`missing base ${JSON.stringify(at)}`);
         }
         if (key.type === 'tag') {
             if (!(key.key in base)) {

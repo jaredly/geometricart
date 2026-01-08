@@ -73,9 +73,15 @@ export function resolveAndApply<T, Extra, Tag extends string = 'type'>(
             current = next.current;
             return next.changes;
         }
-        const ready = fromPending(current, op);
-        current = ops.apply(current, ready);
-        return ready;
+        try {
+            const ready = fromPending(current, op);
+            current = ops.apply(current, ready);
+            return ready;
+        } catch (err) {
+            console.log('Tried to fromPending, but failed');
+            console.log(current, op);
+            throw err;
+        }
     });
     return {current, changes};
 }

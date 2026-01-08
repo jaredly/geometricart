@@ -179,6 +179,11 @@ export function diffBuilderApply<T, Extra, Tag extends string = 'type', R = void
                     };
                 }
 
+                if (prop === 'valueOf') {
+                    // weird react thing
+                    return null;
+                }
+
                 // 🔹 operations
                 if (prop === 'replace') {
                     const k = pathString + '/replace';

@@ -18,7 +18,8 @@ export const pathsFromSegments = (
     segs.forEach((seg) => seg.sort((a, b) => (closeEnough(a.x, b.x) ? a.y - b.y : a.x - b.x)));
     const outerKeys = outer?.map((x) => coordKey(x)) ?? [];
 
-    if (segs.length > 20000) {
+    if (segs.length > 100000) {
+        console.log('Too many segments, sorry');
         return [];
     }
 

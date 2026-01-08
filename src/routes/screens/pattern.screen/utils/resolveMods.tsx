@@ -34,7 +34,7 @@ import {
 
 type CCrop = {type: 'crop'; id: string; mode?: CropMode; hole?: boolean};
 type CInset = {type: 'inset'; v: number};
-export type CropsAndMatrices = (CCrop | Matrix[] | CInset)[];
+export type CropsAndMatrices = (CCrop | Matrix[] | CInset | {type: 'inner'})[];
 
 const enabledMods = (mods: PMods[]) => mods.filter((mod) => !mod.disabled);
 
@@ -44,6 +44,8 @@ export const resolveEnabledPMods = (ctx: AnimCtx, mods: PMods[] = []): CropsAndM
 export const resolvePMod = (ctx: AnimCtx, mod: PMods): CropsAndMatrices[0] => {
     if (mod.disabled) return [];
     switch (mod.type) {
+        case 'inner':
+            return mod;
         case 'inset':
             return {...mod, v: a.number(ctx, mod.v)};
         case 'crop':
@@ -222,6 +224,9 @@ export const modsToShapes2 = (
                     return shape;
                 });
             }
+            if (mod.type === 'inner') {
+                return shapes; // shouldn't have gotten this far?
+            }
 
             const crop = cropCache.get(mod.id)!;
             if (!crop) {
@@ -258,6 +263,9 @@ export const modsToShapes = (
                     i: shape.i,
                 }));
             });
+        }
+        if (mod.type === 'inner') {
+            return shapes; // shouldn't have gotten this far?
         }
 
         const crop = cropCache.get(mod.id)!;
@@ -320,7 +328,7 @@ const renderObject = (ctx: Ctx, crops: CropsAndMatrices, object: EObject) => {
         },
     };
 
-    const shape = ctx.state.shapes[object.shape];
+    const shape = ctx.shapes[object.shape];
     if (!shape) return;
     const path = pk.Path.MakeFromCmds(segmentsCmds(shape.origin, shape.segments, shape.open))!;
     let remove = false;
@@ -427,6 +435,8 @@ export const pathMod = (cropCache: Ctx['cropCache'], mod: CropsAndMatrices[0], p
             path.op(crop, mod.hole ? pk.PathOp.Difference : pk.PathOp.Intersect);
             path.simplify();
         }
+    } else if (mod.type === 'inner') {
+        return false;
     } else {
         insetPkPath(path, mod.v / 100);
     }

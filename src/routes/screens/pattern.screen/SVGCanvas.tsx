@@ -159,12 +159,13 @@ export const SVGCanvas = ({
             ))}
             {pending &&
                 pending.type !== 'select-shapes' &&
+                pending.type !== 'select-shape' &&
                 points.map((pt, i) => (
                     <circle
                         key={i}
                         cx={pt.x}
                         cy={pt.y}
-                        r={0.03}
+                        r={lw / 20}
                         fill="white"
                         onClick={() => {
                             const pending = editContext.latest().pending;
@@ -186,7 +187,7 @@ export const SVGCanvas = ({
                                     const paths = pathsFromSegments(segs, byEndPoint, outer);
                                     const shape = followPath(paths, segs, pt);
                                     if (shape) {
-                                        pending.onDone(shape, false);
+                                        pending.onDone(shape.points, !!shape.open);
                                     } else {
                                         console.log('failed to find a shape sry');
                                     }

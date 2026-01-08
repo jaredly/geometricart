@@ -14,15 +14,24 @@
 - [ ] do the build, and like commit it probably
 - [ ] make an 'archive' button for exports to move to a different directory
 - [ ] ugh I probably want to store like a 'meta' file or whatever for each snapshot image
-- [ ] ok but btw I've done this thing where there are a ton of things in localstorage.
+- [x] ok but btw I've done this thing where there are a ton of things in localstorage.
   -> and not all of them are in good shape y'all.
   -> so do I need to make an indexeddb? And just store the stuff in there? probably folks.
   -> yeahhhh ok so: we do a /prefix/ and
   -> oh nice, compound keys.
 
 - [ ] I reeeeeally want to be able to specify "these mods run after inner mods"
+  - yeah so a mods list should have like a single entry for "inner mods"
+  - {type: 'inner'}
 
 - [ ] history undo/redo vertical stack view pls.
+
+- [ ] click-for-object if it doesn't close should just go for it.
+
+- [ ] I kinda want an object to be able to be dup'd along a pattern's eigenshape. Does that make sense?
+- [ ] also, groups should have mods
+- [ ] opacity should be a mod probably
+- [ ] oh wait, selecting a mul-shape as an object's shape isn't quite working
 
 So, we need to:
 - download localstorage dealios

@@ -16,6 +16,7 @@ export const renderItems = (
     const bgc = colorToRgb(bg);
     ctx.clear(pk.Color(bgc.r, bgc.g, bgc.b));
 
+    const lw = box.width / 10;
     ctx.save();
     ctx.scale(surface.width() / box.width, surface.height() / box.height);
     ctx.translate(-box.x, -box.y);
@@ -45,7 +46,7 @@ export const renderItems = (
             paint.setColor([item.color.r / 255, item.color.g / 255, item.color.b / 255]);
         } else if (item.strokeWidth) {
             paint.setStyle(pk.PaintStyle.Stroke);
-            paint.setStrokeWidth(item.strokeWidth!);
+            paint.setStrokeWidth(item.strokeWidth! * (item.adjustForZoom ? lw : 1));
             paint.setColor([item.color.r / 255, item.color.g / 255, item.color.b / 255]);
         } else {
             return;

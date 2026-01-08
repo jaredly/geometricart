@@ -17,6 +17,7 @@ export function renderShape(
     const isHovered =
         (hover?.type === 'shape' && hover.id === key) ||
         (hover?.type === 'shapes' && hover.ids.includes(key));
+    const lineWidth = 0.1;
     return [
         {
             type: 'path',
@@ -26,8 +27,9 @@ export function renderShape(
                 color: {r: 0, g: 0, b: 0},
             },
             shapes: [shape],
-            strokeWidth: isSelected ? 0.06 : 0.03,
+            strokeWidth: lineWidth * (isSelected ? 2 : 1),
             zIndex: isHovered || isSelected ? 150 : 100,
+            adjustForZoom: true,
             color: {r: 0, g: 0, b: 0},
             key: key + '-shadow',
         },
@@ -55,7 +57,8 @@ export function renderShape(
                 }
             },
             shapes: [shape],
-            strokeWidth: isSelected ? 0.06 : 0.03,
+            adjustForZoom: true,
+            strokeWidth: lineWidth * (isSelected ? 2 : 1),
             zIndex: isHovered || isSelected ? 150 : 100,
         },
     ];
