@@ -500,10 +500,17 @@ export type RenderLog =
 
 export type Hover = {type: 'shape'; id: string} | {type: 'shapes'; ids: string[]};
 
-export const barePathFromCoords = (coords: Coord[]): BarePath => ({
-    segments: coords.map((c) => ({type: 'Line', to: c})),
-    origin: coords[coords.length - 1],
-});
+export const barePathFromCoords = (coords: Coord[], open = false): BarePath =>
+    open
+        ? {
+              segments: coords.slice(1).map((c) => ({type: 'Line', to: c})),
+              origin: coords[0],
+              open: true,
+          }
+        : {
+              segments: coords.map((c) => ({type: 'Line', to: c})),
+              origin: coords[coords.length - 1],
+          };
 
 export function handleShadowAndZSorting(items: RenderItem[]) {
     const len = items.length;

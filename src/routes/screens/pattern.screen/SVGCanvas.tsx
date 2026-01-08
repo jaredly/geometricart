@@ -18,7 +18,7 @@ import {edgesByEndpoint, unique} from '../../shapesFromSegments';
 import {coordPairKey, sortCoordPair} from './utils/adjustShapes';
 import {pathsFromSegments} from '../../pathsFromSegments';
 import {outerBoundary} from '../../outerBoundary';
-import {followPath} from '../../weaveIntersections';
+import {followPath} from '../../followPath';
 import {barePathFromCoords} from './utils/resolveMods';
 import {generateSvgItems} from './generateSvgItems';
 

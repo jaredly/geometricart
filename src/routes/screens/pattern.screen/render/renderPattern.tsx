@@ -2,8 +2,14 @@ import {scalePos} from '../../../../editor/scalePos';
 import {dist} from '../../../../rendering/getMirrorTransforms';
 import {Coord, ThinTiling, Tiling} from '../../../../types';
 import {centroid} from '../../../findReflectionAxes';
-import {getSimplePatternData, getShapeColors} from '../../../getPatternData';
-import {EndPointMap} from '../../../shapesFromSegments';
+import {getSimplePatternData, getShapeColors, shapeSegments} from '../../../getPatternData';
+import {
+    cmpCoords,
+    edgesByEndpoint,
+    EndPointMap,
+    joinAdjacentShapeSegments,
+    unique,
+} from '../../../shapesFromSegments';
 import {adjustShapes, adjustShapes2, coordPairs} from '../utils/adjustShapes';
 import {parseColor} from '../utils/colors';
 import {AnimCtx, Ctx, RenderItem, RenderShadow, a, isColor, isCoord} from '../eval/evaluate';
@@ -16,6 +22,7 @@ import {
     Line,
     Shadow,
     ShapeKind,
+    PatternContents,
 } from '../export-types';
 import {
     CropsAndMatrices,
@@ -27,13 +34,16 @@ import {
     numToCoord,
 } from '../utils/resolveMods';
 import {notNull} from '../utils/notNull';
+import {closeEnough} from '../../../../rendering/epsilonToZero';
+import {coordKey} from '../../../../rendering/coordKey';
+import {outerBoundary} from '../../../outerBoundary';
+import {pathsFromSegments} from '../../../pathsFromSegments';
+import {collectAllPaths} from '../../../followPath';
 
 export const thinTiling = (t: Tiling): ThinTiling => ({segments: t.cache.segments, shape: t.shape});
 
 export const renderPattern = (ctx: Ctx, _outer: CropsAndMatrices, pattern: Pattern) => {
     if (pattern.disabled) return;
-    // not doing yet
-    if (pattern.contents.type !== 'shapes') return;
     const tiling = pattern.tiling.tiling;
     if (!tiling) {
         throw new Error(`Pattern not found ${pattern.tiling}`);
@@ -75,6 +85,57 @@ export const renderPattern = (ctx: Ctx, _outer: CropsAndMatrices, pattern: Patte
         ctx.log?.push({type: 'group', title: 'Adjust Shapes', children: adjusted.debug});
         // renderDebug(adjusted, ctx);
     }
+
+    if (pattern.contents.type === 'lines') {
+        const allSegments = unique(
+            baseShapes
+                .map(joinAdjacentShapeSegments)
+                .flatMap(shapeSegments)
+                .map(([a, b]): [Coord, Coord] =>
+                    (closeEnough(a.x, b.x) ? a.y > b.y : a.x > b.x) ? [b, a] : [a, b],
+                ),
+            ([a, b]) => `${coordKey(a)}:${coordKey(b)}`,
+        );
+
+        const byEndPoint = edgesByEndpoint(allSegments);
+
+        const uniquePoints = unique(allSegments.flat(), coordKey);
+        const pointNames = Object.fromEntries(uniquePoints.map((p, i) => [coordKey(p), i]));
+
+        const outer = outerBoundary(allSegments, byEndPoint, pointNames);
+        const links = pathsFromSegments(allSegments, byEndPoint, outer);
+        const allPaths = collectAllPaths(links, allSegments);
+
+        const maxPathId = allPaths.reduce((a, b) => Math.max(a, b.pathId ?? 0), 0);
+        // ok so for each line, we need to maybe evaluate the style dealio?
+        const locals = {
+            maxPathId,
+            pathId: allPaths[0].pathId,
+            center: centroid(allPaths[0].points),
+            i: 0,
+            groupId: 0, // grouping paths by eigenshape-expansion
+        };
+
+        ctx.items.push(
+            ...allPaths
+                .sort((a, b) => (a.pathId ?? 0) - (b.pathId ?? 0))
+                // .sort((a, b) => (((a.pathId ?? 0) * 10) % 360) - (((b.pathId ?? 0) * 10) % 360))
+                .map(
+                    ({points, open, pathId}, i): RenderItem => ({
+                        type: 'path',
+                        color: {r: ((pathId ?? 0) / maxPathId) * 360, g: 0, b: 0},
+                        // color: {r: ((pathId ?? 0) * 10) % 360, g: 0, b: 0},
+                        key: `${i}`,
+                        shapes: [barePathFromCoords(points, open)],
+                        strokeWidth: 0.01,
+                    }),
+                ),
+        );
+
+        return;
+    }
+    // not doing yet
+    if (pattern.contents.type !== 'shapes') return;
 
     const orderedStyles = Object.values(pattern.contents.styles).sort((a, b) => a.order - b.order);
 

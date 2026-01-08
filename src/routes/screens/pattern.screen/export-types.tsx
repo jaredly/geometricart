@@ -194,11 +194,11 @@ export type PatternContents =
           type: 'weave';
           flip?: number;
           orderings: Record<string, number[]>;
-          styles: Record<string, LineStyle>;
+          styles: Record<string, LineStyle<BaseKind>>;
       }
     | {
           type: 'lines';
-          styles: Record<string, LineStyle>;
+          styles: Record<string, LineStyle<BaseKind>>;
       }
     | {
           type: 'layers';
@@ -307,10 +307,10 @@ export type Line = {
     mods: PMods[];
 };
 
-export type LineStyle = {
+export type LineStyle<Kind> = {
     id: string;
     order: number;
-    kind: BaseKind;
+    kind: Kind;
     style: Line;
     mods: PMods[];
 };

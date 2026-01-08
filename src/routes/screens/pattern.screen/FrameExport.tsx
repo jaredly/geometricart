@@ -32,7 +32,7 @@ export type ExportSettings = {
 };
 
 const defaultExportSettings: ExportSettings = {
-    size: 500,
+    size: 1000,
     kind: 'png',
     svg: {
         split: null,

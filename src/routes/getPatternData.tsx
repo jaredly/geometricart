@@ -228,7 +228,7 @@ export const coordsFromBarePath = (bp: BarePath) => {
     return coords;
 };
 
-const shapeSegments = (shape: Coord[]) => {
+export const shapeSegments = (shape: Coord[]) => {
     return shape.map((c, i): [Coord, Coord] => [shape[i === 0 ? shape.length - 1 : i - 1], c]);
 };
 
