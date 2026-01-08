@@ -1,18 +1,16 @@
-import React, {useState, useEffect, useMemo} from 'react';
-import {Color, Entity, EObject} from '../export-types';
-import {PatternEditor} from './PatternEditor';
-import {GroupEditor} from './GroupEditor';
+import {useEffect, useState} from 'react';
 import {ExternalLinkIcon} from '../../../../icons/Icon';
 import {Updater} from '../../../../json-diff/Updater';
-import {SubStyleList} from './SubStyleList';
-import {FillEditor, ModsEditor} from './FillEditor';
-import {createFill, createLine} from './createLayerTemplate';
-import {LineEditor} from './LineEditor';
+import {Color, Entity, EObject} from '../export-types';
 import {useExportState} from '../ExportHistory';
-import {notNull} from '../utils/notNull';
-import {expandShapes} from '../utils/expandShapes';
 import {useEditState} from '../utils/editState';
 import {objectShapes} from '../utils/resolveMods';
+import {createFill, createLine} from './createLayerTemplate';
+import {FillEditor, ModsEditor} from './FillEditor';
+import {GroupEditor} from './GroupEditor';
+import {LineEditor} from './LineEditor';
+import {PatternEditor} from './PatternEditor';
+import {SubStyleList} from './SubStyleList';
 
 export const EntityEditor = ({
     palette,
@@ -100,18 +98,6 @@ const ObjectEditor = ({
     expandedShapes: string[];
 }) => {
     const st = useExportState();
-    const es = useEditState();
-    const tilingIds = st.use((state) => {
-        if (!state) throw new Error('cant happen');
-        const ids = Object.values(state.layers)
-            .flatMap((layer) =>
-                Object.values(layer.entities).map((entity) =>
-                    entity.type === 'Pattern' ? entity.id : null,
-                ),
-            )
-            .filter(notNull);
-        return ids;
-    }, false);
 
     return (
         <div className="space-y-2">
