@@ -28,7 +28,7 @@ export const renderItems = (
             item.pk ??
             pk.Path.MakeFromCmds(
                 item.shapes.flatMap((shape) =>
-                    segmentsCmds(shape.origin, shape.segments, shape.open),
+                    shape.origin ? segmentsCmds(shape.origin, shape.segments, shape.open) : [],
                 ),
             );
         if (!pkp) {

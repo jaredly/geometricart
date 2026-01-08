@@ -34,36 +34,56 @@ const barePathKey = (path: BarePath) => {
     keys.sort();
     return keys[0];
 };
+
+export const multiplyShape = (value: State['shapes'][''], layers: State['layers']) => {
+    if (value.multiply == null) return;
+    const pattern = findPattern(layers, value.multiply);
+    if (!pattern) return;
+
+    const shape = pattern.tiling.tiling.shape;
+    const size = pattern.psize;
+
+    const bounds = tilingPoints(shape);
+
+    const usedKeys = [coordKey(centroid(coordsFromBarePath(value)))];
+
+    const ttt = eigenShapeTransform(
+        shape,
+        bounds[2],
+        bounds,
+        typeof size === 'number' ? simpleSize(shape, size) : size,
+    );
+    const transformedShapes = applyTilingTransformsG([value], ttt, transformBarePath);
+
+    const shapes: Record<string, State['shapes']['']> = {};
+    transformedShapes.forEach((shape, i) => {
+        const k = coordKey(centroid(coordsFromBarePath(shape)));
+        if (!usedKeys.includes(k)) {
+            shapes[k] = shape;
+            usedKeys.push(k);
+        }
+    });
+
+    return shapes;
+};
+
 export const expandShapes = (shapes: State['shapes'], layers: State['layers']) => {
     let changed = false;
 
     Object.entries(shapes).forEach(([key, value]) => {
-        if (value.multiply == null) return;
-        const pattern = findPattern(layers, value.multiply);
-        if (!pattern) return;
-
-        if (!changed) shapes = {...shapes};
-        const shape = pattern.tiling.tiling.shape;
-        const size = pattern.psize;
-
-        const bounds = tilingPoints(shape);
-
-        const usedKeys = [coordKey(centroid(coordsFromBarePath(value)))];
-
-        const ttt = eigenShapeTransform(
-            shape,
-            bounds[2],
-            bounds,
-            typeof size === 'number' ? simpleSize(shape, size) : size,
-        );
-        const transformedShapes = applyTilingTransformsG([value], ttt, transformBarePath);
-        transformedShapes.forEach((shape, i) => {
-            const k = coordKey(centroid(coordsFromBarePath(shape)));
-            if (!usedKeys.includes(k)) {
-                shapes[key + `:${k}`] = shape;
-                usedKeys.push(k);
-            }
+        const expanded = multiplyShape(value, layers);
+        if (!expanded) return;
+        if (!changed) {
+            changed = true;
+            shapes = {...shapes};
+        }
+        Object.entries(expanded).forEach(([k, v]) => {
+            shapes[`${key}:${k}`] = v;
         });
+        // Object.assign(
+        //     shapes,
+        //     Object.entries(expanded).map(([k, v]) => [`${key}:${k}`, v]),
+        // );
     });
     return shapes;
 };

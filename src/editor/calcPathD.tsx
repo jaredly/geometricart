@@ -3,6 +3,7 @@ import {BarePath, Coord, Segment} from '../types';
 import {arcPath} from './RenderPendingPath';
 
 export const calcPathD = (path: BarePath, zoom: number = 1, prec?: number): string => {
+    if (!path.origin) return '';
     return calcSegmentsD(path.segments, path.origin, path.open, zoom, prec);
 };
 

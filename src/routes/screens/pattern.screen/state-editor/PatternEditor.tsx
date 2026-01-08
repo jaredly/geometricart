@@ -10,6 +10,7 @@ import {ChunkEditor} from './ChunkEditor';
 import {AnimInput} from './AnimInput';
 import {Updater} from '../../../../json-diff/Updater';
 import {SharedEditor} from './SharedEditor';
+import {EyeIcon, EyeInvisibleIcon} from '../../../../icons/Eyes';
 
 export const PatternEditor = ({
     value,
@@ -22,11 +23,22 @@ export const PatternEditor = ({
 }) => {
     return (
         <div className="space-y-3">
-            {typeof value.psize === 'number' ? (
-                <NumberField label="Size" value={value.psize} onChange={update.psize} />
-            ) : (
-                <CoordField label="Pattern size" value={value.psize} onChange={update.psize} />
-            )}
+            <div className="flex flex-row">
+                {typeof value.psize === 'number' ? (
+                    <NumberField label="Size" value={value.psize} onChange={update.psize} />
+                ) : (
+                    <CoordField label="Pattern size" value={value.psize} onChange={update.psize} />
+                )}
+                <button
+                    onClick={() =>
+                        value.disabled ? update.disabled(false) : update.disabled(true)
+                    }
+                    className="cursor-pointer p-3 text-gray-600 hover:text-gray-900"
+                    aria-label={value.disabled ? 'Enable mod' : 'Disable mod'}
+                >
+                    {value.disabled ? <EyeInvisibleIcon color="gray" /> : <EyeIcon />}
+                </button>
+            </div>
             <ModsEditor mods={value.mods} palette={palette} update={update.mods} />
             <AdjustmentsEditor
                 adjustments={value.adjustments}

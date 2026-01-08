@@ -31,6 +31,7 @@ import {
     resolveLine,
     resolveShadow,
 } from '../render/renderPattern';
+import {multiplyShape} from './expandShapes';
 
 type CCrop = {type: 'crop'; id: string; mode?: CropMode; hole?: boolean};
 type CInset = {type: 'inset'; v: number};
@@ -330,11 +331,22 @@ const renderObject = (ctx: Ctx, crops: CropsAndMatrices, object: EObject) => {
 
     const shape = ctx.shapes[object.shape];
     if (!shape) return;
-    const path = pk.Path.MakeFromCmds(segmentsCmds(shape.origin, shape.segments, shape.open))!;
+
+    const paths = [pk.Path.MakeFromCmds(segmentsCmds(shape.origin, shape.segments, shape.open))!];
     let remove = false;
+
+    if (object.multiply) {
+        Object.values(multiplyShape(shape, ctx.state.layers) ?? {}).forEach((shape) => {
+            const np = pk.Path.MakeFromCmds(
+                segmentsCmds(shape.origin, shape.segments, shape.open),
+            )!;
+            paths.push(np);
+        });
+    }
+
     // const fmods = object.mods.map((m) => resolvePMod(ctx.anim, m));
     crops.forEach((mod) => {
-        remove = remove || pathMod(ctx.cropCache, mod, path);
+        remove = remove || paths.every((path) => pathMod(ctx.cropCache, mod, path));
     });
     if (remove) return;
 
@@ -354,10 +366,10 @@ const renderObject = (ctx: Ctx, crops: CropsAndMatrices, object: EObject) => {
         const f = dropNully(resolveFill(localAnim, fr));
         if (f.color == null) return;
 
-        const thisPath = path.copy();
+        const thisPaths = paths.map((path) => path.copy());
         let remove = false;
         f.mods.forEach((mod) => {
-            remove = remove || pathMod(ctx.cropCache, mod, thisPath);
+            remove = remove || thisPaths.every((path) => pathMod(ctx.cropCache, mod, path));
         });
         if (remove) return;
 
@@ -368,20 +380,22 @@ const renderObject = (ctx: Ctx, crops: CropsAndMatrices, object: EObject) => {
             color: colorToRgb(f.color),
             opacity: f.opacity,
             shadow: resolveShadow(anim, f.shadow),
-            shapes: cmdsToSegments([...thisPath.toCmds()]),
+            shapes: thisPaths.flatMap((path) => cmdsToSegments([...path.toCmds()])),
             zIndex: f.zIndex,
         });
-        thisPath.delete();
+        thisPaths.forEach((p) => p.delete());
     });
 
     Object.values(object.style.lines).map((fr, fi) => {
         const f = dropNully(resolveLine(localAnim, fr));
         if (f.color == null) return;
 
-        const thisPath = path.copy();
+        // const thisPath = path.copy();
+        const thisPaths = paths.map((path) => path.copy());
         let remove = false;
         f.mods.forEach((mod) => {
-            remove = remove || pathMod(ctx.cropCache, mod, thisPath);
+            // remove = remove || pathMod(ctx.cropCache, mod, thisPath);
+            remove = remove || thisPaths.every((path) => pathMod(ctx.cropCache, mod, path));
         });
         if (remove) return;
 
@@ -393,14 +407,17 @@ const renderObject = (ctx: Ctx, crops: CropsAndMatrices, object: EObject) => {
             strokeWidth: a.number(anim, f.width ?? 0) / 100,
             opacity: f.opacity,
             shadow: resolveShadow(anim, f.shadow),
-            shapes: cmdsToSegments([...thisPath.toCmds()]),
+            // shapes: cmdsToSegments([...thisPath.toCmds()]),
+            shapes: thisPaths.flatMap((path) => cmdsToSegments([...path.toCmds()])),
             sharp: f.sharp,
             zIndex: f.zIndex,
         });
-        thisPath.delete();
+        // thisPath.delete();
+        thisPaths.forEach((p) => p.delete());
     });
 
-    path.delete();
+    paths.forEach((p) => p.delete());
+    // path.delete();
     // object.style.mods
 };
 

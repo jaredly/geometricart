@@ -80,6 +80,7 @@ export type Group = {
     id: string;
     name?: string;
     entities: Record<string, number>; // id -> order
+    disabled?: boolean;
 };
 
 export type CropMode = 'rough' | 'half';
@@ -172,6 +173,7 @@ export type Pattern = {
     adjustments: Record<string, Adjustment>;
     mods: PMods[];
     shared?: Record<string, AnimatableValue>;
+    disabled?: boolean;
 };
 
 export type Adjustment = {
@@ -326,6 +328,7 @@ export type EObject = {
     type: 'Object';
     id: string;
     shape: string;
+    multiply?: string;
     style: {
         disabled?: boolean;
         fills: Record<string, Fill>;

@@ -31,6 +31,7 @@ import {notNull} from '../utils/notNull';
 export const thinTiling = (t: Tiling): ThinTiling => ({segments: t.cache.segments, shape: t.shape});
 
 export const renderPattern = (ctx: Ctx, _outer: CropsAndMatrices, pattern: Pattern) => {
+    if (pattern.disabled) return;
     // not doing yet
     if (pattern.contents.type !== 'shapes') return;
     const tiling = pattern.tiling.tiling;

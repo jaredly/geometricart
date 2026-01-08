@@ -90,27 +90,29 @@ export const DeferredRender = ({
     const showShapes =
         eShowShapes || pending?.type === 'select-shapes' || pending?.type === 'select-shape';
 
-    const shapesItems = useMemo(
-        (): RenderItem[] =>
-            showShapes
-                ? renderShapes(
-                      expandShapes(state.shapes, state.layers),
-                      hover,
-                      selectedShapes,
-                      pendingState.update,
-                      pending,
-                  ).sort((a, b) => (a.zIndex ?? 0) - (b.zIndex ?? 0))
-                : [],
-        [
-            showShapes,
-            state.shapes,
-            state.layers,
-            hover,
-            selectedShapes,
-            pendingState.update,
-            pending,
-        ],
-    );
+    const shapesItems = useMemo((): RenderItem[] => {
+        if (!showShapes && !hover) return [];
+        let expanded = expandShapes(state.shapes, state.layers);
+        if (!showShapes && hover) {
+            expanded = Object.fromEntries(
+                Object.entries(expanded).filter(([k, v]) =>
+                    hover.type === 'shape' ? k === hover.id : hover.ids.includes(k),
+                ),
+            );
+        }
+
+        return renderShapes(expanded, hover, selectedShapes, pendingState.update, pending).sort(
+            (a, b) => (a.zIndex ?? 0) - (b.zIndex ?? 0),
+        );
+    }, [
+        showShapes,
+        state.shapes,
+        state.layers,
+        hover,
+        selectedShapes,
+        pendingState.update,
+        pending,
+    ]);
 
     const both = useMemo(
         () => (remoteData?.items ? [...remoteData.items, ...shapesItems] : []),
@@ -139,7 +141,6 @@ export const DeferredRender = ({
             zoomProps={zoomProps}
             state={state}
             mouse={mouse}
-            // keyPoints={keyPoints}
             setMouse={setMouse}
             items={both}
             size={size}
