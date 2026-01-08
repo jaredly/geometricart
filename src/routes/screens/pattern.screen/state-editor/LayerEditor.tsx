@@ -9,6 +9,8 @@ import {SharedEditor} from './SharedEditor';
 import {Updater} from '../../../../json-diff/Updater';
 import {genid} from '../utils/genid';
 import {usePendingState} from '../utils/editState';
+import {useExportState} from '../ExportHistory';
+import {expandShapes} from '../utils/expandShapes';
 
 export const LayerEditor = ({
     layer,
@@ -21,6 +23,13 @@ export const LayerEditor = ({
 }) => {
     const entries = useMemo(() => Object.entries(layer.entities), [layer.entities]);
     const pend = usePendingState();
+
+    const st = useExportState();
+    const {shapes, layers} = st.use((state) => ({shapes: state.shapes, layers: state.layers}));
+    const expandedShapes = useMemo(
+        () => Object.keys(expandShapes(shapes, layers)),
+        [shapes, layers],
+    );
 
     return (
         <div className="bg-base-200 border border-base-300 shadow-sm">
@@ -105,6 +114,7 @@ export const LayerEditor = ({
                             ) : null}
                             {entries.map(([entityKey, entity]) => (
                                 <EntityEditor
+                                    expandedShapes={expandedShapes}
                                     palette={palette}
                                     key={entityKey}
                                     value={entity}

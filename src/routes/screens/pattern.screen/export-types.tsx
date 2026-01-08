@@ -328,7 +328,7 @@ export type EObject = {
     type: 'Object';
     id: string;
     shape: string;
-    multiply?: string;
+    multiply?: boolean;
     style: {
         disabled?: boolean;
         fills: Record<string, Fill>;

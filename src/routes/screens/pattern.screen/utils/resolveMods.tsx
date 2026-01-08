@@ -317,6 +317,11 @@ export const withShared = (
 export const numToCoord = (num: number | Coord) =>
     typeof num === 'number' ? {x: num, y: num} : num;
 
+export const objectShapes = (id: string, shapes: string[]) => {
+    const sk = id.includes(':') ? id.split(':')[0] : id;
+    return shapes.filter((s) => s.startsWith(sk));
+};
+
 const renderObject = (ctx: Ctx, crops: CropsAndMatrices, object: EObject) => {
     const anim: (typeof ctx)['anim'] = {
         ...ctx.anim,
@@ -329,20 +334,20 @@ const renderObject = (ctx: Ctx, crops: CropsAndMatrices, object: EObject) => {
         },
     };
 
-    const shape = ctx.shapes[object.shape];
-    if (!shape) return;
-
-    const paths = [pk.Path.MakeFromCmds(segmentsCmds(shape.origin, shape.segments, shape.open))!];
-    let remove = false;
-
+    let paths: PKPath[];
     if (object.multiply) {
-        Object.values(multiplyShape(shape, ctx.state.layers) ?? {}).forEach((shape) => {
-            const np = pk.Path.MakeFromCmds(
-                segmentsCmds(shape.origin, shape.segments, shape.open),
-            )!;
-            paths.push(np);
+        paths = objectShapes(object.shape, Object.keys(ctx.shapes)).map((k) => {
+            const shape = ctx.shapes[k];
+            return pk.Path.MakeFromCmds(segmentsCmds(shape.origin, shape.segments, shape.open))!;
         });
+    } else {
+        const shape = ctx.shapes[object.shape];
+        if (!shape) return;
+
+        paths = [pk.Path.MakeFromCmds(segmentsCmds(shape.origin, shape.segments, shape.open))!];
     }
+
+    let remove = false;
 
     // const fmods = object.mods.map((m) => resolvePMod(ctx.anim, m));
     crops.forEach((mod) => {

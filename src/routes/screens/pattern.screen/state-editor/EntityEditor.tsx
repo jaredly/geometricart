@@ -12,17 +12,21 @@ import {useExportState} from '../ExportHistory';
 import {notNull} from '../utils/notNull';
 import {expandShapes} from '../utils/expandShapes';
 import {useEditState} from '../utils/editState';
+import {objectShapes} from '../utils/resolveMods';
 
 export const EntityEditor = ({
     palette,
     value,
     update,
+    expandedShapes,
 }: {
     palette: Color[];
     value: Entity;
     update: Updater<Entity>;
+    expandedShapes: string[];
 }) => {
     const [type, setType] = useState<Entity['type']>(value.type);
+    const es = useEditState();
 
     useEffect(() => {
         setType(value.type);
@@ -31,7 +35,22 @@ export const EntityEditor = ({
     return (
         <details className="rounded border border-base-300 bg-base-100 p-3 space-y-3">
             <summary className="cursor-pointer hover:text-accent">
-                <div className="inline-flex items-center">
+                <div
+                    className="inline-flex items-center"
+                    onMouseEnter={() => {
+                        if (value.type === 'Object') {
+                            if (value.multiply) {
+                                es.update.hover({
+                                    type: 'shapes',
+                                    ids: objectShapes(value.shape, expandedShapes),
+                                });
+                            } else {
+                                es.update.hover({type: 'shape', id: value.shape});
+                            }
+                        }
+                    }}
+                    onMouseLeave={() => es.update.hover.remove()}
+                >
                     {value.type}
                     {value.type === 'Object' ? <span className="px-4">{value.shape}</span> : null}
                     <div className="flex-1" />
@@ -58,7 +77,12 @@ export const EntityEditor = ({
                 <PatternEditor palette={palette} value={value} update={update.variant('Pattern')} />
             ) : null}
             {value.type === 'Object' ? (
-                <ObjectEditor palette={palette} value={value} update={update.variant('Object')} />
+                <ObjectEditor
+                    expandedShapes={expandedShapes}
+                    palette={palette}
+                    value={value}
+                    update={update.variant('Object')}
+                />
             ) : null}
         </details>
     );
@@ -68,10 +92,12 @@ const ObjectEditor = ({
     value,
     update,
     palette,
+    expandedShapes,
 }: {
     palette: Color[];
     value: EObject;
     update: Updater<EObject>;
+    expandedShapes: string[];
 }) => {
     const st = useExportState();
     const es = useEditState();
@@ -86,17 +112,11 @@ const ObjectEditor = ({
             .filter(notNull);
         return ids;
     }, false);
-    const {shapes, layers} = st.use((state) => ({shapes: state.shapes, layers: state.layers}));
-
-    const expandedShapes = useMemo(() => expandShapes(shapes, layers), [shapes, layers]);
 
     return (
         <div className="space-y-2">
             <div className="form-control">
-                <label
-                    onMouseEnter={() => es.update.hover({type: 'shape', id: value.shape})}
-                    onMouseLeave={() => es.update.hover.remove()}
-                >
+                <label>
                     Shape
                     <select
                         className="select w-40 ml-4"
@@ -120,25 +140,18 @@ const ObjectEditor = ({
                 </label>
                 <label className="mx-4">
                     Mulitply
-                    <select
-                        className="select w-40 ml-4"
+                    <input
+                        className="checkbox ml-4"
+                        type="checkbox"
                         onChange={(evt) => {
-                            const id = evt.target.value;
-                            if (id !== '') {
-                                update.multiply.replace(id);
+                            if (evt.target.checked) {
+                                update.multiply(true);
                             } else {
                                 update.multiply.remove();
                             }
                         }}
-                        value={value.multiply ?? ''}
-                    >
-                        <option value="">Select a pattern</option>
-                        {tilingIds.map((id) => (
-                            <option value={id} key={id}>
-                                {id}
-                            </option>
-                        ))}
-                    </select>
+                        checked={!!value.multiply}
+                    />
                 </label>
             </div>
             <SubStyleList
