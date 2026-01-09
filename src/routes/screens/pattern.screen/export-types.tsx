@@ -188,7 +188,7 @@ export type Adjustment = {
 export type PatternContents =
     | {
           type: 'shapes';
-          styles: Record<string, ShapeStyle>;
+          styles: Record<string, ShapeStyle<ShapeKind>>;
       }
     | {
           type: 'weave';
@@ -198,7 +198,7 @@ export type PatternContents =
       }
     | {
           type: 'lines';
-          styles: Record<string, LineStyle<BaseKind>>;
+          styles: Record<string, ShapeStyle<BaseKind>>;
       }
     | {
           type: 'layers';
@@ -215,14 +215,14 @@ export type BaseKind =
 
 export type ShapeKind = BaseKind | {type: 'shape'; key: string; rotInvariant: boolean};
 
-export type ShapeStyle = {
+export type ShapeStyle<Kind> = {
     id: string;
     disabled?: boolean;
     order: number;
     // TODO: maybe have a kind that's like "anything intersecting with this shape"?
     // Could also be interesting to have an `animatedKind` where we select
     // the items effected by some script
-    kind: ShapeKind | ShapeKind[];
+    kind: Kind | Kind[];
     fills: Record<string, Fill>;
     lines: Record<string, Line>;
     t?: TChunk;

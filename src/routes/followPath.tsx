@@ -51,7 +51,6 @@ const followSinglePath = (
             return {points: points.map((p) => p.int.pos), open: true};
         }
         if (int.key === points[0].int.key) {
-            console.log('got to the top', points);
             return {points: points.map((p) => p.int.pos)};
         }
         if (used[int.key]) {

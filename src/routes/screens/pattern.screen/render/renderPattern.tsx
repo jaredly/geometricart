@@ -23,6 +23,7 @@ import {
     Shadow,
     ShapeKind,
     PatternContents,
+    ShapeStyle,
 } from '../export-types';
 import {
     CropsAndMatrices,
@@ -108,28 +109,75 @@ export const renderPattern = (ctx: Ctx, _outer: CropsAndMatrices, pattern: Patte
 
         const maxPathId = allPaths.reduce((a, b) => Math.max(a, b.pathId ?? 0), 0);
         // ok so for each line, we need to maybe evaluate the style dealio?
-        const locals = {
-            maxPathId,
-            pathId: allPaths[0].pathId,
-            center: centroid(allPaths[0].points),
-            i: 0,
-            groupId: 0, // grouping paths by eigenshape-expansion
-        };
+
+        const orderedStyles = Object.values(pattern.contents.styles).sort(
+            (a, b) => a.order - b.order,
+        );
+        orderedStyles.push({
+            id: 'lol',
+            fills: {},
+            kind: {type: 'everything'},
+            mods: [],
+            order: 0,
+            lines: {
+                lol: {
+                    id: 'lol',
+                    mods: [],
+                    // color: '({r: ((pathId ?? 0) / maxPathId) * 360, g: 0, b: 0})',
+                    // zIndex: 'pathId ?? 0',
+                    color: '({r: ((pathId ?? 0) * 10) % 360, g: 0, b: 0})',
+                    zIndex: '((pathId ?? 0) * 10) % 360',
+                    width: 1,
+                },
+            },
+        });
 
         ctx.items.push(
             ...allPaths
-                .sort((a, b) => (a.pathId ?? 0) - (b.pathId ?? 0))
+                // .sort((a, b) => (a.pathId ?? 0) - (b.pathId ?? 0))
                 // .sort((a, b) => (((a.pathId ?? 0) * 10) % 360) - (((b.pathId ?? 0) * 10) % 360))
-                .map(
-                    ({points, open, pathId}, i): RenderItem => ({
-                        type: 'path',
-                        color: {r: ((pathId ?? 0) / maxPathId) * 360, g: 0, b: 0},
-                        // color: {r: ((pathId ?? 0) * 10) % 360, g: 0, b: 0},
-                        key: `${i}`,
-                        shapes: [barePathFromCoords(points, open)],
-                        strokeWidth: 0.01,
-                    }),
-                ),
+                .flatMap(({points, open, pathId}, i) => {
+                    // return {
+                    //     type: 'path',
+                    //     // color: {r: ((pathId ?? 0) / maxPathId) * 360, g: 0, b: 0},
+                    //     // zIndex: pathId ?? 0,
+                    //     color: {r: ((pathId ?? 0) * 10) % 360, g: 0, b: 0},
+                    //     zIndex: ((pathId ?? 0) * 10) % 360,
+                    //     key: `${i}`,
+                    //     shapes: [barePathFromCoords(points, open)],
+                    //     strokeWidth: 0.01,
+                    // };
+
+                    const matchingStyles = orderedStyles.map((style) => {
+                        const match = true;
+                        // const match = Array.isArray(style.kind)
+                        //     ? first(style.kind, (k) =>
+                        //           matchKind(k, i, colors[i], center, simple.eigenCorners),
+                        //       )
+                        //     : matchKind(style.kind, i, colors[i], center, simple.eigenCorners);
+                        if (!match) {
+                            return;
+                        }
+                        return {style, match};
+                    });
+                    return renderShape(
+                        points,
+                        ctx,
+                        i,
+                        panim,
+                        {
+                            maxPathId,
+                            pathId,
+                            center: centroid(points),
+                            points,
+                            open,
+                            i,
+                            groupId: 0, // grouping paths by eigenshape-expansion
+                        },
+                        matchingStyles.filter(notNull),
+                        open,
+                    );
+                }),
         );
 
         return;
@@ -160,103 +208,122 @@ export const renderPattern = (ctx: Ctx, _outer: CropsAndMatrices, pattern: Patte
         ...midShapes.flatMap(({shape, i}) => {
             const center = centroid(shape);
             const radius = Math.min(...shape.map((s) => dist(s, center)));
-            const fills: Record<string, ConcreteFill> = {};
-            const lines: Record<string, ConcreteLine> = {};
-
-            const stuff: string[] = [];
-
-            const anim: (typeof ctx)['anim'] = {
-                ...panim,
-                values: {
-                    ...panim.values,
-                    center,
-                    radius,
-                    shape,
-                    i,
-                },
-            };
-
-            const first = <T, N>(v: T[], f: (v: T) => N) => {
-                for (let item of v) {
-                    const res = f(item);
-                    if (res != null && res !== false) {
-                        return res;
-                    }
-                }
-            };
-
-            orderedStyles.forEach((s) => {
-                const match = Array.isArray(s.kind)
-                    ? first(s.kind, (k) => matchKind(k, i, colors[i], center, simple.eigenCorners))
-                    : matchKind(s.kind, i, colors[i], center, simple.eigenCorners);
+            const matchingStyles = orderedStyles.map((style) => {
+                const match = Array.isArray(style.kind)
+                    ? first(style.kind, (k) =>
+                          matchKind(k, i, colors[i], center, simple.eigenCorners),
+                      )
+                    : matchKind(style.kind, i, colors[i], center, simple.eigenCorners);
                 if (!match) {
                     return;
                 }
-                if (s.disabled) {
-                    return;
-                }
-                // biome-ignore lint: any is fine here
-                const local: Record<string, any> = {};
-                if (s.t) {
-                    const got = resolveT(s.t, anim.values.t);
-                    if (got == null) return; // out of range
-                    local.t = got;
-                }
-
-                // stuff.push(`style id: ${s.id}`);
-                if (typeof match === 'object') {
-                    local.styleCenter = match;
-                }
-                const localAnim = {...anim, values: {...anim.values, ...local}};
-
-                const smod = resolveEnabledPMods(localAnim, s.mods);
-
-                // hmmm need to align the ... style that it came from ... with animvalues
-                // like `styleCenter`
-                Object.values(s.fills).forEach((fill) => {
-                    const cfill = dropNully(resolveFill(localAnim, fill));
-                    if (cfill.enabled === false) {
-                        // stuff.push(`disabled fill: ${fill.id}`);
-                        return;
-                    }
-                    cfill.mods.push(...smod);
-                    // stuff.push(`fill: ${fill.id}`);
-                    if (!fills[fill.id]) {
-                        fills[fill.id] = cfill;
-                        return;
-                    }
-                    // merge: mods.
-                    const now = fills[fill.id];
-                    cfill.mods.unshift(...now.mods);
-                    Object.assign(now, cfill);
-                });
-                Object.values(s.lines).forEach((line) => {
-                    const cline = dropNully(resolveLine(localAnim, line));
-                    if (cline.enabled === false) return;
-                    cline.mods.push(...smod);
-                    if (!lines[line.id]) {
-                        lines[line.id] = cline;
-                        return;
-                    }
-                    const now = lines[line.id];
-                    cline.mods.unshift(...now.mods);
-                    Object.assign(now, cline);
-                });
+                return {style, match};
             });
-
-            const res: (RenderItem | undefined)[] = [
-                ...Object.values(fills).flatMap((f, fi): RenderItem[] | RenderItem | undefined => {
-                    return renderFill(f, anim, ctx, shape, `fill-${i}-${fi}`);
-                }),
-
-                ...Object.values(lines).flatMap((f, fi): RenderItem[] | RenderItem | undefined => {
-                    return renderLine(f, anim, ctx, shape, `stroke-${i}-${fi}`);
-                }),
-            ];
-
-            return res.filter(notNull);
+            return renderShape(
+                shape,
+                ctx,
+                i,
+                panim,
+                {center, radius, shape, i},
+                matchingStyles.filter(notNull),
+            );
         }),
     );
+};
+
+const first = <T, N>(v: T[], f: (v: T) => N) => {
+    for (let item of v) {
+        const res = f(item);
+        if (res != null && res !== false) {
+            return res;
+        }
+    }
+};
+
+const renderShape = <Kind,>(
+    shape: Coord[],
+    ctx: Ctx,
+    i: number,
+    panim: AnimCtx,
+    locals: any,
+    orderedStyles: {style: ShapeStyle<Kind>; match: boolean | Coord}[],
+    open = false,
+) => {
+    const fills: Record<string, ConcreteFill> = {};
+    const lines: Record<string, ConcreteLine> = {};
+
+    const anim: Ctx['anim'] = {
+        ...panim,
+        values: {
+            ...panim.values,
+            ...locals,
+        },
+    };
+
+    orderedStyles.forEach(({style: s, match}) => {
+        if (s.disabled) {
+            return;
+        }
+        // biome-ignore lint: any is fine here
+        const local: Record<string, any> = {};
+        if (s.t) {
+            const got = resolveT(s.t, anim.values.t);
+            if (got == null) return; // out of range
+            local.t = got;
+        }
+
+        // stuff.push(`style id: ${s.id}`);
+        if (typeof match === 'object') {
+            local.styleCenter = match;
+        }
+        const localAnim = {...anim, values: {...anim.values, ...local}};
+
+        const smod = resolveEnabledPMods(localAnim, s.mods);
+
+        // hmmm need to align the ... style that it came from ... with animvalues
+        // like `styleCenter`
+        Object.values(s.fills).forEach((fill) => {
+            const cfill = dropNully(resolveFill(localAnim, fill));
+            if (cfill.enabled === false) {
+                // stuff.push(`disabled fill: ${fill.id}`);
+                return;
+            }
+            cfill.mods.push(...smod);
+            // stuff.push(`fill: ${fill.id}`);
+            if (!fills[fill.id]) {
+                fills[fill.id] = cfill;
+                return;
+            }
+            // merge: mods.
+            const now = fills[fill.id];
+            cfill.mods.unshift(...now.mods);
+            Object.assign(now, cfill);
+        });
+        Object.values(s.lines).forEach((line) => {
+            const cline = dropNully(resolveLine(localAnim, line));
+            if (cline.enabled === false) return;
+            cline.mods.push(...smod);
+            if (!lines[line.id]) {
+                lines[line.id] = cline;
+                return;
+            }
+            const now = lines[line.id];
+            cline.mods.unshift(...now.mods);
+            Object.assign(now, cline);
+        });
+    });
+
+    const res: (RenderItem | undefined)[] = [
+        ...Object.values(fills).flatMap((f, fi): RenderItem[] | RenderItem | undefined => {
+            return renderFill(f, anim, ctx, shape, `fill-${i}-${fi}`);
+        }),
+
+        ...Object.values(lines).flatMap((f, fi): RenderItem[] | RenderItem | undefined => {
+            return renderLine(f, anim, ctx, shape, `stroke-${i}-${fi}`, open);
+        }),
+    ];
+
+    return res.filter(notNull);
 };
 
 export const renderFill = (
@@ -296,6 +363,7 @@ export const renderLine = (
     ctx: Ctx,
     shape: Coord[],
     key: string,
+    open: boolean,
 ): undefined | RenderItem => {
     if (f.color == null) return;
     if (!f.width) return;
@@ -316,9 +384,9 @@ export const renderLine = (
         strokeWidth: width,
         shapes: f.mods.length
             ? modsToShapes(ctx.cropCache, f.mods, [{shape, i: 0}]).map((s) =>
-                  barePathFromCoords(s.shape),
+                  barePathFromCoords(s.shape, open),
               )
-            : [barePathFromCoords(shape)],
+            : [barePathFromCoords(shape, open)],
         shadow,
         sharp: f.sharp,
         opacity,
