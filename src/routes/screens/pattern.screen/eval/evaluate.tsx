@@ -47,6 +47,7 @@ export type RenderItem =
           color?: {r: number; g: number; b: number};
           zIndex?: number | null;
           opacity?: number;
+          size?: number;
           key: string;
       };
 
@@ -132,7 +133,8 @@ export const isCoord = (v: any): v is Coord => {
     );
 };
 
-export const isColor = (v: any): v is number | string | Color => {
+export const isColor = (v: any): v is number | string | Color | null => {
+    if (v == null) return true;
     if (typeof v === 'number') {
         return true;
     }
@@ -196,12 +198,12 @@ export const a = {
                     (v: any): v is number | Coord => typeof v === 'number' || isCoord(v),
                     {x: 0, y: 0},
                 ),
-    color: (ctx: AnimCtx, v: AnimatableColor): Color => {
+    color: (ctx: AnimCtx, v: AnimatableColor): Color | null => {
         if (typeof v === 'string') {
             const parsed = parseColor(v);
             if (parsed) return parsed;
 
-            v = evaluate<Color | string | number>(ctx, v, isColor, {r: 255, g: 255, b: 255});
+            v = evaluate<Color | string | number | null>(ctx, v, isColor, {r: 255, g: 255, b: 255});
         }
         if (typeof v === 'number') {
             if (!Number.isInteger(v) || v < 0) {

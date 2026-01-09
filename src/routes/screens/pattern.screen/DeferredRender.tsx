@@ -48,7 +48,7 @@ export const DeferredRender = ({
     const eShowShapes = editContext.use((v) => v.showShapes);
 
     const [remoteData, setRemoteData] = useState<null | {
-        bg: Color;
+        bg: Color | null;
         items: RenderItem[];
         keyPoints: ([Coord, Coord] | Coord)[];
         byKey: Record<string, string[]>;

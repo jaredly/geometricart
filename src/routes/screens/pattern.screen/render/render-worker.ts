@@ -36,7 +36,7 @@ export type MessageResponse =
           byKey: Record<string, string[]>;
           warnings: string[];
           keyPoints: ([Coord, Coord] | Coord)[];
-          bg: Color;
+          bg: Color | null;
       }
     | {type: 'video'; id: string; url?: string}
     | {type: 'snapshot'; blob: Blob; ext: 'mp4' | 'png'; id: string}

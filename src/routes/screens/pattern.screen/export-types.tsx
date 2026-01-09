@@ -15,7 +15,7 @@ import {CropsAndMatrices} from './utils/resolveMods';
 export type AnimatableNumber = number | string;
 export type AnimatableBoolean = boolean | string;
 export type AnimatableValue = string;
-export type AnimatableColor = number | string | Color;
+export type AnimatableColor = number | string | Color | null;
 export type AnimatableCoord = Coord | string;
 
 export type Shape =

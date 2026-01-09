@@ -31,7 +31,7 @@ export const Canvas = ({
     t,
 }: {
     items: RenderItem[];
-    bg: Color;
+    bg: Color | null;
     state: State;
     mouse: Coord | null;
     size: number;
@@ -82,7 +82,7 @@ export const SVGCanvas = ({
     state: State;
     mouse: Coord | null;
     keyPoints: ([Coord, Coord] | Coord)[];
-    bg: Color;
+    bg: Color | null;
     items: RenderItem[];
     size: number;
     zoomProps: ZoomProps;
@@ -140,14 +140,14 @@ export const SVGCanvas = ({
                     innerRef.current.tick();
                 }
             }}
-            style={{background: colorToString(bg), width: size, height: size}}
+            style={{background: bg ? colorToString(bg) : undefined, width: size, height: size}}
             onMouseLeave={() => setMouse(null)}
             onMouseMove={(evt) => setMouse(svgCoord(evt))}
         >
             {svgItems}
-            {rpoints.map(({key, coord, color, opacity}) => (
+            {rpoints.map(({key, coord, color, opacity, size}) => (
                 <circle
-                    r={lw / 10}
+                    r={(lw / 10) * (size ?? 1)}
                     fill={colorToString(color ?? {r: 255, g: 0, b: 0})}
                     stroke="none"
                     pointerEvents={'none'}

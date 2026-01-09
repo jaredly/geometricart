@@ -137,6 +137,7 @@ export const renderPattern = (ctx: Ctx, _outer: CropsAndMatrices, pattern: Patte
         );
 
         const colors = colorLines(allPaths, simple.bounds, simple.ttt, ctx.log);
+        const maxColor = Math.max(...colors.filter(notNull));
 
         // for alternating:
         // ignore anything without a pathId
@@ -150,15 +151,15 @@ export const renderPattern = (ctx: Ctx, _outer: CropsAndMatrices, pattern: Patte
                 const key = i + ''; // makeLineKey(points, !!open);
                 const center = centroid(points);
 
-                const thisColor = colors[i] ?? -1;
+                const thisColor = colors[i];
 
                 const matchingStyles = orderedStyles.map((style) => {
                     // const match = true;
                     const match = Array.isArray(style.kind)
                         ? first(style.kind, (k) =>
-                              matchKind(k, key, thisColor, center, simple.eigenCorners),
+                              matchKind(k, key, thisColor ?? -1, center, simple.eigenCorners),
                           )
-                        : matchKind(style.kind, key, thisColor, center, simple.eigenCorners);
+                        : matchKind(style.kind, key, thisColor ?? -1, center, simple.eigenCorners);
                     if (!match) {
                         return;
                     }
@@ -177,7 +178,8 @@ export const renderPattern = (ctx: Ctx, _outer: CropsAndMatrices, pattern: Patte
                         points,
                         open,
                         i,
-                        groupId: 0, // grouping paths by eigenshape-expansion
+                        groupId: thisColor,
+                        maxGroupId: maxColor,
                     },
                     matchingStyles.filter(notNull),
                     open,
@@ -306,16 +308,20 @@ const renderShape = <Kind,>(
             Object.assign(now, cfill);
         });
         Object.values(s.lines).forEach((line) => {
-            const cline = dropNully(resolveLine(localAnim, line));
-            if (cline.enabled === false) return;
-            cline.mods.push(...smod);
-            if (!lines[line.id]) {
-                lines[line.id] = cline;
-                return;
+            try {
+                const cline = dropNully(resolveLine(localAnim, line));
+                if (cline.enabled === false) return;
+                cline.mods.push(...smod);
+                if (!lines[line.id]) {
+                    lines[line.id] = cline;
+                    return;
+                }
+                const now = lines[line.id];
+                cline.mods.unshift(...now.mods);
+                Object.assign(now, cline);
+            } catch (err) {
+                localAnim.warn((err as Error).message);
             }
-            const now = lines[line.id];
-            cline.mods.unshift(...now.mods);
-            Object.assign(now, cline);
         });
     });
 
@@ -341,7 +347,7 @@ export const renderFill = (
 ): undefined | RenderItem => {
     if (f.color == null) return;
     const color = a.color(anim, f.color);
-    if (!color) console.log('waht', color, f.color);
+    if (!color) return;
     const rgb = colorToRgb(color);
     const zIndex = f.zIndex;
     const opacity = f.opacity ? a.number(anim, f.opacity) : undefined;
@@ -374,7 +380,7 @@ export const renderLine = (
     if (f.color == null) return;
     if (!f.width) return;
     const color = a.color(anim, f.color);
-    if (!color) console.log('waht', color, f.color);
+    if (!color) return;
     const rgb = colorToRgb(color);
     const width = a.number(anim, f.width) / 100;
     const opacity = f.opacity ? a.number(anim, f.opacity) : undefined;
@@ -404,12 +410,12 @@ export const resolveFill = (anim: Ctx['anim'], f: Fill): ConcreteFill => {
     return {
         id: f.id,
         mods: resolveEnabledPMods(anim, f.mods),
-        color: f.color != null ? a.color(anim, f.color) : undefined,
+        color: f.color != null ? (a.color(anim, f.color) ?? undefined) : undefined,
         opacity: f.opacity != null ? a.number(anim, f.opacity) : undefined,
         rounded: f.rounded != null ? a.number(anim, f.rounded) : undefined,
         shadow: resolveShadow(anim, f.shadow),
         thickness: f.thickness != null ? a.number(anim, f.thickness) : undefined,
-        tint: f.tint != null ? a.color(anim, f.tint) : undefined,
+        tint: f.tint != null ? (a.color(anim, f.tint) ?? undefined) : undefined,
         zIndex: f.zIndex != null ? a.number(anim, f.zIndex) : undefined,
         enabled: f.enabled != null ? a.boolean(anim, f.enabled) : undefined,
     };
@@ -419,11 +425,11 @@ export const resolveLine = (anim: Ctx['anim'], f: Line): ConcreteLine => {
     return {
         id: f.id,
         mods: resolveEnabledPMods(anim, f.mods),
-        color: f.color != null ? a.color(anim, f.color) : undefined,
+        color: f.color != null ? (a.color(anim, f.color) ?? undefined) : undefined,
         opacity: f.opacity != null ? a.number(anim, f.opacity) : undefined,
         shadow: resolveShadow(anim, f.shadow),
         thickness: f.thickness != null ? a.number(anim, f.thickness) : undefined,
-        tint: f.tint != null ? a.color(anim, f.tint) : undefined,
+        tint: f.tint != null ? (a.color(anim, f.tint) ?? undefined) : undefined,
         zIndex: f.zIndex != null ? a.number(anim, f.zIndex) : undefined,
         width: f.width != null ? a.number(anim, f.width) : undefined,
         sharp: f.sharp != null ? a.boolean(anim, f.sharp) : undefined,
@@ -459,6 +465,7 @@ export const resolveShadow = (anim: Ctx['anim'], shadow?: Shadow): RenderShadow 
         return;
     }
     if (!shadow) return undefined;
+    const scolor = shadow.color ? a.color(anim, shadow.color) : null;
     return removeNullShadow({
         blur: shadow.blur
             ? scalePos(numToCoord(a.coordOrNumber(anim, shadow.blur)), 0.1)
@@ -466,7 +473,7 @@ export const resolveShadow = (anim: Ctx['anim'], shadow?: Shadow): RenderShadow 
         offset: shadow.offset
             ? scalePos(numToCoord(a.coordOrNumber(anim, shadow.offset)), 0.1)
             : {x: 0, y: 0},
-        color: shadow.color ? colorToRgb(a.color(anim, shadow.color)) : {r: 0, g: 0, b: 0},
+        color: scolor != null ? colorToRgb(scolor) : {r: 0, g: 0, b: 0},
         inner: shadow.inner ? a.boolean(anim, shadow.inner) : undefined,
     });
 };
@@ -609,6 +616,7 @@ const colorLines = (
     debugLog?: RenderLog[],
 ) => {
     const byPair: Record<string, number> = {};
+    const prec = 4;
 
     if (debugLog) {
         debugLog?.push({
@@ -624,24 +632,25 @@ const colorLines = (
     const boundingBox = boundsForCoords(...bounds);
     const baseLines = lines.filter((line) => line.points.some((p) => aabbContains(boundingBox, p)));
 
-    const baseLog = maybeAddItems(debugLog, 'Base Items');
+    if (debugLog) {
+        debugLog?.push({
+            type: 'items',
+            title: 'Base Lines',
+            items: baseLines.map((line) => ({
+                item: {type: 'shape', shape: barePathFromCoords(line.points, true)},
+            })),
+        });
+    }
+
+    const baseLog = maybeAddItems(debugLog, 'Base Lines Transformed');
     const dups: Record<number, number> = {};
     baseLines.forEach((line, i) => {
         const transformedLines = applyTilingTransformsG([line.points], ttt, (pts, tx) =>
             pts.map((p) => applyMatrices(p, tx)),
         );
 
-        baseLog?.push({
-            item: transformedLines.map((points) => ({
-                type: 'shape',
-                shape: barePathFromCoords(points, true),
-                hidePoints: true,
-                noFill: true,
-            })),
-        });
-
         const keys = transformedLines.map((points) =>
-            coordPairs(points, true).map((p) => coordPairKey(p)),
+            coordPairs(points, true).map((p) => coordPairKey(p, prec)),
         );
         for (let sub of keys) {
             for (let key of sub) {
@@ -651,24 +660,40 @@ const colorLines = (
                 }
             }
         }
+
+        baseLog?.push({
+            item: transformedLines.map((points) => ({
+                type: 'shape',
+                shape: barePathFromCoords(points, true),
+                hidePoints: true,
+                noFill: true,
+            })),
+            text: `base line ${i}`,
+        });
+
         keys.forEach((keys) => keys.forEach((key) => (byPair[key] = i)));
     });
     const remap: Record<number, number> = {};
     let at = 0;
     baseLines.forEach((_, i) => {
         if (dups[i] != null) {
-            remap[i] = dups[i];
+            // remap[i] = remap[dups[i]];
         } else {
             remap[i] = at++;
         }
     });
 
+    const matches = maybeAddItems(debugLog, 'Base Items');
+
     return lines
         .map((line, i) => {
-            if (baseLines.includes(line)) return baseLines.indexOf(line);
+            if (baseLines.includes(line)) {
+                const at = baseLines.indexOf(line);
+                return dups[at] ?? at;
+            }
 
             for (let pair of coordPairs(line.points, true)) {
-                const k = coordPairKey(pair);
+                const k = coordPairKey(pair, prec);
                 if (byPair[k] != null) {
                     return byPair[k];
                 }

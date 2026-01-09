@@ -8,12 +8,12 @@ export const renderItems = (
     surface: Surface,
     box: Box,
     items: RenderItem[],
-    bg: Color,
+    bg: Color | null,
     fontBuffer?: ArrayBuffer,
     t?: number,
 ) => {
     const ctx = surface.getCanvas();
-    const bgc = colorToRgb(bg);
+    const bgc = bg ? colorToRgb(bg) : {r: 0, g: 0, b: 0};
     ctx.clear(pk.Color(bgc.r, bgc.g, bgc.b));
 
     const lw = box.width / 10;

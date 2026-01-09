@@ -62,7 +62,7 @@ export const PatternContentsEditor = ({
                                 line1: {
                                     id: 'line1',
                                     mods: [],
-                                    color: {r: 255, g: 0, b: 0},
+                                    color: 'groupId',
                                     width: 1,
                                 },
                             },

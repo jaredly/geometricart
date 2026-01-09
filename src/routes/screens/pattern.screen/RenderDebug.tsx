@@ -156,6 +156,7 @@ const renderLogSelection = (
                                   coord: item.to,
                                   color: {r: 255, g: 255, b: 255},
                                   key: `seg-${i}-pt-${j}`,
+                                  size: 0.4,
                               })),
                           ]),
                 ];
