@@ -16,12 +16,15 @@ export const db = new TypedKV<{
     snapshotMeta: SnapshotMeta;
 }>(
     {
-        exports: isValidHistory,
+        exports: typia.createIs<ExportHistory>(),
         exportMeta: isExportMeta,
         snapshots: (v) => v instanceof Blob,
         snapshotMeta: isSnapshotMeta,
     },
     {dbName: 'geometric-art', storeName: 'kv', onInvalidValue: 'undefined'},
+    {
+        exports: typia.createValidate<ExportHistory>(),
+    },
 );
 
 export default db;
