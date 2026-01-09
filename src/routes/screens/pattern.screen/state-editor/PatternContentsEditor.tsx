@@ -26,13 +26,51 @@ export const PatternContentsEditor = ({
         if (nextType === value.type) return;
         switch (nextType) {
             case 'shapes':
-                update({type: 'shapes', styles: {}});
+                update({
+                    type: 'shapes',
+                    styles: {
+                        style1: {
+                            id: 'style1',
+                            kind: {type: 'everything'},
+                            lines: {
+                                line1: {
+                                    id: 'line1',
+                                    mods: [],
+                                    color: {r: 255, g: 0, b: 0},
+                                    width: 1,
+                                },
+                            },
+                            fills: {},
+                            mods: [],
+                            order: 0,
+                        },
+                    },
+                });
                 break;
             case 'weave':
                 update({type: 'weave', orderings: {}, styles: {}});
                 break;
             case 'lines':
-                update({type: 'lines', styles: {}});
+                update({
+                    type: 'lines',
+                    styles: {
+                        style1: {
+                            id: 'style1',
+                            kind: {type: 'everything'},
+                            lines: {
+                                line1: {
+                                    id: 'line1',
+                                    mods: [],
+                                    color: {r: 255, g: 0, b: 0},
+                                    width: 1,
+                                },
+                            },
+                            fills: {},
+                            mods: [],
+                            order: 0,
+                        },
+                    },
+                });
                 break;
             case 'layers':
                 update({
@@ -118,10 +156,10 @@ export const PatternContentsEditor = ({
                 />
             ) : null}
             {value.type === 'lines' ? (
-                <JsonEditor
-                    label="Styles"
-                    value={value.styles}
-                    onChange={update.variant('lines').styles}
+                <ShapeStylesEditor
+                    palette={palette}
+                    styles={value.styles}
+                    update={update.variant('lines').styles}
                 />
             ) : null}
         </details>

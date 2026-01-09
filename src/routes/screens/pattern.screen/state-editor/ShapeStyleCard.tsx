@@ -27,8 +27,8 @@ export const ShapeStyleCard = ({
 }: {
     palette: Color[];
     handleProps: HandleProps;
-    value: ShapeStyle;
-    update: Updater<ShapeStyle>;
+    value: ShapeStyle<ShapeKind>;
+    update: Updater<ShapeStyle<ShapeKind>>;
     onRemove: () => void;
 }) => {
     const [show, setShow] = useState(false);

@@ -8,6 +8,7 @@ import {
     ShapeStyle,
     Fill,
     Line,
+    ShapeKind,
 } from '../export-types';
 
 export const addMod = (type: string): PMods => {
@@ -66,7 +67,7 @@ export const parseAnimatable = (value: string): AnimatableNumber => {
     return Number.isFinite(num) ? (num as AnimatableNumber) : (trimmed as AnimatableNumber);
 };
 
-export const createShapeStyle = (id: string): ShapeStyle => ({
+export const createShapeStyle = (id: string): ShapeStyle<ShapeKind> => ({
     id,
     order: 0,
     kind: {type: 'everything'},

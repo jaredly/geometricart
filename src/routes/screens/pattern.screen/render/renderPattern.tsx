@@ -113,24 +113,24 @@ export const renderPattern = (ctx: Ctx, _outer: CropsAndMatrices, pattern: Patte
         const orderedStyles = Object.values(pattern.contents.styles).sort(
             (a, b) => a.order - b.order,
         );
-        orderedStyles.push({
-            id: 'lol',
-            fills: {},
-            kind: {type: 'everything'},
-            mods: [],
-            order: 0,
-            lines: {
-                lol: {
-                    id: 'lol',
-                    mods: [],
-                    // color: '({r: ((pathId ?? 0) / maxPathId) * 360, g: 0, b: 0})',
-                    // zIndex: 'pathId ?? 0',
-                    color: '({r: ((pathId ?? 0) * 10) % 360, g: 0, b: 0})',
-                    zIndex: '((pathId ?? 0) * 10) % 360',
-                    width: 1,
-                },
-            },
-        });
+        // orderedStyles.push({
+        //     id: 'lol',
+        //     fills: {},
+        //     kind: {type: 'everything'},
+        //     mods: [],
+        //     order: 0,
+        //     lines: {
+        //         lol: {
+        //             id: 'lol',
+        //             mods: [],
+        //             // color: '({r: ((pathId ?? 0) / maxPathId) * 360, g: 0, b: 0})',
+        //             // zIndex: 'pathId ?? 0',
+        //             color: '({r: ((pathId ?? 0) * 10) % 360, g: 0, b: 0})',
+        //             zIndex: '((pathId ?? 0) * 10) % 360',
+        //             width: 1,
+        //         },
+        //     },
+        // });
 
         ctx.items.push(
             ...allPaths

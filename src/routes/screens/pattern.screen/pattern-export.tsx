@@ -167,10 +167,10 @@ const LoadPattern = ({id, state}: {id: string; state: ExportHistory}) => {
  * On localhost, we can use the `/fs/` api, but in prod we just use localStorage
  */
 const CreateAndRedirectSwitch = ({id}: {id: string}) => {
-    const [onLocal, setOnLocal] = useState<null | boolean>(false);
-    // useEffect(() => {
-    //     setOnLocal(window.location.hostname === 'localhost');
-    // }, []);
+    const [onLocal, setOnLocal] = useState<null | boolean>(null);
+    useEffect(() => {
+        setOnLocal(window.location.hostname === 'localhost');
+    }, []);
     if (onLocal == null) return null;
     return onLocal ? <CreateAndRedirect id={id} /> : <CreateAndRedirectLocalStorage id={id} />;
 };
