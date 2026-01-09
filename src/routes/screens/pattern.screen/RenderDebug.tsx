@@ -135,6 +135,7 @@ const renderLogSelection = (
                         type: 'path',
                         color: item.color ? colorToRgb(item.color) : {r: 255, g: 0, b: 0},
                         opacity: detectOverlaps ? 0.3 : undefined,
+                        strokeWidth: item.noFill ? 0.02 : undefined,
                         adjustForZoom: true,
                         shapes: [item.shape],
                         key: 'log-' + i,

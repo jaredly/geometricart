@@ -1,5 +1,5 @@
 import {scalePos} from '../../../../editor/scalePos';
-import {dist, Matrix} from '../../../../rendering/getMirrorTransforms';
+import {applyMatrices, dist, Matrix} from '../../../../rendering/getMirrorTransforms';
 import {Coord, ThinTiling, Tiling} from '../../../../types';
 import {centroid} from '../../../findReflectionAxes';
 import {getSimplePatternData, getShapeColors, shapeSegments} from '../../../getPatternData';
@@ -51,6 +51,7 @@ import {outerBoundary} from '../../../outerBoundary';
 import {pathsFromSegments} from '../../../pathsFromSegments';
 import {collectAllPaths} from '../../../followPath';
 import {boundsForCoords} from '../../../../editor/Bounds';
+import {applyTilingTransformsG} from '../../../../editor/tilingPoints';
 
 export const thinTiling = (t: Tiling): ThinTiling => ({segments: t.cache.segments, shape: t.shape});
 
@@ -591,15 +592,23 @@ function renderDebug(
     });
 }
 
+export const maybeAddItems = (log: RenderLog[] | undefined, title: string) => {
+    const items: undefined | LogItems[] = log ? [] : undefined;
+    log?.push({
+        type: 'items',
+        title,
+        items: items!,
+    });
+    return items;
+};
+
 const colorLines = (
     lines: {points: Coord[]; pathId?: number}[],
     bounds: Coord[],
     ttt: Matrix[][][],
     debugLog?: RenderLog[],
 ) => {
-    const colors: (number | null)[] = lines.map(() => null);
     const byPair: Record<string, number> = {};
-    const same: [number, number][] = [];
 
     if (debugLog) {
         debugLog?.push({
@@ -611,101 +620,60 @@ const colorLines = (
         });
     }
 
-    const matches: undefined | LogItems[] = debugLog ? [] : undefined;
-    debugLog?.push({
-        type: 'items',
-        title: 'Matches',
-        items: matches!,
-    });
-
     // Find the lines that fall within the bounds
     const boundingBox = boundsForCoords(...bounds);
     const baseLines = lines.filter((line) => line.points.some((p) => aabbContains(boundingBox, p)));
 
+    const baseLog = maybeAddItems(debugLog, 'Base Items');
+    const dups: Record<number, number> = {};
     baseLines.forEach((line, i) => {
-        const keys = coordPairs(line.points, true).map((p) => coordPairKey(p));
-        if (keys.some((k) => byPair[k] != null)) {
-            return; // this is a dup looks like
-        }
-        keys.forEach((key) => (byPair[key] = i));
-    });
+        const transformedLines = applyTilingTransformsG([line.points], ttt, (pts, tx) =>
+            pts.map((p) => applyMatrices(p, tx)),
+        );
 
-    return lines.map((line) => {
-        if (baseLines.includes(line)) return baseLines.indexOf(line);
-        for (let pair of coordPairs(line.points, true)) {
-            const k = coordPairKey(pair);
-            if (byPair[k] != null) {
-                return byPair[k];
+        baseLog?.push({
+            item: transformedLines.map((points) => ({
+                type: 'shape',
+                shape: barePathFromCoords(points, true),
+                hidePoints: true,
+                noFill: true,
+            })),
+        });
+
+        const keys = transformedLines.map((points) =>
+            coordPairs(points, true).map((p) => coordPairKey(p)),
+        );
+        for (let sub of keys) {
+            for (let key of sub) {
+                if (byPair[key] != null) {
+                    dups[i] = byPair[key];
+                    return;
+                }
             }
         }
-        return null;
+        keys.forEach((keys) => keys.forEach((key) => (byPair[key] = i)));
+    });
+    const remap: Record<number, number> = {};
+    let at = 0;
+    baseLines.forEach((_, i) => {
+        if (dups[i] != null) {
+            remap[i] = dups[i];
+        } else {
+            remap[i] = at++;
+        }
     });
 
-    // lines.forEach((line, i) => {
-    //     if (line.pathId == null) return; // skip
-    //     const pairs = coordPairs(line.points, true);
-    //     // debugLog?.push({
-    //     //     type: 'items',
-    //     //     title: `Line ${i}`,
-    //     //     items: pairs.map((pair) => ({
-    //     //         item: {type: 'seg', prev: pair[0], seg: {type: 'Line', to: pair[1]}},
-    //     //     })),
-    //     // });
-    //     const keys = pairs.map((p) => coordPairKey(p, 5));
-    //     let found: null | number = null;
-    //     keys.forEach((pair, j) => {
-    //         if (byPair[pair] != null) {
-    //             // console.log('itsamatch', pair, i);
-    //             if (found != null && found !== byPair[pair]) {
-    //                 same.push(found < byPair[pair] ? [found, byPair[pair]] : [byPair[pair], found]);
-    //             } else {
-    //                 if (found == null) {
-    //                     found = byPair[pair];
-    //                     colors[i] = found;
-    //                     matches?.push({
-    //                         text: `Found: ${found}, i: ${i}`,
-    //                         item: [
-    //                             {
-    //                                 type: 'shape',
-    //                                 shape: barePathFromCoords(lines[found].points, true),
-    //                                 color: {r: 0, g: 255, b: 0},
-    //                                 hidePoints: true,
-    //                             },
-    //                             {
-    //                                 type: 'shape',
-    //                                 shape: barePathFromCoords(line.points, true),
-    //                                 hidePoints: true,
-    //                             },
-    //                             {
-    //                                 type: 'seg',
-    //                                 color: {r: 255, g: 255, b: 0},
-    //                                 prev: pairs[j][0],
-    //                                 seg: {type: 'Line', to: pairs[j][1]},
-    //                             },
-    //                         ],
-    //                     });
-    //                 }
-    //             }
-    //         }
-    //     });
-    //     if (found == null) {
-    //         keys.forEach((pair) => (byPair[pair] = i));
-    //     }
-    // });
-    // const mapping: Record<number, number> = {};
-    // // same.forEach(([one, two]) => {
-    // //     colors.forEach((c, i) => {
-    // //         if (c === one) {
-    // //             colors[i] = two;
-    // //         }
-    // //     });
-    // // });
-    // let at = 0;
-    // return colors.map((num) => {
-    //     if (num == null) return num;
-    //     if (mapping[num] == null) {
-    //         mapping[num] = at++;
-    //     }
-    //     return mapping[num];
-    // });
+    return lines
+        .map((line, i) => {
+            if (baseLines.includes(line)) return baseLines.indexOf(line);
+
+            for (let pair of coordPairs(line.points, true)) {
+                const k = coordPairKey(pair);
+                if (byPair[k] != null) {
+                    return byPair[k];
+                }
+            }
+            return null;
+        })
+        .map((n) => (n != null ? remap[n] : n));
 };

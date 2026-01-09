@@ -37,6 +37,16 @@ export const LineEditor = ({
 
             <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
                 <AnimInput
+                    label="enabled"
+                    value={value.enabled}
+                    onChange={(enabled) => update.enabled(enabled as AnimatableBoolean)}
+                />
+                <AnimInput
+                    label="opacity"
+                    value={value.opacity}
+                    onChange={(opacity) => update.opacity(opacity as AnimatableNumber)}
+                />
+                <AnimInput
                     label="zIndex"
                     value={value.zIndex}
                     // biome-ignore lint: this one is fine

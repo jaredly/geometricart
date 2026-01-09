@@ -487,7 +487,7 @@ export const renderGroup = (ctx: Ctx, crops: CropsAndMatrices, group: Group) => 
 export type LogItem =
     | {type: 'seg'; prev: Coord; seg: Segment; color?: Color}
     | {type: 'point'; p: Coord; color?: Color}
-    | {type: 'shape'; shape: BarePath; color?: Color; hidePoints?: boolean};
+    | {type: 'shape'; shape: BarePath; color?: Color; hidePoints?: boolean; noFill?: boolean};
 
 export type LogItems = {item: LogItem | LogItem[]; text?: string; color?: Color; data?: any};
 export type RenderLog =
