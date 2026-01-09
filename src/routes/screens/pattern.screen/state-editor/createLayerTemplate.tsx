@@ -78,10 +78,13 @@ export const createShapeStyle = <Kind,>(id: string, kind: Kind): ShapeStyle<Kind
 
 export const createFill = (id: string): Fill => ({
     id,
+    color: 0,
     mods: [],
 });
 
 export const createLine = (id: string): Line => ({
     id,
+    color: 0,
+    width: 1,
     mods: [],
 });

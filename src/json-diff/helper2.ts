@@ -175,7 +175,7 @@ export function diffBuilderApply<T, Extra, Tag extends string = 'type', R = void
                     };
                 }
 
-                if (prop === 'valueOf') {
+                if (prop === 'valueOf' || prop === 'toString') {
                     // weird react thing
                     return null;
                 }

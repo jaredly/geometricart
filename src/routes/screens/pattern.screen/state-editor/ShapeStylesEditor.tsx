@@ -31,9 +31,15 @@ export const ShapeStylesEditor = <Kind,>({
                 <button
                     className="btn btn-xs btn-outline"
                     onClick={() => {
-                        const id = `style-${entries.length + 1}`;
-                        const style = createShapeStyle(id, defaultKind);
-                        update[id].add(style);
+                        let i = 0;
+                        for (let i = 0; i < 100; i++) {
+                            const id = `style-${i}`;
+                            if (!styles[id]) {
+                                const style = createShapeStyle(id, defaultKind);
+                                update[id].add(style);
+                                return;
+                            }
+                        }
                     }}
                 >
                     Add style

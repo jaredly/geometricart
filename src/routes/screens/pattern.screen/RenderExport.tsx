@@ -119,9 +119,9 @@ export const RenderExport = ({
                         className="input w-13"
                     />
                 </div>
-                <button className="btn" onClick={() => nav(`?debug=${t}`)}>
+                {/*<button className="btn" onClick={() => nav(`?debug=${t}`)}>
                     Debug
-                </button>
+                </button>*/}
                 <VideoExport
                     worker={worker}
                     state={state}
