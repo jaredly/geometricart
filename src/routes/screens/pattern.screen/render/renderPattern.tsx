@@ -11,7 +11,13 @@ import {
     joinAdjacentShapeSegments,
     unique,
 } from '../../../shapesFromSegments';
-import {adjustShapes, adjustShapes2, coordPairKey, coordPairs} from '../utils/adjustShapes';
+import {
+    adjustShapes,
+    adjustShapes2,
+    coordPairKey,
+    coordPairs,
+    sortCoordPair,
+} from '../utils/adjustShapes';
 import {parseColor} from '../utils/colors';
 import {AnimCtx, Ctx, RenderItem, RenderShadow, a, isColor, isCoord} from '../eval/evaluate';
 import {
@@ -35,6 +41,7 @@ import {
     barePathFromCoords,
     numToCoord,
     RenderLog,
+    LogItems,
 } from '../utils/resolveMods';
 import {notNull} from '../utils/notNull';
 import {closeEnough} from '../../../../rendering/epsilonToZero';
@@ -106,10 +113,8 @@ export const renderPattern = (ctx: Ctx, _outer: CropsAndMatrices, pattern: Patte
             baseShapes
                 .map(joinAdjacentShapeSegments)
                 .flatMap(shapeSegments)
-                .map(([a, b]): [Coord, Coord] =>
-                    (closeEnough(a.x, b.x) ? a.y > b.y : a.x > b.x) ? [b, a] : [a, b],
-                ),
-            ([a, b]) => `${coordKey(a)}:${coordKey(b)}`,
+                .map((pair) => sortCoordPair(pair)),
+            coordPairKey,
         );
 
         const byEndPoint = edgesByEndpoint(allSegments);
@@ -588,26 +593,68 @@ const colorLines = (lines: {points: Coord[]; pathId?: number}[], debugLog?: Rend
     const colors: (number | null)[] = lines.map(() => null);
     const byPair: Record<string, number> = {};
     const same: [number, number][] = [];
+
+    if (debugLog) {
+        debugLog?.push({
+            type: 'items',
+            title: 'Lines',
+            items: lines.map((line) => ({
+                item: {type: 'shape', shape: barePathFromCoords(line.points, true)},
+            })),
+        });
+    }
+
+    const matches: undefined | LogItems[] = debugLog ? [] : undefined;
+    debugLog?.push({
+        type: 'items',
+        title: 'Matches',
+        items: matches!,
+    });
+
     lines.forEach((line, i) => {
         if (line.pathId == null) return; // skip
         const pairs = coordPairs(line.points, true);
-        debugLog?.push({
-            type: 'items',
-            title: `Line ${i}`,
-            items: pairs.map((pair) => ({
-                item: {type: 'seg', prev: pair[0], seg: {type: 'Line', to: pair[1]}},
-            })),
-        });
+        // debugLog?.push({
+        //     type: 'items',
+        //     title: `Line ${i}`,
+        //     items: pairs.map((pair) => ({
+        //         item: {type: 'seg', prev: pair[0], seg: {type: 'Line', to: pair[1]}},
+        //     })),
+        // });
         const keys = pairs.map((p) => coordPairKey(p, 5));
         let found: null | number = null;
-        keys.forEach((pair, i) => {
+        keys.forEach((pair, j) => {
             if (byPair[pair] != null) {
                 // console.log('itsamatch', pair, i);
                 if (found != null && found !== byPair[pair]) {
                     same.push(found < byPair[pair] ? [found, byPair[pair]] : [byPair[pair], found]);
                 } else {
-                    found = byPair[pair];
-                    colors[i] = found;
+                    if (found == null) {
+                        found = byPair[pair];
+                        colors[i] = found;
+                        matches?.push({
+                            text: `Found: ${found}, i: ${i}`,
+                            item: [
+                                {
+                                    type: 'shape',
+                                    shape: barePathFromCoords(lines[found].points, true),
+                                    color: {r: 0, g: 255, b: 0},
+                                    hidePoints: true,
+                                },
+                                {
+                                    type: 'shape',
+                                    shape: barePathFromCoords(line.points, true),
+                                    hidePoints: true,
+                                },
+                                {
+                                    type: 'seg',
+                                    color: {r: 255, g: 255, b: 0},
+                                    prev: pairs[j][0],
+                                    seg: {type: 'Line', to: pairs[j][1]},
+                                },
+                            ],
+                        });
+                    }
                 }
             }
         });

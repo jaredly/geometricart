@@ -20,7 +20,15 @@ const followSinglePath = (
         const next = prev.int.exits.find((seg) => seg !== prev.seg);
         if (next == null || !segInts[next]) {
             if (first) {
-                const second = followSinglePath(int0, int0.exits[1], false, segInts, intersections);
+                const second = followSinglePath(
+                    int0,
+                    int0.exits[1],
+                    false,
+                    segInts,
+                    intersections,
+                    maxPathLength,
+                    usedSegments,
+                );
                 if (second) {
                     if (second.open) {
                         second.points.unshift(...points.map((p) => p.int.pos));
@@ -39,7 +47,15 @@ const followSinglePath = (
         if (int.pathId !== int0.pathId) {
             // console.log('reached a different path');
             if (first) {
-                const second = followSinglePath(int0, int0.exits[1], false, segInts, intersections);
+                const second = followSinglePath(
+                    int0,
+                    int0.exits[1],
+                    false,
+                    segInts,
+                    intersections,
+                    maxPathLength,
+                    usedSegments,
+                );
                 if (second) {
                     if (second.open) {
                         second.points.unshift(...points.map((p) => p.int.pos).reverse());

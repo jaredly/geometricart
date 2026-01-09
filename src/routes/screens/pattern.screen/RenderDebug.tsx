@@ -139,7 +139,7 @@ const renderLogSelection = (
                         shapes: [item.shape],
                         key: 'log-' + i,
                     },
-                    ...(detectOverlaps
+                    ...(detectOverlaps || item.hidePoints
                         ? []
                         : [
                               {
