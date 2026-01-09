@@ -6,7 +6,7 @@ import {NumberField} from './NumberField';
 import {LineEditor} from './LineEditor';
 import {FillEditor, ModsEditor} from './FillEditor';
 import {SubStyleList} from './SubStyleList';
-import {BaseKindEditor} from './BaseKindEditor';
+import {ShapeKindEditor} from './BaseKindEditor';
 import {
     AddIcon,
     ChevronUp12,
@@ -31,8 +31,8 @@ export const ShapeStyleCard = <Kind,>({
     handleProps: HandleProps;
     value: ShapeStyle<Kind>;
     update: Updater<ShapeStyle<Kind>>;
-    KindEditor: React.ComponentType<{value: Kind; update: Updater<Kind>}>;
     onRemove: () => void;
+    KindEditor: React.ComponentType<{value: Kind; update: Updater<Kind>}>;
     defaultValue: Kind;
 }) => {
     const [show, setShow] = useState(false);

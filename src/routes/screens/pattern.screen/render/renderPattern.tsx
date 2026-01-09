@@ -4,13 +4,14 @@ import {Coord, ThinTiling, Tiling} from '../../../../types';
 import {centroid} from '../../../findReflectionAxes';
 import {getSimplePatternData, getShapeColors, shapeSegments} from '../../../getPatternData';
 import {
+    allPairs,
     cmpCoords,
     edgesByEndpoint,
     EndPointMap,
     joinAdjacentShapeSegments,
     unique,
 } from '../../../shapesFromSegments';
-import {adjustShapes, adjustShapes2, coordPairs} from '../utils/adjustShapes';
+import {adjustShapes, adjustShapes2, coordPairKey, coordPairs} from '../utils/adjustShapes';
 import {parseColor} from '../utils/colors';
 import {AnimCtx, Ctx, RenderItem, RenderShadow, a, isColor, isCoord} from '../eval/evaluate';
 import {
@@ -42,6 +43,18 @@ import {pathsFromSegments} from '../../../pathsFromSegments';
 import {collectAllPaths} from '../../../followPath';
 
 export const thinTiling = (t: Tiling): ThinTiling => ({segments: t.cache.segments, shape: t.shape});
+
+const makeLineKey = (points: Coord[], open: boolean) => {
+    const segs = open ? allPairs(points) : coordPairs(points);
+    let first: null | string = null;
+    segs.forEach((seg) => {
+        const k = coordPairKey(seg);
+        if (first == null || k < first) {
+            first = k;
+        }
+    });
+    return first!;
+};
 
 export const renderPattern = (ctx: Ctx, _outer: CropsAndMatrices, pattern: Pattern) => {
     if (pattern.disabled) return;
@@ -113,71 +126,45 @@ export const renderPattern = (ctx: Ctx, _outer: CropsAndMatrices, pattern: Patte
         const orderedStyles = Object.values(pattern.contents.styles).sort(
             (a, b) => a.order - b.order,
         );
-        // orderedStyles.push({
-        //     id: 'lol',
-        //     fills: {},
-        //     kind: {type: 'everything'},
-        //     mods: [],
-        //     order: 0,
-        //     lines: {
-        //         lol: {
-        //             id: 'lol',
-        //             mods: [],
-        //             // color: '({r: ((pathId ?? 0) / maxPathId) * 360, g: 0, b: 0})',
-        //             // zIndex: 'pathId ?? 0',
-        //             color: '({r: ((pathId ?? 0) * 10) % 360, g: 0, b: 0})',
-        //             zIndex: '((pathId ?? 0) * 10) % 360',
-        //             width: 1,
-        //         },
-        //     },
-        // });
 
         ctx.items.push(
-            ...allPaths
-                // .sort((a, b) => (a.pathId ?? 0) - (b.pathId ?? 0))
-                // .sort((a, b) => (((a.pathId ?? 0) * 10) % 360) - (((b.pathId ?? 0) * 10) % 360))
-                .flatMap(({points, open, pathId}, i) => {
-                    // return {
-                    //     type: 'path',
-                    //     // color: {r: ((pathId ?? 0) / maxPathId) * 360, g: 0, b: 0},
-                    //     // zIndex: pathId ?? 0,
-                    //     color: {r: ((pathId ?? 0) * 10) % 360, g: 0, b: 0},
-                    //     zIndex: ((pathId ?? 0) * 10) % 360,
-                    //     key: `${i}`,
-                    //     shapes: [barePathFromCoords(points, open)],
-                    //     strokeWidth: 0.01,
-                    // };
+            ...allPaths.flatMap(({points, open, pathId}, i) => {
+                const key = makeLineKey(points, !!open);
+                const center = centroid(points);
 
-                    const matchingStyles = orderedStyles.map((style) => {
-                        const match = true;
-                        // const match = Array.isArray(style.kind)
-                        //     ? first(style.kind, (k) =>
-                        //           matchKind(k, i, colors[i], center, simple.eigenCorners),
-                        //       )
-                        //     : matchKind(style.kind, i, colors[i], center, simple.eigenCorners);
-                        if (!match) {
-                            return;
-                        }
-                        return {style, match};
-                    });
-                    return renderShape(
+                const thisColor = (pathId ?? 0) % 10;
+
+                const matchingStyles = orderedStyles.map((style) => {
+                    // const match = true;
+                    const match = Array.isArray(style.kind)
+                        ? first(style.kind, (k) =>
+                              matchKind(k, key, thisColor, center, simple.eigenCorners),
+                          )
+                        : matchKind(style.kind, key, thisColor, center, simple.eigenCorners);
+                    if (!match) {
+                        return;
+                    }
+                    return {style, match};
+                });
+                return renderShape(
+                    points,
+                    ctx,
+                    i,
+                    panim,
+                    {
+                        maxPathId,
+                        pathId,
+                        center,
+                        key,
                         points,
-                        ctx,
-                        i,
-                        panim,
-                        {
-                            maxPathId,
-                            pathId,
-                            center: centroid(points),
-                            points,
-                            open,
-                            i,
-                            groupId: 0, // grouping paths by eigenshape-expansion
-                        },
-                        matchingStyles.filter(notNull),
                         open,
-                    );
-                }),
+                        i,
+                        groupId: 0, // grouping paths by eigenshape-expansion
+                    },
+                    matchingStyles.filter(notNull),
+                    open,
+                );
+            }),
         );
 
         return;
@@ -207,13 +194,14 @@ export const renderPattern = (ctx: Ctx, _outer: CropsAndMatrices, pattern: Patte
     ctx.items.push(
         ...midShapes.flatMap(({shape, i}) => {
             const center = centroid(shape);
+            const key = coordKey(center);
             const radius = Math.min(...shape.map((s) => dist(s, center)));
             const matchingStyles = orderedStyles.map((style) => {
                 const match = Array.isArray(style.kind)
                     ? first(style.kind, (k) =>
-                          matchKind(k, i, colors[i], center, simple.eigenCorners),
+                          matchKind(k, key, colors[i], center, simple.eigenCorners),
                       )
-                    : matchKind(style.kind, i, colors[i], center, simple.eigenCorners);
+                    : matchKind(style.kind, key, colors[i], center, simple.eigenCorners);
                 if (!match) {
                     return;
                 }
@@ -470,9 +458,10 @@ const removeNullShadow = (sh: RenderShadow) => {
     }
     return sh;
 };
+
 export const matchKind = (
     k: ShapeKind,
-    i: number,
+    id: string,
     color: number,
     center: Coord,
     eigenCorners: Coord[][],
@@ -483,7 +472,7 @@ export const matchKind = (
         case 'alternating':
             return color === k.index ? {x: 0, y: 0} : false;
         case 'explicit':
-            return k.ids[i];
+            return k.ids[id];
         case 'shape':
             console.log('not right');
             return false;
@@ -504,6 +493,7 @@ export const matchKind = (
     }
     return false;
 };
+
 export const matchesDistances = (dist: number, distances: number[]) => {
     for (let i = 0; i < distances.length; i++) {
         if (dist < distances[i]) {

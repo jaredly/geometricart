@@ -1,10 +1,11 @@
 import React, {useState, useEffect} from 'react';
-import {Color, PatternContents, AnimatableCoord} from '../export-types';
+import {Color, PatternContents, AnimatableCoord, ShapeKind, BaseKind} from '../export-types';
 import {AnimCoordInput} from './AnimCoordInput';
 import {JsonEditor} from './JsonEditor';
 import {NumberField} from './NumberField';
 import {ShapeStylesEditor} from './ShapeStylesEditor';
 import {Updater} from '../../../../json-diff/Updater';
+import {BaseKindEditor, ShapeKindEditor} from './BaseKindEditor';
 
 export const PatternContentsEditor = ({
     value,
@@ -149,17 +150,21 @@ export const PatternContentsEditor = ({
                 </div>
             ) : null}
             {value.type === 'shapes' ? (
-                <ShapeStylesEditor
+                <ShapeStylesEditor<ShapeKind>
                     palette={palette}
                     styles={value.styles}
                     update={update.variant('shapes').styles}
+                    KindEditor={ShapeKindEditor}
+                    defaultKind={{type: 'everything'}}
                 />
             ) : null}
             {value.type === 'lines' ? (
-                <ShapeStylesEditor
+                <ShapeStylesEditor<BaseKind>
                     palette={palette}
                     styles={value.styles}
                     update={update.variant('lines').styles}
+                    KindEditor={BaseKindEditor}
+                    defaultKind={{type: 'everything'}}
                 />
             ) : null}
         </details>

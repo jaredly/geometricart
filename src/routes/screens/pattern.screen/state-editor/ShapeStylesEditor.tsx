@@ -4,16 +4,20 @@ import {ShapeStyleCard} from './ShapeStyleCard';
 import {createShapeStyle} from './createLayerTemplate';
 import {DragToReorderList} from './DragToReorderList';
 import {Updater} from '../../../../json-diff/Updater';
-import {BaseKindEditor} from './BaseKindEditor';
+import {ShapeKindEditor} from './BaseKindEditor';
 
-export const ShapeStylesEditor = ({
+export const ShapeStylesEditor = <Kind,>({
     styles,
     update,
     palette,
+    KindEditor,
+    defaultKind,
 }: {
     palette: Color[];
-    styles: Record<string, ShapeStyle<ShapeKind>>;
-    update: Updater<Record<string, ShapeStyle<ShapeKind>>>;
+    styles: Record<string, ShapeStyle<Kind>>;
+    update: Updater<Record<string, ShapeStyle<Kind>>>;
+    KindEditor: React.ComponentType<{value: Kind; update: Updater<Kind>}>;
+    defaultKind: Kind;
 }) => {
     const entries = useMemo(
         () => Object.entries(styles).sort(([, a], [, b]) => a.order - b.order),
@@ -28,7 +32,7 @@ export const ShapeStylesEditor = ({
                     className="btn btn-xs btn-outline"
                     onClick={() => {
                         const id = `style-${entries.length + 1}`;
-                        const style = createShapeStyle(id);
+                        const style = createShapeStyle(id, defaultKind);
                         update[id].add(style);
                     }}
                 >
@@ -41,15 +45,15 @@ export const ShapeStylesEditor = ({
                     items={entries.map(([key, style], i) => ({
                         key,
                         render: (handleProps) => (
-                            <ShapeStyleCard<ShapeKind>
+                            <ShapeStyleCard<Kind>
                                 handleProps={handleProps}
                                 key={key + ':' + i}
                                 palette={palette}
                                 value={style}
                                 update={update[key]}
                                 onRemove={update[key].remove}
-                                KindEditor={BaseKindEditor}
-                                defaultValue={{type: 'everything'}}
+                                KindEditor={KindEditor}
+                                defaultValue={defaultKind}
                             />
                         ),
                     }))}

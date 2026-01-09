@@ -1,4 +1,13 @@
 
+# Lines!
+
+- [ ] explicit -> gotta be able to click lines to select them pls
+  - how would a [line] be identified? not by center. maybe like a hash?
+    I don't love it too much. or like ... the top-left-most segment? yeah
+    that's kinda neat. Ok so it's the sorted-segment-key that sorts first.
+    simple.
+  
+
 ## Isolated pattern editor:
 
 - [x] basic loading
