@@ -116,6 +116,7 @@ export const AnimColor = ({
                             : colorToString(value)
                         : ''
                 }
+                className='w-80 font-mono'
                 placeholder="Color"
                 onChange={(value) => {
                     const parsed = parseAnimatable(value);

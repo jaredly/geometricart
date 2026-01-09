@@ -19,7 +19,7 @@ import {
     coordPairs,
     sortCoordPair,
 } from '../utils/adjustShapes';
-import {parseColor} from '../utils/colors';
+import {parseColor, Rgb} from '../utils/colors';
 import {AnimCtx, Ctx, RenderItem, RenderShadow, a, isColor, isCoord} from '../eval/evaluate';
 import {
     Pattern,
@@ -32,6 +32,8 @@ import {
     ShapeKind,
     PatternContents,
     ShapeStyle,
+    Color,
+    Hsl,
 } from '../export-types';
 import {
     CropsAndMatrices,
@@ -52,6 +54,7 @@ import {pathsFromSegments} from '../../../pathsFromSegments';
 import {collectAllPaths} from '../../../followPath';
 import {boundsForCoords} from '../../../../editor/Bounds';
 import {applyTilingTransformsG} from '../../../../editor/tilingPoints';
+import {hslToRgb, rgbToHsl} from '../../../../rendering/colorConvert';
 
 export const thinTiling = (t: Tiling): ThinTiling => ({segments: t.cache.segments, shape: t.shape});
 
@@ -127,7 +130,10 @@ export const renderPattern = (ctx: Ctx, _outer: CropsAndMatrices, pattern: Patte
 
         const outer = outerBoundary(allSegments, byEndPoint, pointNames);
         const links = pathsFromSegments(allSegments, byEndPoint, outer);
-        const allPaths = collectAllPaths(links, allSegments);
+        let allPaths = collectAllPaths(links, allSegments);
+        if (!pattern.contents.includeBorders) {
+            allPaths = allPaths.filter((p) => p.pathId != null);
+        }
 
         const maxPathId = allPaths.reduce((a, b) => Math.max(a, b.pathId ?? 0), 0);
         // ok so for each line, we need to maybe evaluate the style dealio?
@@ -178,6 +184,7 @@ export const renderPattern = (ctx: Ctx, _outer: CropsAndMatrices, pattern: Patte
                         points,
                         open,
                         i,
+                        maxI: allPaths.length - 1,
                         groupId: thisColor,
                         maxGroupId: maxColor,
                     },
@@ -338,6 +345,33 @@ const renderShape = <Kind,>(
     return res.filter(notNull);
 };
 
+const clamp = (v: number, min: number, max: number) => Math.min(Math.max(min, v), max);
+const clampRgb = (rgb: Rgb) => ({
+    r: clamp(rgb.r, 0, 255),
+    g: clamp(rgb.g, 0, 255),
+    b: clamp(rgb.b, 0, 255),
+});
+const clampHsl = ({h, s, l}: Hsl): Hsl => ({h: h % 1, s: clamp(s, 0, 1), l: clamp(l, 0, 1)});
+
+export const tintColor = (base: Rgb, tint: Color) => {
+    if (Array.isArray(tint)) {
+        const [r, g, b] = tint;
+        return clampRgb({r: base.r + r, g: base.g + g, b: base.b + b});
+    }
+    if ('h' in tint) {
+        const [h, s, l] = rgbToHsl(base.r, base.g, base.b);
+        const res = clampHsl({
+            h: h + tint.h,
+            s: s + tint.s,
+            l: l + tint.l,
+        });
+        const [r, g, b] = hslToRgb(res.h, res.s, res.l);
+        return {r, g, b};
+    }
+    const {r, g, b} = tint;
+    return clampRgb({r: base.r + r, g: base.g + g, b: base.b + b});
+};
+
 export const renderFill = (
     f: ConcreteFill,
     anim: AnimCtx,
@@ -346,13 +380,13 @@ export const renderFill = (
     key: string,
 ): undefined | RenderItem => {
     if (f.color == null) return;
-    const color = a.color(anim, f.color);
-    if (!color) return;
-    const rgb = colorToRgb(color);
+    let rgb = colorToRgb(f.color);
+    if (f.tint) {
+        rgb = tintColor(rgb, f.tint);
+    }
     const zIndex = f.zIndex;
-    const opacity = f.opacity ? a.number(anim, f.opacity) : undefined;
+    const opacity = f.opacity;
     const shadow = resolveShadow(anim, f.shadow);
-    // ctx.byKey[key] = stuff;
 
     return {
         type: 'path',
@@ -379,15 +413,12 @@ export const renderLine = (
 ): undefined | RenderItem => {
     if (f.color == null) return;
     if (!f.width) return;
-    const color = a.color(anim, f.color);
-    if (!color) return;
-    const rgb = colorToRgb(color);
-    const width = a.number(anim, f.width) / 100;
-    const opacity = f.opacity ? a.number(anim, f.opacity) : undefined;
+    let rgb = colorToRgb(f.color);
+    if (f.tint) {
+        rgb = tintColor(rgb, f.tint);
+    }
+    const width = f.width / 100;
     const shadow = resolveShadow(anim, f.shadow);
-    const zIndex = f.zIndex;
-    // const key = `stroke-${i}-${fi}`;
-    // ctx.byKey[key] = stuff;
 
     return {
         type: 'path',
@@ -401,8 +432,8 @@ export const renderLine = (
             : [barePathFromCoords(shape, open)],
         shadow,
         sharp: f.sharp,
-        opacity,
-        zIndex,
+        opacity: f.opacity,
+        zIndex: f.zIndex,
     };
 };
 

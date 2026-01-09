@@ -35,7 +35,7 @@ export const LineEditor = ({
                 </button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
+            <div className="flex flex-row flex-wrap gap-2">
                 <AnimInput
                     label="enabled"
                     value={value.enabled}

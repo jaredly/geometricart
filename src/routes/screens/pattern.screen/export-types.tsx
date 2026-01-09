@@ -9,7 +9,7 @@ import {
 } from '../../../rendering/getMirrorTransforms';
 import {GuideGeom, Coord, Segment, BarePath, Tiling, ThinTiling} from '../../../types';
 import {pk, PKPath} from '../../pk';
-import {colorToString} from './utils/colors';
+import {colorToString, Rgb} from './utils/colors';
 import {CropsAndMatrices} from './utils/resolveMods';
 
 export type AnimatableNumber = number | string;
@@ -47,10 +47,8 @@ export type Shape =
 
 export type Box = {x: number; y: number; width: number; height: number};
 
-export type Color =
-    | {r: number; g: number; b: number}
-    | {h: number; s: number; l: number}
-    | [number, number, number];
+export type Hsl = {h: number; s: number; l: number};
+export type Color = Rgb | Hsl | [number, number, number];
 
 export const colorToRgb = (c: Color): {r: number; g: number; b: number} =>
     Array.isArray(c)
@@ -199,6 +197,8 @@ export type PatternContents =
     | {
           type: 'lines';
           styles: Record<string, ShapeStyle<BaseKind>>;
+          includeBorders?: boolean;
+          sort?: AnimatableValue;
       }
     | {
           type: 'layers';

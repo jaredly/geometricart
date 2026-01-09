@@ -81,7 +81,13 @@ export const getScript = (ctx: AnimCtx, v: string) => {
     return ctx.cache.get(v)!;
 };
 
-const evaluate = <T,>(ctx: AnimCtx, s: string, check: (v: any) => v is T, otherwise: T): T => {
+const evaluate = <T,>(
+    ctx: AnimCtx,
+    s: string,
+    check: (v: any) => v is T,
+    otherwise: T,
+    name?: string,
+): T => {
     const sc = getScript(ctx, s);
     if (!sc) return otherwise;
     let missing = false;
@@ -97,13 +103,17 @@ const evaluate = <T,>(ctx: AnimCtx, s: string, check: (v: any) => v is T, otherw
     try {
         const v = sc.fn(ctx.values);
         if (!check(v)) {
-            ctx.warn(`couldnt get number: ${JSON.stringify(v)}`);
+            ctx.warn(
+                `couldnt get ${name ?? 'value'}: ${JSON.stringify(v)} - ${JSON.stringify(otherwise)}`,
+            );
             return otherwise;
         }
         return v;
     } catch (err) {
         console.log(ctx.values);
-        ctx.warn(`Error while running script ${err}. Needs ${sc.needs.join(',')}`);
+        ctx.warn(
+            `Error while running script for ${name ?? 'value'} ${err}. Needs ${sc.needs.join(',')}`,
+        );
         return otherwise;
     }
 };
@@ -203,7 +213,13 @@ export const a = {
             const parsed = parseColor(v);
             if (parsed) return parsed;
 
-            v = evaluate<Color | string | number | null>(ctx, v, isColor, {r: 255, g: 255, b: 255});
+            v = evaluate<Color | string | number | null>(
+                ctx,
+                v,
+                isColor,
+                {r: 255, g: 255, b: 255},
+                'color',
+            );
         }
         if (typeof v === 'number') {
             if (!Number.isInteger(v) || v < 0) {

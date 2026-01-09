@@ -79,11 +79,17 @@ export const renderItems = (
             shadowPaint.setMaskFilter(
                 pk.MaskFilter.MakeBlur(pk.BlurStyle.Normal, Math.abs(amt), true),
             );
+            if (item.opacity != null) {
+                shadowPaint.setAlphaf(item.opacity);
+            }
 
             if (item.shadow.inner) {
                 paint.setColor(
                     pk.Color(item.shadow.color.r, item.shadow.color.g, item.shadow.color.b),
                 );
+                if (item.opacity != null) {
+                    paint.setAlphaf(item.opacity);
+                }
                 ctx.saveLayer();
                 ctx.drawPath(pkp, paint);
                 ctx.clipPath(pkp, pk.ClipOp.Intersect, true);
@@ -96,6 +102,9 @@ export const renderItems = (
                 shadowPaint.setColor(
                     pk.Color(item.shadow.color.r, item.shadow.color.g, item.shadow.color.b),
                 );
+                if (item.opacity != null) {
+                    shadowPaint.setAlphaf(item.opacity);
+                }
                 ctx.save();
                 ctx.translate(item.shadow.offset.x, item.shadow.offset.y);
                 ctx.drawPath(pkp, shadowPaint);
