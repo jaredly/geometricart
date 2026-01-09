@@ -4,6 +4,7 @@ import {ShapeStyleCard} from './ShapeStyleCard';
 import {createShapeStyle} from './createLayerTemplate';
 import {DragToReorderList} from './DragToReorderList';
 import {Updater} from '../../../../json-diff/Updater';
+import {BaseKindEditor} from './BaseKindEditor';
 
 export const ShapeStylesEditor = ({
     styles,
@@ -40,13 +41,15 @@ export const ShapeStylesEditor = ({
                     items={entries.map(([key, style], i) => ({
                         key,
                         render: (handleProps) => (
-                            <ShapeStyleCard
+                            <ShapeStyleCard<ShapeKind>
                                 handleProps={handleProps}
                                 key={key + ':' + i}
                                 palette={palette}
                                 value={style}
                                 update={update[key]}
                                 onRemove={update[key].remove}
+                                KindEditor={BaseKindEditor}
+                                defaultValue={{type: 'everything'}}
                             />
                         ),
                     }))}

@@ -15,21 +15,25 @@ import {
     SelectDragIcon,
 } from '../../../../icons/Icon';
 import {HandleProps} from './DragToReorderList';
-import {Updater} from '../../../../json-diff/Updater';
+import {SingleUpdater, Updater} from '../../../../json-diff/Updater';
 import {ChunkEditor} from './ChunkEditor';
 
-export const ShapeStyleCard = ({
+export const ShapeStyleCard = <Kind,>({
     value,
     update,
     onRemove,
     palette,
     handleProps,
+    defaultValue,
+    KindEditor,
 }: {
     palette: Color[];
     handleProps: HandleProps;
-    value: ShapeStyle<ShapeKind>;
-    update: Updater<ShapeStyle<ShapeKind>>;
+    value: ShapeStyle<Kind>;
+    update: Updater<ShapeStyle<Kind>>;
+    KindEditor: React.ComponentType<{value: Kind; update: Updater<Kind>}>;
     onRemove: () => void;
+    defaultValue: Kind;
 }) => {
     const [show, setShow] = useState(false);
     return (
@@ -75,7 +79,12 @@ export const ShapeStyleCard = ({
                             Remove
                         </button>
                     </div>
-                    <KindOrKinds value={value.kind} update={update.kind} />
+                    <KindOrKinds<Kind>
+                        KindEditor={KindEditor}
+                        value={value.kind}
+                        update={update.kind}
+                        defaultValue={defaultValue}
+                    />
                 </div>
                 <button className="btn w-full btn-xs" onClick={() => setShow(!show)}>
                     {show ? <ChevronUp12 /> : <DotsHorizontalOutline />}
@@ -122,15 +131,20 @@ export const ShapeStyleCard = ({
     );
 };
 
-const KindOrKinds = ({
+const KindOrKinds = <Kind,>({
     value,
     update,
+    KindEditor,
+    defaultValue,
 }: {
-    value: ShapeKind | ShapeKind[];
-    // onChange: (next: ShapeKind | ShapeKind[]) => void;
-    update: Updater<ShapeKind | ShapeKind[]>;
+    value: Kind | Kind[];
+    // onChange: (next: Kind | Kind[]) => void;
+    update: Updater<Kind | Kind[]>;
+    KindEditor: React.ComponentType<{value: Kind; update: Updater<Kind>}>;
+    defaultValue: Kind;
 }) => {
     const kinds = Array.isArray(value) ? value : [value];
+    const single = update as unknown as SingleUpdater<Kind>;
     return (
         <div className="bg-base-200 rounded-lg p-3 border border-base-300 space-y-2">
             <div className="flex items-center justify-between">
@@ -139,10 +153,10 @@ const KindOrKinds = ({
                     onClick={() => {
                         if (Array.isArray(value)) {
                             const res = kinds.slice();
-                            res.push({type: 'everything'});
-                            update.single(false).push({type: 'everything'});
+                            res.push(defaultValue);
+                            single.single(false).push(defaultValue);
                         } else {
-                            update.replace([value, {type: 'everything'}]);
+                            update.replace([value, defaultValue]);
                         }
                     }}
                     className="btn btn-square"
@@ -150,7 +164,7 @@ const KindOrKinds = ({
                     <AddIcon />
                 </button>
                 {kinds.length >= 1 ? (
-                    <BaseKindEditor value={kinds[0]} update={update.single(true)} />
+                    <KindEditor value={kinds[0]} update={single.single(true)} />
                 ) : null}
             </div>
             {kinds.slice(1).map((kind, i) => {
@@ -158,13 +172,13 @@ const KindOrKinds = ({
                     <div key={i}>
                         <button
                             onClick={() => {
-                                update.single(false)[i + 1].remove();
+                                single.single(false)[i + 1].remove();
                             }}
                             className="btn btn-square text-red-400"
                         >
                             &times;
                         </button>
-                        <BaseKindEditor value={kind} update={update.single(false)[i + 1]} />
+                        <KindEditor value={kind} update={single.single(false)[i + 1]} />
                     </div>
                 );
             })}
