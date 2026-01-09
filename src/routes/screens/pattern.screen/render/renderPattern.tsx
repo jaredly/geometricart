@@ -1,5 +1,5 @@
 import {scalePos} from '../../../../editor/scalePos';
-import {dist} from '../../../../rendering/getMirrorTransforms';
+import {dist, Matrix} from '../../../../rendering/getMirrorTransforms';
 import {Coord, ThinTiling, Tiling} from '../../../../types';
 import {centroid} from '../../../findReflectionAxes';
 import {getSimplePatternData, getShapeColors, shapeSegments} from '../../../getPatternData';
@@ -133,7 +133,7 @@ export const renderPattern = (ctx: Ctx, _outer: CropsAndMatrices, pattern: Patte
             (a, b) => a.order - b.order,
         );
 
-        const colors = colorLines(allPaths, ctx.log);
+        const colors = colorLines(allPaths, simple.bounds, simple.ttt, ctx.log);
 
         // for alternating:
         // ignore anything without a pathId
@@ -589,7 +589,12 @@ function renderDebug(
     });
 }
 
-const colorLines = (lines: {points: Coord[]; pathId?: number}[], debugLog?: RenderLog[]) => {
+const colorLines = (
+    lines: {points: Coord[]; pathId?: number}[],
+    eigenCorners: Coord[],
+    ttt: Matrix[][][],
+    debugLog?: RenderLog[],
+) => {
     const colors: (number | null)[] = lines.map(() => null);
     const byPair: Record<string, number> = {};
     const same: [number, number][] = [];
