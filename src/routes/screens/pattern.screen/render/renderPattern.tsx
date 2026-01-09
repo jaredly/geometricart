@@ -4,6 +4,7 @@ import {Coord, ThinTiling, Tiling} from '../../../../types';
 import {centroid} from '../../../findReflectionAxes';
 import {getSimplePatternData, getShapeColors, shapeSegments} from '../../../getPatternData';
 import {
+    aabbContains,
     allPairs,
     cmpCoords,
     edgesByEndpoint,
@@ -49,6 +50,7 @@ import {coordKey} from '../../../../rendering/coordKey';
 import {outerBoundary} from '../../../outerBoundary';
 import {pathsFromSegments} from '../../../pathsFromSegments';
 import {collectAllPaths} from '../../../followPath';
+import {boundsForCoords} from '../../../../editor/Bounds';
 
 export const thinTiling = (t: Tiling): ThinTiling => ({segments: t.cache.segments, shape: t.shape});
 
@@ -591,7 +593,7 @@ function renderDebug(
 
 const colorLines = (
     lines: {points: Coord[]; pathId?: number}[],
-    eigenCorners: Coord[],
+    bounds: Coord[],
     ttt: Matrix[][][],
     debugLog?: RenderLog[],
 ) => {
@@ -616,71 +618,94 @@ const colorLines = (
         items: matches!,
     });
 
-    lines.forEach((line, i) => {
-        if (line.pathId == null) return; // skip
-        const pairs = coordPairs(line.points, true);
-        // debugLog?.push({
-        //     type: 'items',
-        //     title: `Line ${i}`,
-        //     items: pairs.map((pair) => ({
-        //         item: {type: 'seg', prev: pair[0], seg: {type: 'Line', to: pair[1]}},
-        //     })),
-        // });
-        const keys = pairs.map((p) => coordPairKey(p, 5));
-        let found: null | number = null;
-        keys.forEach((pair, j) => {
-            if (byPair[pair] != null) {
-                // console.log('itsamatch', pair, i);
-                if (found != null && found !== byPair[pair]) {
-                    same.push(found < byPair[pair] ? [found, byPair[pair]] : [byPair[pair], found]);
-                } else {
-                    if (found == null) {
-                        found = byPair[pair];
-                        colors[i] = found;
-                        matches?.push({
-                            text: `Found: ${found}, i: ${i}`,
-                            item: [
-                                {
-                                    type: 'shape',
-                                    shape: barePathFromCoords(lines[found].points, true),
-                                    color: {r: 0, g: 255, b: 0},
-                                    hidePoints: true,
-                                },
-                                {
-                                    type: 'shape',
-                                    shape: barePathFromCoords(line.points, true),
-                                    hidePoints: true,
-                                },
-                                {
-                                    type: 'seg',
-                                    color: {r: 255, g: 255, b: 0},
-                                    prev: pairs[j][0],
-                                    seg: {type: 'Line', to: pairs[j][1]},
-                                },
-                            ],
-                        });
-                    }
-                }
-            }
-        });
-        if (found == null) {
-            keys.forEach((pair) => (byPair[pair] = i));
+    // Find the lines that fall within the bounds
+    const boundingBox = boundsForCoords(...bounds);
+    const baseLines = lines.filter((line) => line.points.some((p) => aabbContains(boundingBox, p)));
+
+    baseLines.forEach((line, i) => {
+        const keys = coordPairs(line.points, true).map((p) => coordPairKey(p));
+        if (keys.some((k) => byPair[k] != null)) {
+            return; // this is a dup looks like
         }
+        keys.forEach((key) => (byPair[key] = i));
     });
-    const mapping: Record<number, number> = {};
-    // same.forEach(([one, two]) => {
-    //     colors.forEach((c, i) => {
-    //         if (c === one) {
-    //             colors[i] = two;
+
+    return lines.map((line) => {
+        if (baseLines.includes(line)) return baseLines.indexOf(line);
+        for (let pair of coordPairs(line.points, true)) {
+            const k = coordPairKey(pair);
+            if (byPair[k] != null) {
+                return byPair[k];
+            }
+        }
+        return null;
+    });
+
+    // lines.forEach((line, i) => {
+    //     if (line.pathId == null) return; // skip
+    //     const pairs = coordPairs(line.points, true);
+    //     // debugLog?.push({
+    //     //     type: 'items',
+    //     //     title: `Line ${i}`,
+    //     //     items: pairs.map((pair) => ({
+    //     //         item: {type: 'seg', prev: pair[0], seg: {type: 'Line', to: pair[1]}},
+    //     //     })),
+    //     // });
+    //     const keys = pairs.map((p) => coordPairKey(p, 5));
+    //     let found: null | number = null;
+    //     keys.forEach((pair, j) => {
+    //         if (byPair[pair] != null) {
+    //             // console.log('itsamatch', pair, i);
+    //             if (found != null && found !== byPair[pair]) {
+    //                 same.push(found < byPair[pair] ? [found, byPair[pair]] : [byPair[pair], found]);
+    //             } else {
+    //                 if (found == null) {
+    //                     found = byPair[pair];
+    //                     colors[i] = found;
+    //                     matches?.push({
+    //                         text: `Found: ${found}, i: ${i}`,
+    //                         item: [
+    //                             {
+    //                                 type: 'shape',
+    //                                 shape: barePathFromCoords(lines[found].points, true),
+    //                                 color: {r: 0, g: 255, b: 0},
+    //                                 hidePoints: true,
+    //                             },
+    //                             {
+    //                                 type: 'shape',
+    //                                 shape: barePathFromCoords(line.points, true),
+    //                                 hidePoints: true,
+    //                             },
+    //                             {
+    //                                 type: 'seg',
+    //                                 color: {r: 255, g: 255, b: 0},
+    //                                 prev: pairs[j][0],
+    //                                 seg: {type: 'Line', to: pairs[j][1]},
+    //                             },
+    //                         ],
+    //                     });
+    //                 }
+    //             }
     //         }
     //     });
+    //     if (found == null) {
+    //         keys.forEach((pair) => (byPair[pair] = i));
+    //     }
     // });
-    let at = 0;
-    return colors.map((num) => {
-        if (num == null) return num;
-        if (mapping[num] == null) {
-            mapping[num] = at++;
-        }
-        return mapping[num];
-    });
+    // const mapping: Record<number, number> = {};
+    // // same.forEach(([one, two]) => {
+    // //     colors.forEach((c, i) => {
+    // //         if (c === one) {
+    // //             colors[i] = two;
+    // //         }
+    // //     });
+    // // });
+    // let at = 0;
+    // return colors.map((num) => {
+    //     if (num == null) return num;
+    //     if (mapping[num] == null) {
+    //         mapping[num] = at++;
+    //     }
+    //     return mapping[num];
+    // });
 };
