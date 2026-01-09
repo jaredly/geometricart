@@ -73,7 +73,10 @@ export const adjustShapes2 = (
     //     (p) => coordTruncatePairKey(p, amt),
     // );
 
-    let segments = unique(uniqueShapes.flatMap(coordPairs), (p) => coordTruncatePairKey(p, amt));
+    let segments = unique(
+        uniqueShapes.flatMap((p) => coordPairs(p)),
+        (p) => coordTruncatePairKey(p, amt),
+    );
 
     outerDebug?.push({
         type: 'items',
@@ -325,7 +328,10 @@ export const adjustShapes = (
             }
 
             let [removedSegs, segs] = unzip(
-                unique(right.flatMap(coordPairs), coordPairKey),
+                unique(
+                    right.flatMap((p) => coordPairs(p)),
+                    coordPairKey,
+                ),
                 (pair) => !coordPairOnShape(pair, shapeLines, eps * eps, eps),
             );
 
@@ -485,9 +491,10 @@ export const unzip = <T,>(v: T[], test: (t: T) => boolean) => {
     return [left, right] as const;
 };
 
-export const coordPairs = (coords: Coord[]) => {
+export const coordPairs = (coords: Coord[], open = false) => {
     const res: [Coord, Coord][] = [];
     coords.forEach((coord, i) => {
+        if (i === 0 && open) return;
         res.push([coords[i === 0 ? coords.length - 1 : i - 1], coord]);
     });
     return res;

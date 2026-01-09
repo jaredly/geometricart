@@ -223,7 +223,8 @@ const Inner = ({snapshotUrl, namePrefix}: {snapshotUrl: SnapshotUrl; namePrefix:
     const sctx = useExportState();
     const state = sctx.use((v) => v);
     const pctx = usePendingState();
-    const debug = location.search.includes('debug=');
+    const {search} = useLocation();
+    const debug = search.includes('debug=');
 
     useEffect(() => {
         return sctx.onHistoryChange(() => {

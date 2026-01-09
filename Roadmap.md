@@ -7,6 +7,9 @@
     that's kinda neat. Ok so it's the sorted-segment-key that sorts first.
     simple.
   
+For lines, we need a heck of a lot more caching.
+
+Explicit by ids is kinda fun idk.
 
 ## Isolated pattern editor:
 

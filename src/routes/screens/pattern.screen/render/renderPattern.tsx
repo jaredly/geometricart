@@ -34,6 +34,7 @@ import {
     resolveT,
     barePathFromCoords,
     numToCoord,
+    RenderLog,
 } from '../utils/resolveMods';
 import {notNull} from '../utils/notNull';
 import {closeEnough} from '../../../../rendering/epsilonToZero';
@@ -45,7 +46,7 @@ import {collectAllPaths} from '../../../followPath';
 export const thinTiling = (t: Tiling): ThinTiling => ({segments: t.cache.segments, shape: t.shape});
 
 const makeLineKey = (points: Coord[], open: boolean) => {
-    const segs = open ? allPairs(points) : coordPairs(points);
+    const segs = coordPairs(points, open);
     let first: null | string = null;
     segs.forEach((seg) => {
         const k = coordPairKey(seg);
@@ -68,7 +69,7 @@ export const renderPattern = (ctx: Ctx, _outer: CropsAndMatrices, pattern: Patte
 
     const simple = getSimplePatternData(tiling, pattern.psize);
     let baseShapes = simple.uniqueShapes;
-    ctx.keyPoints.push(...baseShapes.flatMap(coordPairs));
+    ctx.keyPoints.push(...baseShapes.flatMap((p) => coordPairs(p)));
     ctx.keyPoints.push(...simple.eigenCorners.flat());
 
     const modsBeforeAdjusts = false;
@@ -127,12 +128,21 @@ export const renderPattern = (ctx: Ctx, _outer: CropsAndMatrices, pattern: Patte
             (a, b) => a.order - b.order,
         );
 
+        const colors = colorLines(allPaths, ctx.log);
+
+        // for alternating:
+        // ignore anything without a pathId
+        // then find paths that interesect with the eigenshape
+        // do the ttt on them
+        // make a map of coordPairKey -> number
+        // for all other paths, step through their coord pairs until you find a hit
+
         ctx.items.push(
             ...allPaths.flatMap(({points, open, pathId}, i) => {
-                const key = makeLineKey(points, !!open);
+                const key = i + ''; // makeLineKey(points, !!open);
                 const center = centroid(points);
 
-                const thisColor = (pathId ?? 0) % 10;
+                const thisColor = colors[i] ?? -1;
 
                 const matchingStyles = orderedStyles.map((style) => {
                     // const match = true;
@@ -573,3 +583,52 @@ function renderDebug(
         });
     });
 }
+
+const colorLines = (lines: {points: Coord[]; pathId?: number}[], debugLog?: RenderLog[]) => {
+    const colors: (number | null)[] = lines.map(() => null);
+    const byPair: Record<string, number> = {};
+    const same: [number, number][] = [];
+    lines.forEach((line, i) => {
+        if (line.pathId == null) return; // skip
+        const pairs = coordPairs(line.points, true);
+        debugLog?.push({
+            type: 'items',
+            title: `Line ${i}`,
+            items: pairs.map((pair) => ({
+                item: {type: 'seg', prev: pair[0], seg: {type: 'Line', to: pair[1]}},
+            })),
+        });
+        const keys = pairs.map((p) => coordPairKey(p, 5));
+        let found: null | number = null;
+        keys.forEach((pair, i) => {
+            if (byPair[pair] != null) {
+                // console.log('itsamatch', pair, i);
+                if (found != null && found !== byPair[pair]) {
+                    same.push(found < byPair[pair] ? [found, byPair[pair]] : [byPair[pair], found]);
+                } else {
+                    found = byPair[pair];
+                    colors[i] = found;
+                }
+            }
+        });
+        if (found == null) {
+            keys.forEach((pair) => (byPair[pair] = i));
+        }
+    });
+    const mapping: Record<number, number> = {};
+    // same.forEach(([one, two]) => {
+    //     colors.forEach((c, i) => {
+    //         if (c === one) {
+    //             colors[i] = two;
+    //         }
+    //     });
+    // });
+    let at = 0;
+    return colors.map((num) => {
+        if (num == null) return num;
+        if (mapping[num] == null) {
+            mapping[num] = at++;
+        }
+        return mapping[num];
+    });
+};

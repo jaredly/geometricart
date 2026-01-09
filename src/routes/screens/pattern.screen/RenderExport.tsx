@@ -12,6 +12,7 @@ import {useCropCache} from './hooks/useCropCache';
 import {useElementZoom} from './hooks/useSVGZoom';
 import {VideoExport} from './VideoExport';
 import {SnapshotUrl} from './state-editor/saveAnnotation';
+import {useLocation, useNavigate} from 'react-router';
 
 export const RenderExport = ({
     namePrefix,
@@ -28,6 +29,7 @@ export const RenderExport = ({
 }) => {
     const [t, setT] = useState(0); // animateeeee
     const animCache = useMemo<AnimCtx['cache']>(() => new Map(), []);
+    const nav = useNavigate();
 
     const [duration, setDuration] = useState(5);
     const [animate, setAnimate] = useState(false);
@@ -117,6 +119,9 @@ export const RenderExport = ({
                         className="input w-13"
                     />
                 </div>
+                <button className="btn" onClick={() => nav(`?debug=${t}`)}>
+                    Debug
+                </button>
                 <VideoExport
                     worker={worker}
                     state={state}
