@@ -1,4 +1,24 @@
 
+# Memory what
+
+Ok the memory issues are at a bit of a crisis.
+Running a 55 second video ate up like 100 GB of memory or something.
+so.
+here we are.
+
+this one http://localhost:5173/export/93hzmg6cb5
+after recording a couple of videos, hit 1gb of memory.
+there's one ArrayBuffer with >400mb. I assume it's from the video recording, maybe I can clean it up more aggressively?
+
+#
+
+- [ ] it would be cool to be able to mark patterns by "how many fundamental shapes there are".
+  Like these ones that are only a single closed shape repeated, are super cool.
+
+- [ ] can zoom be animated? I would like that.
+- [ ] clipping an (open) path, might result in closed.
+- [ ] I want to be able to sort lines
+
 # Lines!
 
 - [ ] explicit -> gotta be able to click lines to select them pls

@@ -192,9 +192,14 @@ export const a = {
     number: (ctx: AnimCtx, v: AnimatableNumber): number =>
         typeof v === 'number' ? v : evaluate<number>(ctx, v, (v) => typeof v === 'number', 0),
     boolean: (ctx: AnimCtx, v: AnimatableBoolean): boolean =>
-        typeof v === 'boolean'
-            ? v
-            : evaluate<boolean>(ctx, v, (v) => typeof v === 'boolean', false),
+        typeof v === 'boolean' || typeof v === 'number'
+            ? !!v
+            : !!evaluate<boolean | number>(
+                  ctx,
+                  v,
+                  (v) => typeof v === 'boolean' || typeof v === 'number',
+                  false,
+              ),
     coord: (ctx: AnimCtx, v: AnimatableCoord): Coord =>
         typeof v === 'object' ? v : evaluate<Coord>(ctx, v, isCoord, {x: 0, y: 0}),
     coordOrNumber: (ctx: AnimCtx, v: AnimatableCoord | AnimatableNumber): Coord | number =>

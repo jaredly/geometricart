@@ -13,7 +13,7 @@ import {colorToString, Rgb} from './utils/colors';
 import {CropsAndMatrices} from './utils/resolveMods';
 
 export type AnimatableNumber = number | string;
-export type AnimatableBoolean = boolean | string;
+export type AnimatableBoolean = boolean | string | number;
 export type AnimatableValue = string;
 export type AnimatableColor = number | string | Color | null;
 export type AnimatableCoord = Coord | string;

@@ -6,6 +6,7 @@ import {NumberField} from './NumberField';
 import {ShapeStylesEditor} from './ShapeStylesEditor';
 import {Updater} from '../../../../json-diff/Updater';
 import {BaseKindEditor, ShapeKindEditor} from './BaseKindEditor';
+import {AnimInput, AnimValueInput} from './AnimInput';
 
 export const PatternContentsEditor = ({
     value,
@@ -159,13 +160,24 @@ export const PatternContentsEditor = ({
                 />
             ) : null}
             {value.type === 'lines' ? (
-                <ShapeStylesEditor<BaseKind>
-                    palette={palette}
-                    styles={value.styles}
-                    update={update.variant('lines').styles}
-                    KindEditor={BaseKindEditor}
-                    defaultKind={{type: 'everything'}}
-                />
+                <>
+                    <AnimValueInput
+                        label="Sort"
+                        onChange={(v) =>
+                            v == null
+                                ? update.variant('lines').sort.remove()
+                                : update.variant('lines').sort(v)
+                        }
+                        value={value.sort}
+                    />
+                    <ShapeStylesEditor<BaseKind>
+                        palette={palette}
+                        styles={value.styles}
+                        update={update.variant('lines').styles}
+                        KindEditor={BaseKindEditor}
+                        defaultKind={{type: 'everything'}}
+                    />
+                </>
             ) : null}
         </details>
     );
