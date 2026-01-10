@@ -5,7 +5,7 @@ import {
     AnimatableColor,
     AnimatableValue,
 } from '../export-types';
-import {BlurInput} from './BlurInput';
+import {BlurInput, BlurTextarea} from './BlurInput';
 import {parseAnimatable} from './createLayerTemplate';
 
 export const AnimInput = ({
@@ -45,7 +45,7 @@ export const AnimValueInput = ({
         <div className="label mr-2">
             <span className="label-text text-sm font-semibold">{label}</span>
         </div>
-        <BlurInput
+        <BlurTextarea
             value={value != null ? String(value) : ''}
             placeholder="expression"
             onChange={(value) => {

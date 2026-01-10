@@ -144,6 +144,32 @@ export const renderPattern = (ctx: Ctx, _outer: CropsAndMatrices, pattern: Patte
 
         const colors = colorLines(allPaths, simple.bounds, simple.ttt, ctx.log);
         const maxColor = Math.max(...colors.filter(notNull));
+        let pathsWithGroups = allPaths.map((path, i) => ({...path, groupId: colors[i]}));
+
+        if (pattern.contents.sort) {
+            const fn = a.value(panim, pattern.contents.sort);
+            if (typeof fn !== 'function') {
+                panim.warn(`"sort" should be a function.`);
+            } else if (fn.length === 2) {
+                let warned = false;
+                pathsWithGroups.sort((a, b) => {
+                    const res = fn(a, b);
+                    if (typeof res !== 'number') {
+                        if (warned) {
+                            panim.warn('"sort" with two arguments should return an number');
+                            warned = true;
+                        }
+                        return 0;
+                    }
+                    return res;
+                });
+            } else if (fn.length === 1) {
+                pathsWithGroups = fn(pathsWithGroups);
+                if (!Array.isArray(pathsWithGroups)) {
+                    panim.warn('sort() with one argument should return an array');
+                }
+            }
+        }
 
         // for alternating:
         // ignore anything without a pathId
@@ -153,19 +179,19 @@ export const renderPattern = (ctx: Ctx, _outer: CropsAndMatrices, pattern: Patte
         // for all other paths, step through their coord pairs until you find a hit
 
         ctx.items.push(
-            ...allPaths.flatMap(({points, open, pathId}, i) => {
+            ...pathsWithGroups.flatMap(({points, open, pathId, groupId}, i) => {
                 const key = i + ''; // makeLineKey(points, !!open);
                 const center = centroid(points);
 
-                const thisColor = colors[i];
+                // const thisColor = colors[i];
 
                 const matchingStyles = orderedStyles.map((style) => {
                     // const match = true;
                     const match = Array.isArray(style.kind)
                         ? first(style.kind, (k) =>
-                              matchKind(k, key, thisColor ?? -1, center, simple.eigenCorners),
+                              matchKind(k, key, groupId ?? -1, center, simple.eigenCorners),
                           )
-                        : matchKind(style.kind, key, thisColor ?? -1, center, simple.eigenCorners);
+                        : matchKind(style.kind, key, groupId ?? -1, center, simple.eigenCorners);
                     if (!match) {
                         return;
                     }
@@ -185,7 +211,7 @@ export const renderPattern = (ctx: Ctx, _outer: CropsAndMatrices, pattern: Patte
                         open,
                         i,
                         maxI: allPaths.length - 1,
-                        groupId: thisColor,
+                        groupId: groupId,
                         maxGroupId: maxColor,
                     },
                     matchingStyles.filter(notNull),

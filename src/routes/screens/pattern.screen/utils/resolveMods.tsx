@@ -475,10 +475,18 @@ export const renderGroup = (ctx: Ctx, crops: CropsAndMatrices, group: Group) => 
                 renderGroup(ctx, crops, entity);
                 break;
             case 'Pattern':
-                renderPattern(ctx, crops, entity);
+                try {
+                    renderPattern(ctx, crops, entity);
+                } catch (err) {
+                    ctx.anim.warn(`An error occurred while rendering pattern ${id}. ${err}`);
+                }
                 break;
             case 'Object':
-                renderObject(ctx, crops, entity);
+                try {
+                    renderObject(ctx, crops, entity);
+                } catch (err) {
+                    ctx.anim.warn(`An error occurred while rendering object ${id}. ${err}`);
+                }
                 break;
         }
     }

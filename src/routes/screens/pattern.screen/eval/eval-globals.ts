@@ -1,5 +1,8 @@
-import {closeEnough} from '../../../../rendering/epsilonToZero';
+import {boundsForCoords} from '../../../../editor/Bounds';
+import {closeEnough, closeEnoughAngle} from '../../../../rendering/epsilonToZero';
 import {angleTo, dist} from '../../../../rendering/getMirrorTransforms';
+import {Coord} from '../../../../types';
+import {centroid} from '../../../findReflectionAxes';
 import {ease, easeInOutCubic} from '../../animator.screen/easeInOutCubic';
 import {easeFn} from './evalEase';
 
@@ -124,7 +127,11 @@ export const globals: Record<string, any> = {
     dist,
     ease,
     angleTo,
+    centroid,
     easeInOutCubic,
+    closeEnough,
+    closeEnoughAngle,
+    bbox: (c: Coord[]) => boundsForCoords(...c),
     tsplit,
     chunk,
     chunks,
