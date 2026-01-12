@@ -35,7 +35,13 @@ import {multiplyShape} from './expandShapes';
 
 type CCrop = {type: 'crop'; id: string; mode?: CropMode; hole?: boolean};
 type CInset = {type: 'inset'; v: number};
-export type CropsAndMatrices = (CCrop | Matrix[] | CInset | {type: 'inner'})[];
+export type CropsAndMatrices = (
+    | CCrop
+    | Matrix[]
+    | CInset
+    | {type: 'stroke'; width: number; round: boolean}
+    | {type: 'inner'}
+)[];
 
 const enabledMods = (mods: PMods[]) => mods.filter((mod) => !mod.disabled);
 
@@ -45,6 +51,8 @@ export const resolveEnabledPMods = (ctx: AnimCtx, mods: PMods[] = []): CropsAndM
 export const resolvePMod = (ctx: AnimCtx, mod: PMods): CropsAndMatrices[0] => {
     if (mod.disabled) return [];
     switch (mod.type) {
+        case 'stroke':
+            return {...mod, width: a.number(ctx, mod.width), round: a.boolean(ctx, mod.round)};
         case 'inner':
             return mod;
         case 'inset':
@@ -202,46 +210,46 @@ const intoCmds = (path: PKPath) => {
 //     }
 // };
 
-// NOTE: I do think I should be splitting paths up after
-// clipping, and treating each subpath separately.
-// I don't know how to deal with holes though,
-// which presumably I want to be able to support
-// at some point.
-export const modsToShapes2 = (
-    cropCache: Ctx['cropCache'],
-    mods: CropsAndMatrices,
-    shapes: {shape: Coord[]; i: number}[],
-) => {
-    return mods.reduce(
-        (shapes, mod) => {
-            if (Array.isArray(mod)) {
-                return shapes.map((shape) => transformPKPath(shape, mod));
-            }
-
-            if (mod.type === 'inset') {
-                if (Math.abs(mod.v) <= 0.01) return shapes;
-                return shapes.map((shape) => {
-                    insetPkPath(shape, mod.v);
-                    return shape;
-                });
-            }
-            if (mod.type === 'inner') {
-                return shapes; // shouldn't have gotten this far?
-            }
-
-            const crop = cropCache.get(mod.id)!;
-            if (!crop) {
-                console.log(`No crop cache for ${mod.id}`);
-                return shapes;
-                // throw new Error(`No crop? ${mod.id} : ${[...cropCache.keys()]}`);
-            }
-            return shapes.map((shape) => {
-                return clipShape2(shape, mod, crop.path);
-            });
-        },
-        shapes.map(({shape}) => pkPathFromCoords(shape)!),
-    );
-};
+// // NOTE: I do think I should be splitting paths up after
+// // clipping, and treating each subpath separately.
+// // I don't know how to deal with holes though,
+// // which presumably I want to be able to support
+// // at some point.
+// export const modsToShapes2 = (
+//     cropCache: Ctx['cropCache'],
+//     mods: CropsAndMatrices,
+//     shapes: {shape: Coord[]; i: number}[],
+// ) => {
+//     return mods.reduce(
+//         (shapes, mod) => {
+//             if (Array.isArray(mod)) {
+//                 return shapes.map((shape) => transformPKPath(shape, mod));
+//             }
+//             if (mod.type === 'inset') {
+//                 if (Math.abs(mod.v) <= 0.01) return shapes;
+//                 return shapes.map((shape) => {
+//                     insetPkPath(shape, mod.v);
+//                     return shape;
+//                 });
+//             }
+//             if (mod.type === 'inner') {
+//                 return shapes; // shouldn't have gotten this far?
+//             }
+//             if (mod.type === 'stroke') {
+//             }
+//             const crop = cropCache.get(mod.id)!;
+//             if (!crop) {
+//                 console.log(`No crop cache for ${mod.id}`);
+//                 return shapes;
+//                 // throw new Error(`No crop? ${mod.id} : ${[...cropCache.keys()]}`);
+//             }
+//             return shapes.map((shape) => {
+//                 return clipShape2(shape, mod, crop.path);
+//             });
+//         },
+//         shapes.map(({shape}) => pkPathFromCoords(shape)!),
+//     );
+// };
 
 export const modsToShapes = (
     cropCache: Ctx['cropCache'],
@@ -267,6 +275,24 @@ export const modsToShapes = (
         }
         if (mod.type === 'inner') {
             return shapes; // shouldn't have gotten this far?
+        }
+        if (mod.type === 'stroke') {
+            return shapes.flatMap((shape) => {
+                // const path = bare
+                const path = pkPathFromCoords(shape.shape.points, shape.shape.open)!;
+                path.stroke({
+                    width: mod.width,
+                    cap: mod.round ? pk.StrokeCap.Round : pk.StrokeCap.Square,
+                    join: mod.round ? pk.StrokeJoin.Round : pk.StrokeJoin.Miter,
+                });
+                path.simplify();
+                const items = pkPathToSegments(path);
+                path.delete();
+                return items.map((bp) => ({
+                    shape: {points: coordsFromBarePath(bp), open: !!bp.open},
+                    i: shape.i,
+                }));
+            });
         }
 
         const crop = cropCache.get(mod.id)!;
@@ -458,6 +484,8 @@ export const pathMod = (cropCache: Ctx['cropCache'], mod: CropsAndMatrices[0], p
             path.simplify();
         }
     } else if (mod.type === 'inner') {
+        return false;
+    } else if (mod.type === 'stroke') {
         return false;
     } else {
         insetPkPath(path, mod.v / 100);

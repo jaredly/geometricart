@@ -90,7 +90,9 @@ export const ModsEditor = ({
                 value=""
                 onChange={(evt) => {
                     (update as Updater<PMods[] | undefined>)((a, u) =>
-                        a ? u.push(addMod(evt.target.value)) : u([addMod(evt.target.value)]),
+                        a
+                            ? u.push(addMod(evt.target.value as PMods['type']))
+                            : u([addMod(evt.target.value as PMods['type'])]),
                     );
                     // update.push(addMod(evt.target.value));
                 }}
@@ -98,7 +100,7 @@ export const ModsEditor = ({
                 <option disabled value="">
                     Add
                 </option>
-                {['inset', 'translate', 'crop', 'scale', 'rotate'].map((type) => (
+                {['inset', 'translate', 'crop', 'scale', 'rotate', 'stroke'].map((type) => (
                     <option value={type} key={type}>
                         {type}
                     </option>

@@ -1,6 +1,6 @@
 import React from 'react';
 import {Color, PMods, AnimatableNumber, AnimatableCoord} from '../export-types';
-import {AnimInput} from './AnimInput';
+import {AnimInput, AnimValueInput} from './AnimInput';
 import {AnimCoordInput} from './AnimCoordInput';
 import {AnimCoordOrNumberInput} from './AnimCoordOrNumberInput';
 import {useExportState} from '../ExportHistory';
@@ -159,6 +159,27 @@ export const PModEditor = ({
                         label="origin"
                         value={value.origin}
                         onChange={update.variant('rotate').origin}
+                    />
+                </Disableable>
+            );
+        case 'stroke':
+            return (
+                <Disableable
+                    disabled={value.disabled}
+                    toggle={() => update.variant(value.type).disabled((v, u) => u(!v))}
+                    remove={update.remove}
+                >
+                    {value.type}
+                    <AnimInput
+                        label="width"
+                        value={value.width}
+                        // biome-ignore lint: this one is fine
+                        onChange={update.variant(value.type).width as Updater<any>}
+                    />
+                    <AnimValueInput
+                        label="round"
+                        value={value.round + ''}
+                        onChange={(v) => update.variant(value.type).round(v ?? false)}
                     />
                 </Disableable>
             );

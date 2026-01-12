@@ -84,6 +84,7 @@ export type Group = {
 export type CropMode = 'rough' | 'half';
 
 export type PMods =
+    | {type: 'stroke'; width: AnimatableNumber; round: AnimatableBoolean; disabled?: boolean}
     | {type: 'inner'; disabled?: boolean}
     | {type: 'inset'; v: AnimatableNumber; disabled?: boolean}
     | {type: 'crop'; id: string; hole?: boolean; mode?: CropMode; disabled?: boolean}
@@ -98,6 +99,7 @@ export type PMods =
 
 export type ConcretePMod =
     | {type: 'inner'}
+    | {type: 'stroke'; width: number; round: boolean}
     | {type: 'inset'; v: number; disabled?: boolean}
     | {type: 'crop'; id: string; hole?: boolean; mode?: CropMode; disabled?: boolean}
     | {type: 'scale'; v: Coord | number; origin?: Coord; disabled?: boolean}
