@@ -235,18 +235,26 @@ const Inner = ({snapshotUrl, namePrefix}: {snapshotUrl: SnapshotUrl; namePrefix:
     useEffect(() => {
         const fn = (evt: KeyboardEvent) => {
             if (evt.metaKey && evt.key === 'z') {
+                const t = evt.target;
+                if (t instanceof HTMLInputElement || t instanceof HTMLTextAreaElement) {
+                    return; // something is focused
+                }
                 if (evt.shiftKey) {
                     if (sctx.canRedo()) {
                         sctx.redo();
                     } else {
                         pctx.redo();
                     }
+                    evt.preventDefault();
+                    evt.stopImmediatePropagation();
                 } else {
                     if (pctx.canUndo()) {
                         pctx.undo();
                     } else {
                         sctx.undo();
                     }
+                    evt.preventDefault();
+                    evt.stopImmediatePropagation();
                 }
             }
         };
