@@ -41,7 +41,7 @@ export const AnimValueInput = ({
     value?: AnimatableValue;
     onChange: (next?: AnimatableValue) => void;
 }) => (
-    <label className="form-control">
+    <label className="form-control flex">
         <div className="label mr-2">
             <span className="label-text text-sm font-semibold">{label}</span>
         </div>

@@ -90,8 +90,8 @@ export const renderPattern = (ctx: Ctx, _outer: CropsAndMatrices, pattern: Patte
         baseShapes = modsToShapes(
             ctx.cropCache,
             enabledPatternMods,
-            baseShapes.map((shape, i) => ({shape, i})),
-        ).map((s) => s.shape);
+            baseShapes.map((shape, i) => ({shape: {points: shape, open: false}, i})),
+        ).map((s) => s.shape.points);
     }
 
     if (Object.keys(pattern.adjustments).length) {
@@ -240,15 +240,15 @@ export const renderPattern = (ctx: Ctx, _outer: CropsAndMatrices, pattern: Patte
         ? modsToShapes(
               ctx.cropCache,
               enabledPatternMods,
-              baseShapes.map((shape, i) => ({shape, i})),
+              baseShapes.map((shape, i) => ({shape: {points: shape, open: false}, i})),
           )
-        : baseShapes.map((shape, i) => ({shape, i}));
+        : baseShapes.map((shape, i) => ({shape: {points: shape, open: false}, i}));
 
     ctx.items.push(
         ...midShapes.flatMap(({shape, i}) => {
-            const center = centroid(shape);
+            const center = centroid(shape.points);
             const key = coordKey(center);
-            const radius = Math.min(...shape.map((s) => dist(s, center)));
+            const radius = Math.min(...shape.points.map((s) => dist(s, center)));
             const matchingStyles = orderedStyles.map((style) => {
                 const match = Array.isArray(style.kind)
                     ? first(style.kind, (k) =>
@@ -261,7 +261,7 @@ export const renderPattern = (ctx: Ctx, _outer: CropsAndMatrices, pattern: Patte
                 return {style, match};
             });
             return renderShape(
-                shape,
+                shape.points,
                 ctx,
                 i,
                 panim,
@@ -420,9 +420,9 @@ export const renderFill = (
         color: rgb,
         opacity,
         shapes: f.mods.length
-            ? modsToShapes(ctx.cropCache, f.mods, [{shape, i: 0}]).map((s) =>
-                  barePathFromCoords(s.shape),
-              )
+            ? modsToShapes(ctx.cropCache, f.mods, [
+                  {shape: {points: shape, open: false}, i: 0},
+              ]).map((s) => barePathFromCoords(s.shape.points, s.shape.open))
             : [barePathFromCoords(shape)],
         shadow,
         zIndex,
@@ -452,8 +452,8 @@ export const renderLine = (
         color: rgb,
         strokeWidth: width,
         shapes: f.mods.length
-            ? modsToShapes(ctx.cropCache, f.mods, [{shape, i: 0}]).map((s) =>
-                  barePathFromCoords(s.shape, open),
+            ? modsToShapes(ctx.cropCache, f.mods, [{shape: {points: shape, open}, i: 0}]).map((s) =>
+                  barePathFromCoords(s.shape.points, s.shape.open),
               )
             : [barePathFromCoords(shape, open)],
         shadow,

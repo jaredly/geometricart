@@ -17,7 +17,13 @@ there's one ArrayBuffer with >400mb. I assume it's from the video recording, may
 
 - [ ] can zoom be animated? I would like that.
 - [ ] clipping an (open) path, might result in closed.
-- [ ] I want to be able to sort lines
+- [x] I want to be able to sort lines
+
+It would be really nice to be able to know what the transformation was
+that took the original line to the current line, within a `groupId`.
+Like, some of theme were just translated, but some were rotated,
+some were flipped, etc.
+
 
 # Lines!
 

@@ -86,15 +86,15 @@ const insetShape = (shape: Coord[], inset: number) => {
         .map((shape) => shape.map((s) => ({x: s.x / by, y: s.y / by})));
 };
 
-const clipShape = (shape: Coord[], mod: CCrop, crop: PKPath) => {
+const clipShape = (shape: {points: Coord[]; open: boolean}, mod: CCrop, crop: PKPath) => {
     if (mod.mode === 'rough') {
-        const center = centroid(shape);
+        const center = centroid(shape.points);
         if (crop.contains(center.x, center.y) === !!mod.hole) {
             return [];
         }
         return [shape];
     } else if (mod.mode === 'half') {
-        const path = pkPathFromCoords(shape)!;
+        const path = pkPathFromCoords(shape.points, shape.open)!;
         const other = path.copy();
         other.op(crop, mod.hole ? pk.PathOp.Difference : pk.PathOp.Intersect);
         other.simplify();
@@ -104,18 +104,18 @@ const clipShape = (shape: Coord[], mod: CCrop, crop: PKPath) => {
             .reduce((a, b) => a + b, 0);
         other.delete();
         path.delete();
-        const area = calcPolygonArea(shape);
+        const area = calcPolygonArea(shape.points);
         if (size < area / 2 + epsilon) {
             return [];
         }
         return [shape];
     } else {
-        const path = pkPathFromCoords(shape)!;
+        const path = pkPathFromCoords(shape.points, shape.open)!;
         path.op(crop, mod.hole ? pk.PathOp.Difference : pk.PathOp.Intersect);
         path.simplify();
         const items = pkPathToSegments(path);
         path.delete();
-        return items.map(coordsFromBarePath);
+        return items.map((bp) => ({points: coordsFromBarePath(bp), open: !!bp.open}));
     }
 };
 
@@ -246,12 +246,12 @@ export const modsToShapes2 = (
 export const modsToShapes = (
     cropCache: Ctx['cropCache'],
     mods: CropsAndMatrices,
-    shapes: {shape: Coord[]; i: number}[],
+    shapes: {shape: {points: Coord[]; open: boolean}; i: number}[],
 ) => {
     return mods.reduce((shapes, mod) => {
         if (Array.isArray(mod)) {
             return shapes.map((shape) => ({
-                shape: transformShape(shape.shape, mod),
+                shape: {points: transformShape(shape.shape.points, mod), open: shape.shape.open},
                 i: shape.i,
             }));
         }
@@ -259,8 +259,8 @@ export const modsToShapes = (
         if (mod.type === 'inset') {
             if (Math.abs(mod.v) <= 0.01) return shapes;
             return shapes.flatMap((shape) => {
-                return insetShape(shape.shape, mod.v).map((coords) => ({
-                    shape: coords,
+                return insetShape(shape.shape.points, mod.v).map((coords) => ({
+                    shape: {points: coords, open: false}, // inset makes it closed
                     i: shape.i,
                 }));
             });

@@ -65,7 +65,7 @@ export const BlurTextarea = ({
         <textarea
             style={style}
             className={
-                `input font-mono text-xs input-sm ${className ?? ''} ` +
+                `textarea flex-1 font-mono text-xs input-sm ${className ?? ''} ` +
                 (text != null && text !== value ? 'outline-blue-400' : '')
             }
             value={text ?? value}
