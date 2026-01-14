@@ -179,9 +179,9 @@ export const renderPattern = (ctx: Ctx, _outer: CropsAndMatrices, pattern: Patte
         // for all other paths, step through their coord pairs until you find a hit
 
         ctx.items.push(
-            ...pathsWithGroups.flatMap(({points, open, pathId, groupId}, i) => {
+            ...pathsWithGroups.flatMap((path, i) => {
                 const key = i + ''; // makeLineKey(points, !!open);
-                const center = centroid(points);
+                const center = centroid(path.points);
 
                 // const thisColor = colors[i];
 
@@ -189,33 +189,36 @@ export const renderPattern = (ctx: Ctx, _outer: CropsAndMatrices, pattern: Patte
                     // const match = true;
                     const match = Array.isArray(style.kind)
                         ? first(style.kind, (k) =>
-                              matchKind(k, key, groupId ?? -1, center, simple.eigenCorners),
+                              matchKind(k, key, path.groupId ?? -1, center, simple.eigenCorners),
                           )
-                        : matchKind(style.kind, key, groupId ?? -1, center, simple.eigenCorners);
+                        : matchKind(
+                              style.kind,
+                              key,
+                              path.groupId ?? -1,
+                              center,
+                              simple.eigenCorners,
+                          );
                     if (!match) {
                         return;
                     }
                     return {style, match};
                 });
                 return renderShape(
-                    points,
+                    path.points,
                     ctx,
                     i,
                     panim,
                     {
+                        ...path,
                         maxPathId,
-                        pathId,
                         center,
                         key,
-                        points,
-                        open,
                         i,
                         maxI: allPaths.length - 1,
-                        groupId: groupId,
                         maxGroupId: maxColor,
                     },
                     matchingStyles.filter(notNull),
-                    open,
+                    path.open,
                 );
             }),
         );
