@@ -5,6 +5,9 @@ import {RenderItem} from '../eval/evaluate';
 import {Box, Color, colorToRgb} from '../export-types';
 import {Coord} from '../../../../types';
 import {pkPathFromCoords} from '../../../getPatternData';
+import {scaleMatrix, translationMatrix} from '../../../../rendering/getMirrorTransforms';
+import {mapSegment, transformBarePath} from '../../../../rendering/points';
+import {truncateCoord, truncateShape} from '../utils/adjustShapes';
 
 export const renderItems = (
     surface: Surface,
@@ -24,20 +27,156 @@ export const renderItems = (
     paint.setAlphaf(0.1);
     ctx.drawCircle((t ?? 0) * surface.width(), (t ?? 0) * surface.height(), 10, paint);
 
+    ctx.save();
+    // ctx.scale(surface.width() / box.width, surface.height() / box.height);
+    // ctx.translate(-box.x, -box.y);
+
+    const item: RenderItem = {
+        type: 'path',
+        key: 'fill-0-0',
+        color: {
+            r: 0,
+            g: 57,
+            b: 117,
+        },
+        opacity: -0.029999999999999995,
+        shapes: [
+            {
+                segments: [
+                    {
+                        type: 'Line',
+                        to: {
+                            x: -0.5,
+                            y: 6.639528274536133,
+                        },
+                    },
+                    {
+                        type: 'Line',
+                        to: {
+                            x: -0.3333333134651184,
+                            y: 6.928203105926514,
+                        },
+                    },
+                    {
+                        type: 'Line',
+                        to: {
+                            x: -3.6666667461395264,
+                            y: 6.928203105926514,
+                        },
+                    },
+                    // {
+                    //     type: 'Line',
+                    //     to: {
+                    //         x: -3.5,
+                    //         y: 6.639528274536133,
+                    //     },
+                    // },
+                    // {
+                    //     type: 'Line',
+                    //     to: {
+                    //         x: -3.3333332538604736,
+                    //         y: 6.350852966308594,
+                    //     },
+                    // },
+                    // {
+                    //     type: 'Line',
+                    //     to: {
+                    //         x: -3.1666667461395264,
+                    //         y: 6.062177658081055,
+                    //     },
+                    // },
+                    // {
+                    //     type: 'Line',
+                    //     to: {
+                    //         x: -3,
+                    //         y: 5.773502826690674,
+                    //     },
+                    // },
+                    // {
+                    //     type: 'Line',
+                    //     to: {
+                    //         x: -2.8333332538604736,
+                    //         y: 5.484827518463135,
+                    //     },
+                    // },
+                    // {
+                    //     type: 'Line',
+                    //     to: {
+                    //         x: -1.1666666269302368,
+                    //         y: 5.484827518463135,
+                    //     },
+                    // },
+                    // {
+                    //     type: 'Line',
+                    //     to: {
+                    //         x: -1,
+                    //         y: 5.773502826690674,
+                    //     },
+                    // },
+                    // {
+                    //     type: 'Line',
+                    //     to: {
+                    //         x: -0.8333333134651184,
+                    //         y: 6.062177658081055,
+                    //     },
+                    // },
+                    // {
+                    //     type: 'Line',
+                    //     to: {
+                    //         x: -0.6666666865348816,
+                    //         y: 6.350852966308594,
+                    //     },
+                    // },
+                ],
+                origin: {
+                    x: -0.6666666865348816,
+                    y: 6.350852966308594,
+                },
+            },
+        ],
+    };
+
+    const sx = surface.width() / box.width;
+    const sy = surface.height() / box.height;
+    const tx = [translationMatrix({x: -box.x, y: -box.y}), scaleMatrix(sx, sy)];
     for (let i = 0; i < items.length; i++) {
-        const pts: Coord[] = [];
-        for (let i = 0; i < 10; i++) {
-            const x = Math.random() * surface.width();
-            const y = Math.random() * surface.height();
-            pts.push({x, y});
-        }
-        const pkp = pkPathFromCoords(pts);
+        // const item = items[0];
+        // if (item.type === 'point') {
+        //     continue;
+        // }
+        const pkp2 = pk.Path.MakeFromCmds(
+            item.shapes
+                .map((shape) => transformBarePath(shape, tx))
+                .map((shape) => ({
+                    ...shape,
+                    origin: truncateCoord(shape.origin, 1000),
+                    segments: shape.segments.map((seg) =>
+                        mapSegment(seg, (pos) => truncateCoord(pos, 1000)),
+                    ),
+                }))
+                .flatMap((shape) => segmentsCmds(shape.origin, shape.segments, shape.open)),
+        );
+        if (!pkp2) continue;
+        // pkp2.transform(scaleMatrix(sx, sy));
+        // pkp2.transform(translationMatrix({x: -box.x * sx, y: -box.y * sy}));
+        // const item = items[0];
+
+        // const pts: Coord[] = [];
+        // for (let i = 0; i < 10; i++) {
+        //     const x = Math.random() * box.width + box.x;
+        //     const y = Math.random() * box.height + box.y;
+        //     pts.push({x, y});
+        // }
+        // const pkp = pkPathFromCoords(pts);
         // ctx.drawCircle(x, y, 100, paint);
-        if (pkp) {
-            ctx.drawPath(pkp, paint);
-            pkp.delete();
+        if (pkp2) {
+            ctx.drawPath(pkp2, paint);
         }
+        // pkp?.delete();
+        pkp2?.delete();
     }
+
+    ctx.restore();
 
     // const lw = box.width / 10;
     // ctx.save();

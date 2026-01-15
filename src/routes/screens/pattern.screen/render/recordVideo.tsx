@@ -24,6 +24,9 @@ export const recordVideo = async (
 
     const fontData = await fetch('/assets/Roboto-Regular.ttf').then((r) => r.arrayBuffer());
 
+    const {items, bg} = svgItems(state, animCache, cropCache, 0);
+    console.log(items[0]);
+
     let last = Date.now();
     const blob = await generateVideo(canvas, frameRate, totalFrames, (_, currentFrame) => {
         let now = Date.now();
@@ -33,12 +36,12 @@ export const recordVideo = async (
         }
         const surface = pk.MakeWebGLCanvasSurface(canvas)!;
         // // if (currentFrame % 10 === 0)
-        const {items, bg} = svgItems(state, animCache, cropCache, currentFrame / totalFrames);
+        // const {items, bg} = svgItems(state, animCache, cropCache, currentFrame / totalFrames);
         // const debugTime = false;
         // if (debugTime) {
         //     renderItems(surface, box, items, bg, fontData, currentFrame / totalFrames);
         // } else {
-        renderItems(surface, box, items, bg, undefined, currentFrame / totalFrames);
+        renderItems(surface, box, items, bg);
         // }
         surface.delete();
     });

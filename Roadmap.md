@@ -10,7 +10,6 @@ this one http://localhost:5173/export/93hzmg6cb5
 after recording a couple of videos, hit 1gb of memory.
 there's one ArrayBuffer with >400mb. I assume it's from the video recording, maybe I can clean it up more aggressively?
 
-
 # Clipping a single line
 
 -> the 'stroke' mod, lookin fresh

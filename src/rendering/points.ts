@@ -24,6 +24,32 @@ export function transformBarePath(shape: BarePath, tx: Matrix[]): BarePath {
     };
 }
 
+export const mapSegment = (segment: Segment, pos: (f: Coord) => Coord): Segment => {
+    // const to = applyMatrices(segment.to, matrices)
+    switch (segment.type) {
+        case 'Arc': {
+            return {
+                type: 'Arc',
+                center: pos(segment.center),
+                clockwise: segment.clockwise,
+                to: pos(segment.to),
+                // to,
+            };
+        }
+        case 'Quad':
+            return {
+                type: 'Quad',
+                to: pos(segment.to),
+                control: pos(segment.control),
+            };
+        case 'Line':
+            return {
+                type: 'Line',
+                to: pos(segment.to),
+            };
+    }
+};
+
 export const transformSegment = (segment: Segment, matrices: Array<Matrix>): Segment => {
     // const to = applyMatrices(segment.to, matrices)
     switch (segment.type) {
