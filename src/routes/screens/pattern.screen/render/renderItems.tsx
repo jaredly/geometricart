@@ -1,19 +1,15 @@
-import {Surface, ImageFilter} from 'canvaskit-wasm';
+import {Surface} from 'canvaskit-wasm';
 import {pk} from '../../../pk';
 import {segmentsCmds} from '../../animator.screen/cropPath';
 import {RenderItem} from '../eval/evaluate';
 import {Box, Color, colorToRgb} from '../export-types';
-import {Coord} from '../../../../types';
-import {pkPathFromCoords} from '../../../getPatternData';
-import {scaleMatrix, translationMatrix} from '../../../../rendering/getMirrorTransforms';
-import {mapSegment, transformBarePath} from '../../../../rendering/points';
-import {truncateCoord, truncateShape} from '../utils/adjustShapes';
 
 export const renderItems = (
     surface: Surface,
     box: Box,
     items: RenderItem[],
     bg: Color | null,
+    antiAlias: boolean,
     fontBuffer?: ArrayBuffer,
     t?: number,
 ) => {
@@ -47,7 +43,9 @@ export const renderItems = (
             return;
         }
         const paint = new pk.Paint();
-        paint.setAntiAlias(true);
+        if (antiAlias) {
+            paint.setAntiAlias(true);
+        }
         if (item.strokeWidth == null) {
             paint.setStyle(pk.PaintStyle.Fill);
             paint.setColor([item.color.r / 255, item.color.g / 255, item.color.b / 255]);

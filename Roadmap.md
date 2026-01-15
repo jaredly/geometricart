@@ -12,6 +12,17 @@ there's one ArrayBuffer with >400mb. I assume it's from the video recording, may
 
 rendering a 12-line-segment path, 700 times * 120 = 84,000 times
 
+-> I should have a button to turn off aa though.
+
+WOW finally got it figured out.
+I should try doing back-to-back video renders/ with AA and without, and see if I can tell a difference.
+
+ALSO: I want to time the renders with a smaller vs larger max GPU cache, see if that
+changes the speed of rendering.
+
+woof ok rturning off AA really speeds up rendering videos.
+hmf but I don't like the result.
+
 # Clipping a single line
 
 -> the 'stroke' mod, lookin fresh

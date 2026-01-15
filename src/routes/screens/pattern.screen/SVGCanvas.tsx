@@ -21,7 +21,7 @@ import {outerBoundary} from '../../outerBoundary';
 import {followPath} from '../../followPath';
 import {barePathFromCoords} from './utils/resolveMods';
 import {generateSvgItems} from './generateSvgItems';
-import {Surface} from 'canvaskit-wasm';
+import {GrDirectContext, Surface} from 'canvaskit-wasm';
 import {getConstrainedSurface} from './render/recordVideo';
 
 export const Canvas = ({
@@ -42,19 +42,27 @@ export const Canvas = ({
     byKey: Record<string, string[]>;
     t: number;
 }) => {
-    // const surface = useRef<null | Surface>(null);
+    const sref = useRef<null | {surface: Surface | null; grc: GrDirectContext}>(null);
     // const font = usePromise(() => fetch('/assets/Roboto-Regular.ttf').then((r) => r.arrayBuffer()));
     useEffect(() => {
-        const {surface, grc} = getConstrainedSurface(innerRef.current.node! as HTMLCanvasElement);
-        renderItems(surface!, box, items, bg);
-        surface!.delete();
-        grc.releaseResourcesAndAbandonContext();
-    }, [box, items, innerRef, bg]);
+        if (!sref.current) return;
+        const {surface} = sref.current;
+        // const {surface, grc} = getConstrainedSurface(innerRef.current.node! as HTMLCanvasElement);
+        // no need for AA when previewing
+        renderItems(surface!, box, items, bg, false);
+        // surface!.delete();
+        // grc.releaseResourcesAndAbandonContext();
+    }, [box, items, bg]);
+
+    useEffect(() => {
+        return () => sref.current?.grc.releaseResourcesAndAbandonContext();
+    }, []);
 
     return (
         <canvas
             ref={(node) => {
                 if (node && innerRef.current.node !== node) {
+                    sref.current = getConstrainedSurface(node);
                     innerRef.current.node = node;
                     innerRef.current.tick();
                 }

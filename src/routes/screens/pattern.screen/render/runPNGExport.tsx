@@ -39,7 +39,7 @@ export const runPNGExport = (size: number, box: Box, items: RenderItem[], bg: Co
     const canvas = new OffscreenCanvas(size, size);
     const surface = pk.MakeWebGLCanvasSurface(canvas)!;
 
-    renderItems(surface, box, items, bg);
+    renderItems(surface, box, items, bg, true);
     const img = surface.makeImageSnapshot();
     const bytes = img.encodeToBytes(pk.ImageFormat.PNG)!;
     surface.delete();

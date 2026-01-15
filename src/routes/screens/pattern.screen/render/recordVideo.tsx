@@ -63,10 +63,11 @@ export const recordVideo = async (
         // // if (currentFrame % 10 === 0)
         const {items, bg} = svgItems(state, animCache, cropCache, currentFrame / totalFrames);
         const debugTime = false;
+        // yes AA when recording video
         if (debugTime) {
-            renderItems(surface!, box, items, bg, fontData, currentFrame / totalFrames);
+            renderItems(surface!, box, items, bg, true, fontData, currentFrame / totalFrames);
         } else {
-            renderItems(surface!, box, items, bg);
+            renderItems(surface!, box, items, bg, true);
         }
     });
     surface?.delete();
