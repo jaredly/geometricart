@@ -1,4 +1,4 @@
-import {useEffect, useMemo, useState} from 'react';
+import {useEffect, useMemo, useRef, useState} from 'react';
 import {BarePath, Coord, shapeKey} from '../../../types';
 import {Path, pk} from '../../pk';
 import {shapeD} from '../../shapeD';
@@ -21,6 +21,8 @@ import {outerBoundary} from '../../outerBoundary';
 import {followPath} from '../../followPath';
 import {barePathFromCoords} from './utils/resolveMods';
 import {generateSvgItems} from './generateSvgItems';
+import {Surface} from 'canvaskit-wasm';
+import {getConstrainedSurface} from './render/recordVideo';
 
 export const Canvas = ({
     items,
@@ -40,10 +42,13 @@ export const Canvas = ({
     byKey: Record<string, string[]>;
     t: number;
 }) => {
+    // const surface = useRef<null | Surface>(null);
     // const font = usePromise(() => fetch('/assets/Roboto-Regular.ttf').then((r) => r.arrayBuffer()));
     useEffect(() => {
-        const surface = pk.MakeWebGLCanvasSurface(innerRef.current.node! as HTMLCanvasElement)!;
-        renderItems(surface, box, items, bg);
+        const {surface, grc} = getConstrainedSurface(innerRef.current.node! as HTMLCanvasElement);
+        renderItems(surface!, box, items, bg);
+        surface!.delete();
+        grc.releaseResourcesAndAbandonContext();
     }, [box, items, innerRef, bg]);
 
     return (

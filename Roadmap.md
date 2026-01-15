@@ -10,11 +10,14 @@ this one http://localhost:5173/export/93hzmg6cb5
 after recording a couple of videos, hit 1gb of memory.
 there's one ArrayBuffer with >400mb. I assume it's from the video recording, maybe I can clean it up more aggressively?
 
+rendering a 12-line-segment path, 700 times * 120 = 84,000 times
+
 # Clipping a single line
 
 -> the 'stroke' mod, lookin fresh
 -> but then we kinda need to know about multiple paths with holes n stuff
 -> so maybe just hold onto the cmds? or the paths?
+
 
 
 
