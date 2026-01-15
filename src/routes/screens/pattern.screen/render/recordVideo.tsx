@@ -31,16 +31,16 @@ export const recordVideo = async (
             last = now;
             onStatus(currentFrame / totalFrames);
         }
-        // if (currentFrame % 10 === 0)
         const surface = pk.MakeWebGLCanvasSurface(canvas)!;
-
+        // // if (currentFrame % 10 === 0)
         const {items, bg} = svgItems(state, animCache, cropCache, currentFrame / totalFrames);
-        const debugTime = false;
-        if (debugTime) {
-            renderItems(surface, box, items, bg, fontData, currentFrame / totalFrames);
-        } else {
-            renderItems(surface, box, items, bg);
-        }
+        // const debugTime = false;
+        // if (debugTime) {
+        //     renderItems(surface, box, items, bg, fontData, currentFrame / totalFrames);
+        // } else {
+        renderItems(surface, box, items, bg, undefined, currentFrame / totalFrames);
+        // }
+        surface.delete();
     });
     return blob;
 };
