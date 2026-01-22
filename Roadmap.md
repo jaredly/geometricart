@@ -1,4 +1,12 @@
 
+# Weave
+
+-> do a toposort? mayyybe.
+-> know how wide a ribbon is, so we know .... how much of an intersection needs to be above?
+
+
+
+
 # Memory what
 
 Ok the memory issues are at a bit of a crisis.

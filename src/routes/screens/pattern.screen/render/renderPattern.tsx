@@ -210,6 +210,7 @@ export const renderPattern = (ctx: Ctx, _outer: CropsAndMatrices, pattern: Patte
                     panim,
                     {
                         ...path,
+                        open: !!path.open,
                         maxPathId,
                         center,
                         key,
