@@ -1,5 +1,8 @@
-import {closeEnough} from '../../../../rendering/epsilonToZero';
+import {boundsForCoords} from '../../../../editor/Bounds';
+import {closeEnough, closeEnoughAngle, epsilon} from '../../../../rendering/epsilonToZero';
 import {angleTo, dist} from '../../../../rendering/getMirrorTransforms';
+import {Coord} from '../../../../types';
+import {centroid} from '../../../findReflectionAxes';
 import {ease, easeInOutCubic} from '../../animator.screen/easeInOutCubic';
 import {easeFn} from './evalEase';
 
@@ -124,7 +127,35 @@ export const globals: Record<string, any> = {
     dist,
     ease,
     angleTo,
+    centroid,
     easeInOutCubic,
+    closeEnough,
+    closeEnoughAngle,
+    bin: (v: number, bins: number[]) => {
+        for (let i = 0; i < bins.length; i++) {
+            if (v < bins[i] + epsilon) {
+                return i;
+            }
+        }
+        return bins.length;
+    },
+    bbox: (c: Coord[]) => boundsForCoords(...c),
+    /**
+     * Finds the point that is farthest from the center,
+     * and gives you (angleTo(center, point)).
+     * If two are tied, it returns the one with the smaller angle.
+     */
+    orientation: (c: Coord[], center: Coord) => {
+        let best: null | {dist: number; pos: Coord; angle: number} = null;
+        c.forEach((pos) => {
+            const d = dist(center, pos);
+            if (best != null && best.dist > d - epsilon) return;
+            const angle = angleTo(center, pos);
+            if (best && closeEnough(best.dist, d) && angle > best.angle - epsilon) return;
+            best = {dist: d, pos, angle};
+        });
+        return best!.angle;
+    },
     tsplit,
     chunk,
     chunks,

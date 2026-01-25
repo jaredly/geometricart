@@ -35,7 +35,13 @@ import {multiplyShape} from './expandShapes';
 
 type CCrop = {type: 'crop'; id: string; mode?: CropMode; hole?: boolean};
 type CInset = {type: 'inset'; v: number};
-export type CropsAndMatrices = (CCrop | Matrix[] | CInset | {type: 'inner'})[];
+export type CropsAndMatrices = (
+    | CCrop
+    | Matrix[]
+    | CInset
+    | {type: 'stroke'; width: number; round: boolean}
+    | {type: 'inner'}
+)[];
 
 const enabledMods = (mods: PMods[]) => mods.filter((mod) => !mod.disabled);
 
@@ -45,6 +51,8 @@ export const resolveEnabledPMods = (ctx: AnimCtx, mods: PMods[] = []): CropsAndM
 export const resolvePMod = (ctx: AnimCtx, mod: PMods): CropsAndMatrices[0] => {
     if (mod.disabled) return [];
     switch (mod.type) {
+        case 'stroke':
+            return {...mod, width: a.number(ctx, mod.width), round: a.boolean(ctx, mod.round)};
         case 'inner':
             return mod;
         case 'inset':
@@ -86,15 +94,15 @@ const insetShape = (shape: Coord[], inset: number) => {
         .map((shape) => shape.map((s) => ({x: s.x / by, y: s.y / by})));
 };
 
-const clipShape = (shape: Coord[], mod: CCrop, crop: PKPath) => {
+const clipShape = (shape: {points: Coord[]; open: boolean}, mod: CCrop, crop: PKPath) => {
     if (mod.mode === 'rough') {
-        const center = centroid(shape);
+        const center = centroid(shape.points);
         if (crop.contains(center.x, center.y) === !!mod.hole) {
             return [];
         }
         return [shape];
     } else if (mod.mode === 'half') {
-        const path = pkPathFromCoords(shape)!;
+        const path = pkPathFromCoords(shape.points, shape.open)!;
         const other = path.copy();
         other.op(crop, mod.hole ? pk.PathOp.Difference : pk.PathOp.Intersect);
         other.simplify();
@@ -104,18 +112,18 @@ const clipShape = (shape: Coord[], mod: CCrop, crop: PKPath) => {
             .reduce((a, b) => a + b, 0);
         other.delete();
         path.delete();
-        const area = calcPolygonArea(shape);
+        const area = calcPolygonArea(shape.points);
         if (size < area / 2 + epsilon) {
             return [];
         }
         return [shape];
     } else {
-        const path = pkPathFromCoords(shape)!;
+        const path = pkPathFromCoords(shape.points, shape.open)!;
         path.op(crop, mod.hole ? pk.PathOp.Difference : pk.PathOp.Intersect);
         path.simplify();
         const items = pkPathToSegments(path);
         path.delete();
-        return items.map(coordsFromBarePath);
+        return items.map((bp) => ({points: coordsFromBarePath(bp), open: !!bp.open}));
     }
 };
 
@@ -202,56 +210,56 @@ const intoCmds = (path: PKPath) => {
 //     }
 // };
 
-// NOTE: I do think I should be splitting paths up after
-// clipping, and treating each subpath separately.
-// I don't know how to deal with holes though,
-// which presumably I want to be able to support
-// at some point.
-export const modsToShapes2 = (
-    cropCache: Ctx['cropCache'],
-    mods: CropsAndMatrices,
-    shapes: {shape: Coord[]; i: number}[],
-) => {
-    return mods.reduce(
-        (shapes, mod) => {
-            if (Array.isArray(mod)) {
-                return shapes.map((shape) => transformPKPath(shape, mod));
-            }
-
-            if (mod.type === 'inset') {
-                if (Math.abs(mod.v) <= 0.01) return shapes;
-                return shapes.map((shape) => {
-                    insetPkPath(shape, mod.v);
-                    return shape;
-                });
-            }
-            if (mod.type === 'inner') {
-                return shapes; // shouldn't have gotten this far?
-            }
-
-            const crop = cropCache.get(mod.id)!;
-            if (!crop) {
-                console.log(`No crop cache for ${mod.id}`);
-                return shapes;
-                // throw new Error(`No crop? ${mod.id} : ${[...cropCache.keys()]}`);
-            }
-            return shapes.map((shape) => {
-                return clipShape2(shape, mod, crop.path);
-            });
-        },
-        shapes.map(({shape}) => pkPathFromCoords(shape)!),
-    );
-};
+// // NOTE: I do think I should be splitting paths up after
+// // clipping, and treating each subpath separately.
+// // I don't know how to deal with holes though,
+// // which presumably I want to be able to support
+// // at some point.
+// export const modsToShapes2 = (
+//     cropCache: Ctx['cropCache'],
+//     mods: CropsAndMatrices,
+//     shapes: {shape: Coord[]; i: number}[],
+// ) => {
+//     return mods.reduce(
+//         (shapes, mod) => {
+//             if (Array.isArray(mod)) {
+//                 return shapes.map((shape) => transformPKPath(shape, mod));
+//             }
+//             if (mod.type === 'inset') {
+//                 if (Math.abs(mod.v) <= 0.01) return shapes;
+//                 return shapes.map((shape) => {
+//                     insetPkPath(shape, mod.v);
+//                     return shape;
+//                 });
+//             }
+//             if (mod.type === 'inner') {
+//                 return shapes; // shouldn't have gotten this far?
+//             }
+//             if (mod.type === 'stroke') {
+//             }
+//             const crop = cropCache.get(mod.id)!;
+//             if (!crop) {
+//                 console.log(`No crop cache for ${mod.id}`);
+//                 return shapes;
+//                 // throw new Error(`No crop? ${mod.id} : ${[...cropCache.keys()]}`);
+//             }
+//             return shapes.map((shape) => {
+//                 return clipShape2(shape, mod, crop.path);
+//             });
+//         },
+//         shapes.map(({shape}) => pkPathFromCoords(shape)!),
+//     );
+// };
 
 export const modsToShapes = (
     cropCache: Ctx['cropCache'],
     mods: CropsAndMatrices,
-    shapes: {shape: Coord[]; i: number}[],
+    shapes: {shape: {points: Coord[]; open: boolean}; i: number}[],
 ) => {
     return mods.reduce((shapes, mod) => {
         if (Array.isArray(mod)) {
             return shapes.map((shape) => ({
-                shape: transformShape(shape.shape, mod),
+                shape: {points: transformShape(shape.shape.points, mod), open: shape.shape.open},
                 i: shape.i,
             }));
         }
@@ -259,14 +267,32 @@ export const modsToShapes = (
         if (mod.type === 'inset') {
             if (Math.abs(mod.v) <= 0.01) return shapes;
             return shapes.flatMap((shape) => {
-                return insetShape(shape.shape, mod.v).map((coords) => ({
-                    shape: coords,
+                return insetShape(shape.shape.points, mod.v).map((coords) => ({
+                    shape: {points: coords, open: false}, // inset makes it closed
                     i: shape.i,
                 }));
             });
         }
         if (mod.type === 'inner') {
             return shapes; // shouldn't have gotten this far?
+        }
+        if (mod.type === 'stroke') {
+            return shapes.flatMap((shape) => {
+                // const path = bare
+                const path = pkPathFromCoords(shape.shape.points, shape.shape.open)!;
+                path.stroke({
+                    width: mod.width,
+                    cap: mod.round ? pk.StrokeCap.Round : pk.StrokeCap.Square,
+                    join: mod.round ? pk.StrokeJoin.Round : pk.StrokeJoin.Miter,
+                });
+                path.simplify();
+                const items = pkPathToSegments(path);
+                path.delete();
+                return items.map((bp) => ({
+                    shape: {points: coordsFromBarePath(bp), open: !!bp.open},
+                    i: shape.i,
+                }));
+            });
         }
 
         const crop = cropCache.get(mod.id)!;
@@ -459,6 +485,8 @@ export const pathMod = (cropCache: Ctx['cropCache'], mod: CropsAndMatrices[0], p
         }
     } else if (mod.type === 'inner') {
         return false;
+    } else if (mod.type === 'stroke') {
+        return false;
     } else {
         insetPkPath(path, mod.v / 100);
     }
@@ -475,10 +503,18 @@ export const renderGroup = (ctx: Ctx, crops: CropsAndMatrices, group: Group) => 
                 renderGroup(ctx, crops, entity);
                 break;
             case 'Pattern':
-                renderPattern(ctx, crops, entity);
+                try {
+                    renderPattern(ctx, crops, entity);
+                } catch (err) {
+                    ctx.anim.warn(`An error occurred while rendering pattern ${id}. ${err}`);
+                }
                 break;
             case 'Object':
-                renderObject(ctx, crops, entity);
+                try {
+                    renderObject(ctx, crops, entity);
+                } catch (err) {
+                    ctx.anim.warn(`An error occurred while rendering object ${id}. ${err}`);
+                }
                 break;
         }
     }
@@ -487,7 +523,7 @@ export const renderGroup = (ctx: Ctx, crops: CropsAndMatrices, group: Group) => 
 export type LogItem =
     | {type: 'seg'; prev: Coord; seg: Segment; color?: Color}
     | {type: 'point'; p: Coord; color?: Color}
-    | {type: 'shape'; shape: BarePath; color?: Color};
+    | {type: 'shape'; shape: BarePath; color?: Color; hidePoints?: boolean; noFill?: boolean};
 
 export type LogItems = {item: LogItem | LogItem[]; text?: string; color?: Color; data?: any};
 export type RenderLog =
@@ -500,10 +536,17 @@ export type RenderLog =
 
 export type Hover = {type: 'shape'; id: string} | {type: 'shapes'; ids: string[]};
 
-export const barePathFromCoords = (coords: Coord[]): BarePath => ({
-    segments: coords.map((c) => ({type: 'Line', to: c})),
-    origin: coords[coords.length - 1],
-});
+export const barePathFromCoords = (coords: Coord[], open = false): BarePath =>
+    open
+        ? {
+              segments: coords.slice(1).map((c) => ({type: 'Line', to: c})),
+              origin: coords[0],
+              open: true,
+          }
+        : {
+              segments: coords.map((c) => ({type: 'Line', to: c})),
+              origin: coords[coords.length - 1],
+          };
 
 export function handleShadowAndZSorting(items: RenderItem[]) {
     const len = items.length;

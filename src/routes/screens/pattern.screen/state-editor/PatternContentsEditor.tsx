@@ -1,10 +1,12 @@
 import React, {useState, useEffect} from 'react';
-import {Color, PatternContents, AnimatableCoord} from '../export-types';
+import {Color, PatternContents, AnimatableCoord, ShapeKind, BaseKind} from '../export-types';
 import {AnimCoordInput} from './AnimCoordInput';
 import {JsonEditor} from './JsonEditor';
 import {NumberField} from './NumberField';
 import {ShapeStylesEditor} from './ShapeStylesEditor';
 import {Updater} from '../../../../json-diff/Updater';
+import {BaseKindEditor, ShapeKindEditor} from './BaseKindEditor';
+import {AnimInput, AnimValueInput} from './AnimInput';
 
 export const PatternContentsEditor = ({
     value,
@@ -26,13 +28,51 @@ export const PatternContentsEditor = ({
         if (nextType === value.type) return;
         switch (nextType) {
             case 'shapes':
-                update({type: 'shapes', styles: {}});
+                update({
+                    type: 'shapes',
+                    styles: {
+                        style1: {
+                            id: 'style1',
+                            kind: {type: 'everything'},
+                            lines: {
+                                line1: {
+                                    id: 'line1',
+                                    mods: [],
+                                    color: {r: 255, g: 0, b: 0},
+                                    width: 1,
+                                },
+                            },
+                            fills: {},
+                            mods: [],
+                            order: 0,
+                        },
+                    },
+                });
                 break;
             case 'weave':
                 update({type: 'weave', orderings: {}, styles: {}});
                 break;
             case 'lines':
-                update({type: 'lines', styles: {}});
+                update({
+                    type: 'lines',
+                    styles: {
+                        style1: {
+                            id: 'style1',
+                            kind: {type: 'everything'},
+                            lines: {
+                                line1: {
+                                    id: 'line1',
+                                    mods: [],
+                                    color: 'groupId',
+                                    width: 1,
+                                },
+                            },
+                            fills: {},
+                            mods: [],
+                            order: 0,
+                        },
+                    },
+                });
                 break;
             case 'layers':
                 update({
@@ -111,18 +151,33 @@ export const PatternContentsEditor = ({
                 </div>
             ) : null}
             {value.type === 'shapes' ? (
-                <ShapeStylesEditor
+                <ShapeStylesEditor<ShapeKind>
                     palette={palette}
                     styles={value.styles}
                     update={update.variant('shapes').styles}
+                    KindEditor={ShapeKindEditor}
+                    defaultKind={{type: 'everything'}}
                 />
             ) : null}
             {value.type === 'lines' ? (
-                <JsonEditor
-                    label="Styles"
-                    value={value.styles}
-                    onChange={update.variant('lines').styles}
-                />
+                <>
+                    <AnimValueInput
+                        label="Sort"
+                        onChange={(v) =>
+                            v == null
+                                ? update.variant('lines').sort.remove()
+                                : update.variant('lines').sort(v)
+                        }
+                        value={value.sort}
+                    />
+                    <ShapeStylesEditor<BaseKind>
+                        palette={palette}
+                        styles={value.styles}
+                        update={update.variant('lines').styles}
+                        KindEditor={BaseKindEditor}
+                        defaultKind={{type: 'everything'}}
+                    />
+                </>
             ) : null}
         </details>
     );

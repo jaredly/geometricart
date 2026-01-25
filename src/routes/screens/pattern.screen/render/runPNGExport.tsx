@@ -7,7 +7,12 @@ import {ExportSettings} from '../FrameExport';
 import {renderItems} from './renderItems';
 import {generateSvgItems} from '../generateSvgItems';
 
-export const runSVGExport = (ex: ExportSettings, box: Box, items: RenderItem[], bg: Color) => {
+export const runSVGExport = (
+    ex: ExportSettings,
+    box: Box,
+    items: RenderItem[],
+    bg: Color | null,
+) => {
     const lw = box.width / 10;
     const svgItems = generateSvgItems(
         items.filter((i) => i.type === 'path'),
@@ -19,7 +24,7 @@ export const runSVGExport = (ex: ExportSettings, box: Box, items: RenderItem[], 
         <svg
             xmlns="http://www.w3.org/2000/svg"
             viewBox={`${box.x.toFixed(7)} ${box.y.toFixed(7)} ${box.width.toFixed(7)} ${box.height.toFixed(7)}`}
-            style={{background: colorToString(bg)}}
+            style={{background: bg != null ? colorToString(bg) : undefined}}
             width={ex.size}
             height={ex.size}
         >
@@ -30,11 +35,11 @@ export const runSVGExport = (ex: ExportSettings, box: Box, items: RenderItem[], 
     return new Blob([text], {type: 'image/svg+xml'});
 };
 
-export const runPNGExport = (size: number, box: Box, items: RenderItem[], bg: Color) => {
+export const runPNGExport = (size: number, box: Box, items: RenderItem[], bg: Color | null) => {
     const canvas = new OffscreenCanvas(size, size);
     const surface = pk.MakeWebGLCanvasSurface(canvas)!;
 
-    renderItems(surface, box, items, bg);
+    renderItems(surface, box, items, bg, true);
     const img = surface.makeImageSnapshot();
     const bytes = img.encodeToBytes(pk.ImageFormat.PNG)!;
     surface.delete();

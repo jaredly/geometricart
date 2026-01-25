@@ -167,10 +167,10 @@ const LoadPattern = ({id, state}: {id: string; state: ExportHistory}) => {
  * On localhost, we can use the `/fs/` api, but in prod we just use localStorage
  */
 const CreateAndRedirectSwitch = ({id}: {id: string}) => {
-    const [onLocal, setOnLocal] = useState<null | boolean>(false);
-    // useEffect(() => {
-    //     setOnLocal(window.location.hostname === 'localhost');
-    // }, []);
+    const [onLocal, setOnLocal] = useState<null | boolean>(null);
+    useEffect(() => {
+        setOnLocal(window.location.hostname === 'localhost');
+    }, []);
     if (onLocal == null) return null;
     return onLocal ? <CreateAndRedirect id={id} /> : <CreateAndRedirectLocalStorage id={id} />;
 };
@@ -223,7 +223,8 @@ const Inner = ({snapshotUrl, namePrefix}: {snapshotUrl: SnapshotUrl; namePrefix:
     const sctx = useExportState();
     const state = sctx.use((v) => v);
     const pctx = usePendingState();
-    const debug = location.search.includes('debug=');
+    const {search} = useLocation();
+    const debug = search.includes('debug=');
 
     useEffect(() => {
         return sctx.onHistoryChange(() => {
@@ -234,18 +235,26 @@ const Inner = ({snapshotUrl, namePrefix}: {snapshotUrl: SnapshotUrl; namePrefix:
     useEffect(() => {
         const fn = (evt: KeyboardEvent) => {
             if (evt.metaKey && evt.key === 'z') {
+                const t = evt.target;
+                if (t instanceof HTMLInputElement || t instanceof HTMLTextAreaElement) {
+                    return; // something is focused
+                }
                 if (evt.shiftKey) {
                     if (sctx.canRedo()) {
                         sctx.redo();
                     } else {
                         pctx.redo();
                     }
+                    evt.preventDefault();
+                    evt.stopImmediatePropagation();
                 } else {
                     if (pctx.canUndo()) {
                         pctx.undo();
                     } else {
                         sctx.undo();
                     }
+                    evt.preventDefault();
+                    evt.stopImmediatePropagation();
                 }
             }
         };

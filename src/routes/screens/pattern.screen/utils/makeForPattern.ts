@@ -1,6 +1,6 @@
 import {ThinTiling} from '../../../../types';
 import {getNewPatternData} from '../../../getPatternData';
-import {ShapeStyle} from '../export-types';
+import {ShapeKind, ShapeStyle} from '../export-types';
 import {sizeBox} from '../hooks/useSVGZoom';
 import {State} from '../types/state-type';
 import {parseColor} from './colors';
@@ -13,7 +13,7 @@ for (let i = 0; i < colorsRaw.length; i += 6) {
 
 export const makeForPattern = (tiling: ThinTiling, hash: string): State => {
     const pd = getNewPatternData(tiling);
-    const styles: Record<string, ShapeStyle> = {};
+    const styles: Record<string, ShapeStyle<ShapeKind>> = {};
     for (let i = 0; i <= pd.colorInfo.maxColor; i++) {
         styles[`alt-${i}`] = {
             id: `alt-${i}`,

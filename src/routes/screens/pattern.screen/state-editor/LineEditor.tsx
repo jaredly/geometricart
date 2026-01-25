@@ -35,7 +35,17 @@ export const LineEditor = ({
                 </button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
+            <div className="flex flex-row flex-wrap gap-2">
+                <AnimInput
+                    label="enabled"
+                    value={value.enabled}
+                    onChange={(enabled) => update.enabled(enabled as AnimatableBoolean)}
+                />
+                <AnimInput
+                    label="opacity"
+                    value={value.opacity}
+                    onChange={(opacity) => update.opacity(opacity as AnimatableNumber)}
+                />
                 <AnimInput
                     label="zIndex"
                     value={value.zIndex}
@@ -48,6 +58,13 @@ export const LineEditor = ({
                     value={value.color}
                     // biome-ignore lint: this one is fine
                     onChange={update.color as Updater<any>}
+                />
+                <AnimColor
+                    palette={palette}
+                    label="Tint"
+                    value={value.tint}
+                    placeholder="rgb or hsl"
+                    onChange={(tint, when) => update.tint(tint as AnimatableColor, when)}
                 />
                 <AnimInput
                     label="Width"

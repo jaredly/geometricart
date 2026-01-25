@@ -73,7 +73,10 @@ export const adjustShapes2 = (
     //     (p) => coordTruncatePairKey(p, amt),
     // );
 
-    let segments = unique(uniqueShapes.flatMap(coordPairs), (p) => coordTruncatePairKey(p, amt));
+    let segments = unique(
+        uniqueShapes.flatMap((p) => coordPairs(p)),
+        (p) => coordTruncatePairKey(p, amt),
+    );
 
     outerDebug?.push({
         type: 'items',
@@ -103,9 +106,9 @@ export const adjustShapes2 = (
                     mods,
                 );
                 const shapeLines = coordLines(shapeCoords);
-                const moved = modsToShapes(cropCache, resolved, [{shape: shapeCoords, i: 0}]).map(
-                    (a) => ({...a, shape: truncateShape(a.shape, amt)}),
-                );
+                const moved = modsToShapes(cropCache, resolved, [
+                    {shape: {points: shapeCoords, open: !!shape.open}, i: 0},
+                ]).map((a) => ({...a, shape: truncateShape(a.shape.points, amt)}));
                 const movedLines = moved.map((m) => coordLines(m.shape));
 
                 if (allSameLines(shapeLines, movedLines.flat())) {
@@ -267,10 +270,13 @@ export const adjustShapes = (
                 mods,
             );
             const shapeLines = coordLines(shapeCoords);
-            const moved = modsToShapes(cropCache, resolved, [{shape: shapeCoords, i: 0}]).map(
-                (a) => ({...a, shape: truncateShape(a.shape, amt)}),
-            );
-            const movedLines = moved.map((m) => coordLines(m.shape));
+            const moved = modsToShapes(cropCache, resolved, [
+                {shape: {points: shapeCoords, open: !!shape.open}, i: 0},
+            ]).map((a) => ({
+                ...a,
+                shape: {points: truncateShape(a.shape.points, amt), open: a.shape.open},
+            }));
+            const movedLines = moved.map((m) => coordLines(m.shape.points));
             if (allSameLines(shapeLines, movedLines.flat())) {
                 continue;
             }
@@ -282,7 +288,10 @@ export const adjustShapes = (
                     items: [
                         {item: {type: 'shape', shape}, text: 'pre-move'},
                         ...moved.map((coords, i) => ({
-                            item: {type: 'shape' as const, shape: barePathFromCoords(coords.shape)},
+                            item: {
+                                type: 'shape' as const,
+                                shape: barePathFromCoords(coords.shape.points),
+                            },
                             text: 'post-' + i,
                         })),
                     ],
@@ -325,7 +334,10 @@ export const adjustShapes = (
             }
 
             let [removedSegs, segs] = unzip(
-                unique(right.flatMap(coordPairs), coordPairKey),
+                unique(
+                    right.flatMap((p) => coordPairs(p)),
+                    coordPairKey,
+                ),
                 (pair) => !coordPairOnShape(pair, shapeLines, eps * eps, eps),
             );
 
@@ -341,14 +353,14 @@ export const adjustShapes = (
                     title: 'Added Segments',
                     type: 'items',
                     items: moved.flatMap((shape) =>
-                        coordPairs(shape.shape).flatMap((pair) => ({
+                        coordPairs(shape.shape.points).flatMap((pair) => ({
                             item: {type: 'seg', prev: pair[0], seg: {type: 'Line', to: pair[1]}},
                         })),
                     ),
                 });
             }
 
-            segs.push(...moved.flatMap((m) => coordPairs(m.shape)));
+            segs.push(...moved.flatMap((m) => coordPairs(m.shape.points)));
 
             if (log) {
                 debug.push({
@@ -403,7 +415,7 @@ export const adjustShapes = (
 
                 logByEndPoint(debug, byEndPoint);
             }
-            const cmoved = centroid(moved.flatMap((m) => m.shape));
+            const cmoved = centroid(moved.flatMap((m) => m.shape.points));
             const fromSegments = shapesFromSegments(byEndPoint, one, prec, debug);
             const [centerShapes, reconstructed] = unzip(
                 fromSegments.shapes,
@@ -485,9 +497,10 @@ export const unzip = <T,>(v: T[], test: (t: T) => boolean) => {
     return [left, right] as const;
 };
 
-export const coordPairs = (coords: Coord[]) => {
+export const coordPairs = (coords: Coord[], open = false) => {
     const res: [Coord, Coord][] = [];
     coords.forEach((coord, i) => {
+        if (i === 0 && open) return;
         res.push([coords[i === 0 ? coords.length - 1 : i - 1], coord]);
     });
     return res;

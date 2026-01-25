@@ -18,6 +18,10 @@ export type TableSpec<TTables extends Record<string, any>> = {
     [K in keyof TTables]: Validator<TTables[K]>;
 };
 
+export type DebugSpec<TTables extends Record<string, any>> = Partial<{
+    [K in keyof TTables]: (value: unknown) => any;
+}>;
+
 export interface TxContext<TTables extends Record<string, any>> {
     set<K extends keyof TTables>(table: K, key: KVKey, value: TTables[K]): void;
     del<K extends keyof TTables>(table: K, key: KVKey): void;
@@ -45,13 +49,19 @@ export class TypedKV<TTables extends Record<string, any>> {
     private opening: Promise<IDBDatabase> | null = null;
 
     private validators: TableSpec<TTables>;
+    private debuggers: DebugSpec<TTables>;
 
-    constructor(validators: TableSpec<TTables>, opts: TypedKVOptions = {}) {
+    constructor(
+        validators: TableSpec<TTables>,
+        opts: TypedKVOptions = {},
+        debugSpec: DebugSpec<TTables> = {},
+    ) {
         this.validators = validators;
         this.dbName = opts.dbName ?? 'kv-db';
         this.storeName = opts.storeName ?? 'kv';
         this.version = opts.version ?? 1;
         this.onInvalidValue = opts.onInvalidValue ?? 'throw';
+        this.debuggers = debugSpec;
     }
 
     private makeKey<K extends keyof TTables>(table: K, key: KVKey): CompoundKey {
@@ -124,6 +134,7 @@ export class TypedKV<TTables extends Record<string, any>> {
         // Optional: validate on write too (cheap safety)
         const isOk = this.validators[table](value as unknown);
         if (!isOk) {
+            console.log('Failed to validate', value);
             throw new Error(
                 `Validation failed for table "${String(table)}" (refusing to store value).`,
             );
@@ -222,6 +233,7 @@ export class TypedKV<TTables extends Record<string, any>> {
                 }
 
                 if (!validate(next)) {
+                    console.log(`failed to valiated`, next);
                     reject(
                         new Error(
                             `Validation failed for updated value in table "${String(table)}" (refusing to store).`,
@@ -262,6 +274,10 @@ export class TypedKV<TTables extends Record<string, any>> {
             set: (table, key, value) => {
                 if (!validateOnWrite(table, value)) {
                     tx.abort();
+                    console.log('nope', value);
+                    if (this.debuggers[table]) {
+                        console.log(this.debuggers[table](value));
+                    }
                     throw new Error(
                         `Validation failed for table "${String(table)}" (refusing to store value).`,
                     );

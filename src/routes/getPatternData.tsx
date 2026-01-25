@@ -228,7 +228,7 @@ export const coordsFromBarePath = (bp: BarePath) => {
     return coords;
 };
 
-const shapeSegments = (shape: Coord[]) => {
+export const shapeSegments = (shape: Coord[]) => {
     return shape.map((c, i): [Coord, Coord] => [shape[i === 0 ? shape.length - 1 : i - 1], c]);
 };
 
@@ -271,7 +271,7 @@ export const getSimplePatternData = (tiling: ThinTiling, size: Coord | number) =
         bounds.forEach((pos, i) => eigenCorners[i].push(pos));
     });
 
-    return {initialShapes, minSegLength, canons, ttt, uniqueShapes, eigenCorners};
+    return {initialShapes, minSegLength, canons, ttt, uniqueShapes, bounds, eigenCorners};
 };
 
 export const coordToPolar = (c: Coord) => ({t: angleTo({x: 0, y: 0}, c), m: dist({x: 0, y: 0}, c)});

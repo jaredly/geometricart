@@ -30,6 +30,12 @@ type UpdateFunction<Value, Tag extends PropertyKey, R, Extra> = (
 const getPathSymbol = Symbol('get path');
 const getExtraSymbol = Symbol('get extra');
 
+export type SingleableNode<Root, Current, Tag extends PropertyKey, R, Extra = unknown> = {
+    single<V extends boolean>(
+        isSingle: V,
+    ): DiffNodeA<Root, V extends true ? Current : Current[], Tag, R, Extra>;
+};
+
 export type DiffNodeA<Root, Current, Tag extends PropertyKey, R, Extra = unknown> = AddMethodsA<
     Current,
     R
@@ -43,17 +49,7 @@ export type DiffNodeA<Root, Current, Tag extends PropertyKey, R, Extra = unknown
     // navigation
     // 🔹 "one or many" → refine T | T[] via single()
     (IsSingleOrArray<Current> extends true
-        ? {
-              single<V extends boolean>(
-                  isSingle: V,
-              ): DiffNodeA<
-                  Root,
-                  V extends true ? SingleElement<Current> : SingleElement<Current>[],
-                  Tag,
-                  R,
-                  Extra
-              >;
-          }
+        ? SingleableNode<Root, SingleElement<Current>, Tag, R, Extra>
         : // biome-ignore lint: this one is fine
           {}) &
     // 🔹 tagged union → must choose an arm via variant()
@@ -179,7 +175,7 @@ export function diffBuilderApply<T, Extra, Tag extends string = 'type', R = void
                     };
                 }
 
-                if (prop === 'valueOf') {
+                if (prop === 'valueOf' || prop === 'toString') {
                     // weird react thing
                     return null;
                 }

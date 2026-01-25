@@ -1,4 +1,4 @@
-import {useEffect, useMemo, useState} from 'react';
+import {useEffect, useMemo, useRef, useState} from 'react';
 import {BarePath, Coord, shapeKey} from '../../../types';
 import {Path, pk} from '../../pk';
 import {shapeD} from '../../shapeD';
@@ -18,9 +18,11 @@ import {edgesByEndpoint, unique} from '../../shapesFromSegments';
 import {coordPairKey, sortCoordPair} from './utils/adjustShapes';
 import {pathsFromSegments} from '../../pathsFromSegments';
 import {outerBoundary} from '../../outerBoundary';
-import {followPath} from '../../weaveIntersections';
+import {followPath} from '../../followPath';
 import {barePathFromCoords} from './utils/resolveMods';
 import {generateSvgItems} from './generateSvgItems';
+import {GrDirectContext, Surface} from 'canvaskit-wasm';
+import {getConstrainedSurface} from './render/recordVideo';
 
 export const Canvas = ({
     items,
@@ -31,7 +33,7 @@ export const Canvas = ({
     t,
 }: {
     items: RenderItem[];
-    bg: Color;
+    bg: Color | null;
     state: State;
     mouse: Coord | null;
     size: number;
@@ -40,16 +42,27 @@ export const Canvas = ({
     byKey: Record<string, string[]>;
     t: number;
 }) => {
+    const sref = useRef<null | {surface: Surface | null; grc: GrDirectContext}>(null);
     // const font = usePromise(() => fetch('/assets/Roboto-Regular.ttf').then((r) => r.arrayBuffer()));
     useEffect(() => {
-        const surface = pk.MakeWebGLCanvasSurface(innerRef.current.node! as HTMLCanvasElement)!;
-        renderItems(surface, box, items, bg);
-    }, [box, items, innerRef, bg]);
+        if (!sref.current) return;
+        const {surface} = sref.current;
+        // const {surface, grc} = getConstrainedSurface(innerRef.current.node! as HTMLCanvasElement);
+        // no need for AA when previewing
+        renderItems(surface!, box, items, bg, false);
+        // surface!.delete();
+        // grc.releaseResourcesAndAbandonContext();
+    }, [box, items, bg]);
+
+    useEffect(() => {
+        return () => sref.current?.grc.releaseResourcesAndAbandonContext();
+    }, []);
 
     return (
         <canvas
             ref={(node) => {
                 if (node && innerRef.current.node !== node) {
+                    sref.current = getConstrainedSurface(node);
                     innerRef.current.node = node;
                     innerRef.current.tick();
                 }
@@ -82,7 +95,7 @@ export const SVGCanvas = ({
     state: State;
     mouse: Coord | null;
     keyPoints: ([Coord, Coord] | Coord)[];
-    bg: Color;
+    bg: Color | null;
     items: RenderItem[];
     size: number;
     zoomProps: ZoomProps;
@@ -140,14 +153,14 @@ export const SVGCanvas = ({
                     innerRef.current.tick();
                 }
             }}
-            style={{background: colorToString(bg), width: size, height: size}}
+            style={{background: bg ? colorToString(bg) : undefined, width: size, height: size}}
             onMouseLeave={() => setMouse(null)}
             onMouseMove={(evt) => setMouse(svgCoord(evt))}
         >
             {svgItems}
-            {rpoints.map(({key, coord, color, opacity}) => (
+            {rpoints.map(({key, coord, color, opacity, size}) => (
                 <circle
-                    r={lw / 10}
+                    r={(lw / 10) * (size ?? 1)}
                     fill={colorToString(color ?? {r: 255, g: 0, b: 0})}
                     stroke="none"
                     pointerEvents={'none'}

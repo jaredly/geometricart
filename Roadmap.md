@@ -1,4 +1,75 @@
 
+# Weave
+
+-> do a toposort? mayyybe.
+-> know how wide a ribbon is, so we know .... how much of an intersection needs to be above?
+
+
+
+
+# Memory what
+
+Ok the memory issues are at a bit of a crisis.
+Running a 55 second video ate up like 100 GB of memory or something.
+so.
+here we are.
+
+this one http://localhost:5173/export/93hzmg6cb5
+after recording a couple of videos, hit 1gb of memory.
+there's one ArrayBuffer with >400mb. I assume it's from the video recording, maybe I can clean it up more aggressively?
+
+rendering a 12-line-segment path, 700 times * 120 = 84,000 times
+
+-> I should have a button to turn off aa though.
+
+WOW finally got it figured out.
+I should try doing back-to-back video renders/ with AA and without, and see if I can tell a difference.
+
+ALSO: I want to time the renders with a smaller vs larger max GPU cache, see if that
+changes the speed of rendering.
+
+woof ok rturning off AA really speeds up rendering videos.
+hmf but I don't like the result.
+
+# Clipping a single line
+
+-> the 'stroke' mod, lookin fresh
+-> but then we kinda need to know about multiple paths with holes n stuff
+-> so maybe just hold onto the cmds? or the paths?
+
+
+
+
+
+
+#
+
+- [ ] it would be cool to be able to mark patterns by "how many fundamental shapes there are".
+  Like these ones that are only a single closed shape repeated, are super cool.
+  -> this can be precomputed, so we can sort by it in the gallery
+
+- [ ] can zoom be animated? I would like that.
+- [ ] clipping an (open) path, might result in closed.
+- [x] I want to be able to sort lines
+
+It would be really nice to be able to know what the transformation was
+that took the original line to the current line, within a `groupId`.
+Like, some of theme were just translated, but some were rotated,
+some were flipped, etc.
+
+
+# Lines!
+
+- [ ] explicit -> gotta be able to click lines to select them pls
+  - how would a [line] be identified? not by center. maybe like a hash?
+    I don't love it too much. or like ... the top-left-most segment? yeah
+    that's kinda neat. Ok so it's the sorted-segment-key that sorts first.
+    simple.
+  
+For lines, we need a heck of a lot more caching.
+
+Explicit by ids is kinda fun idk.
+
 ## Isolated pattern editor:
 
 - [x] basic loading

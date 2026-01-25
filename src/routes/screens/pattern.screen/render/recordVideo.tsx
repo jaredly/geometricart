@@ -8,6 +8,30 @@ import {svgItems} from './svgItems';
 import {pkPathWithCmds} from '../../animator.screen/cropPath';
 import {renderItems} from './renderItems';
 
+export const getConstrainedSurface = (node: HTMLCanvasElement | OffscreenCanvas) => {
+    const MB = 1024 * 1024;
+
+    // 1) Create WebGL context handle with explicit opts (important!)
+    const glHandle = pk.GetWebGLContext(node, {
+        antialias: 0, // avoid MSAA + Skia AA double-whammy
+        stencil: 1,
+        depth: 0,
+        alpha: 1,
+    });
+
+    // 2) Create GrDirectContext
+    const grContext = pk.MakeWebGLContext(glHandle)!;
+
+    // 3) Cap Skia’s GPU resource cache
+    grContext.setResourceCacheLimitBytes(256 * MB); // try 128–512MB
+
+    // 4) Create the onscreen surface
+    return {
+        surface: pk.MakeOnScreenGLSurface(grContext, node.width, node.height, pk.ColorSpace.SRGB),
+        grc: grContext,
+    };
+};
+
 export const recordVideo = async (
     state: State,
     size: number,
@@ -24,6 +48,9 @@ export const recordVideo = async (
 
     const fontData = await fetch('/assets/Roboto-Regular.ttf').then((r) => r.arrayBuffer());
 
+    // const {items, bg} = svgItems(state, animCache, cropCache, 0);
+    const {surface, grc} = getConstrainedSurface(canvas);
+
     let last = Date.now();
     const blob = await generateVideo(canvas, frameRate, totalFrames, (_, currentFrame) => {
         let now = Date.now();
@@ -31,16 +58,19 @@ export const recordVideo = async (
             last = now;
             onStatus(currentFrame / totalFrames);
         }
-        // if (currentFrame % 10 === 0)
-        const surface = pk.MakeWebGLCanvasSurface(canvas)!;
+        // surface.get
 
+        // // if (currentFrame % 10 === 0)
         const {items, bg} = svgItems(state, animCache, cropCache, currentFrame / totalFrames);
         const debugTime = false;
+        // yes AA when recording video
         if (debugTime) {
-            renderItems(surface, box, items, bg, fontData, currentFrame / totalFrames);
+            renderItems(surface!, box, items, bg, true, fontData, currentFrame / totalFrames);
         } else {
-            renderItems(surface, box, items, bg);
+            renderItems(surface!, box, items, bg, true);
         }
     });
+    surface?.delete();
+    grc.releaseResourcesAndAbandonContext();
     return blob;
 };

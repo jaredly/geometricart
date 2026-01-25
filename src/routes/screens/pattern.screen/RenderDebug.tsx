@@ -15,6 +15,8 @@ import {useEditState} from './utils/editState';
 import {renderShape} from './render/renderShape';
 import {Updater} from '../../../json-diff/Updater';
 import {ShowRenderLog} from './ShowRenderLog';
+import {useLocalStorage} from '../../../vest/useLocalStorage';
+import {useLocation} from 'react-router';
 
 const allItems = (log: RenderLog): LogItem[] => {
     if (log.type === 'items') return log.items.flatMap((l) => l.item);
@@ -133,11 +135,12 @@ const renderLogSelection = (
                         type: 'path',
                         color: item.color ? colorToRgb(item.color) : {r: 255, g: 0, b: 0},
                         opacity: detectOverlaps ? 0.3 : undefined,
+                        strokeWidth: item.noFill ? 0.02 : undefined,
                         adjustForZoom: true,
                         shapes: [item.shape],
                         key: 'log-' + i,
                     },
-                    ...(detectOverlaps
+                    ...(detectOverlaps || item.hidePoints
                         ? []
                         : [
                               {
@@ -153,6 +156,7 @@ const renderLogSelection = (
                                   coord: item.to,
                                   color: {r: 255, g: 255, b: 255},
                                   key: `seg-${i}-pt-${j}`,
+                                  size: 0.4,
                               })),
                           ]),
                 ];
@@ -171,7 +175,8 @@ export const matchPath = (one: number[], two: number[]) => {
 export const RenderDebug = ({state, update}: {state: State; update: Updater<State>}) => {
     const animCache = useMemo<AnimCtx['cache']>(() => new Map(), []);
 
-    const m = location.search.match(/debug=([\d.]+)/g);
+    const {search} = useLocation();
+    const m = search.match(/debug=([\d.]+)/g);
     const t = m ? +m[0].split('=')[1] : 0;
 
     const es = useEditState();

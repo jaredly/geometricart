@@ -47,7 +47,7 @@ export const EntityEditor = ({
                             }
                         }
                     }}
-                    onMouseLeave={() => es.update.hover.remove()}
+                    onMouseLeave={() => (value.type === 'Object' ? es.update.hover.remove() : null)}
                 >
                     {value.type}
                     {value.type === 'Object' ? <span className="px-4">{value.shape}</span> : null}

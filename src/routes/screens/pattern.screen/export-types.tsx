@@ -9,13 +9,13 @@ import {
 } from '../../../rendering/getMirrorTransforms';
 import {GuideGeom, Coord, Segment, BarePath, Tiling, ThinTiling} from '../../../types';
 import {pk, PKPath} from '../../pk';
-import {colorToString} from './utils/colors';
+import {colorToString, Rgb} from './utils/colors';
 import {CropsAndMatrices} from './utils/resolveMods';
 
 export type AnimatableNumber = number | string;
-export type AnimatableBoolean = boolean | string;
+export type AnimatableBoolean = boolean | string | number;
 export type AnimatableValue = string;
-export type AnimatableColor = number | string | Color;
+export type AnimatableColor = number | string | Color | null;
 export type AnimatableCoord = Coord | string;
 
 export type Shape =
@@ -47,10 +47,8 @@ export type Shape =
 
 export type Box = {x: number; y: number; width: number; height: number};
 
-export type Color =
-    | {r: number; g: number; b: number}
-    | {h: number; s: number; l: number}
-    | [number, number, number];
+export type Hsl = {h: number; s: number; l: number};
+export type Color = Rgb | Hsl | [number, number, number];
 
 export const colorToRgb = (c: Color): {r: number; g: number; b: number} =>
     Array.isArray(c)
@@ -86,6 +84,7 @@ export type Group = {
 export type CropMode = 'rough' | 'half';
 
 export type PMods =
+    | {type: 'stroke'; width: AnimatableNumber; round: AnimatableBoolean; disabled?: boolean}
     | {type: 'inner'; disabled?: boolean}
     | {type: 'inset'; v: AnimatableNumber; disabled?: boolean}
     | {type: 'crop'; id: string; hole?: boolean; mode?: CropMode; disabled?: boolean}
@@ -100,6 +99,7 @@ export type PMods =
 
 export type ConcretePMod =
     | {type: 'inner'}
+    | {type: 'stroke'; width: number; round: boolean}
     | {type: 'inset'; v: number; disabled?: boolean}
     | {type: 'crop'; id: string; hole?: boolean; mode?: CropMode; disabled?: boolean}
     | {type: 'scale'; v: Coord | number; origin?: Coord; disabled?: boolean}
@@ -188,17 +188,19 @@ export type Adjustment = {
 export type PatternContents =
     | {
           type: 'shapes';
-          styles: Record<string, ShapeStyle>;
+          styles: Record<string, ShapeStyle<ShapeKind>>;
       }
     | {
           type: 'weave';
           flip?: number;
           orderings: Record<string, number[]>;
-          styles: Record<string, LineStyle>;
+          styles: Record<string, LineStyle<BaseKind>>;
       }
     | {
           type: 'lines';
-          styles: Record<string, LineStyle>;
+          styles: Record<string, ShapeStyle<BaseKind>>;
+          includeBorders?: boolean;
+          sort?: AnimatableValue;
       }
     | {
           type: 'layers';
@@ -215,14 +217,14 @@ export type BaseKind =
 
 export type ShapeKind = BaseKind | {type: 'shape'; key: string; rotInvariant: boolean};
 
-export type ShapeStyle = {
+export type ShapeStyle<Kind> = {
     id: string;
     disabled?: boolean;
     order: number;
     // TODO: maybe have a kind that's like "anything intersecting with this shape"?
     // Could also be interesting to have an `animatedKind` where we select
     // the items effected by some script
-    kind: ShapeKind | ShapeKind[];
+    kind: Kind | Kind[];
     fills: Record<string, Fill>;
     lines: Record<string, Line>;
     t?: TChunk;
@@ -307,10 +309,10 @@ export type Line = {
     mods: PMods[];
 };
 
-export type LineStyle = {
+export type LineStyle<Kind> = {
     id: string;
     order: number;
-    kind: BaseKind;
+    kind: Kind;
     style: Line;
     mods: PMods[];
 };
