@@ -63,8 +63,8 @@ export const LineEditor = ({
                     palette={palette}
                     label="Tint"
                     value={value.tint}
-                    // biome-ignore lint: this one is fine
-                    onChange={update.tint as Updater<any>}
+                    placeholder="rgb or hsl"
+                    onChange={(tint, when) => update.tint(tint as AnimatableColor, when)}
                 />
                 <AnimInput
                     label="Width"

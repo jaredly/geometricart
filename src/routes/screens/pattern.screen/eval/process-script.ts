@@ -5,6 +5,9 @@ import assignParent from 'estree-assign-parent';
 import {crawl, getScope} from './scope-analyzer.js';
 
 export function processScript(source: string) {
+    if (source.match(/^\s*{\s*[a-zA-Z_0-9]+\s*:/) && source.match(/}\s*$/)) {
+        source = `(${source})`;
+    }
     // 1. Parse to ESTree-ish AST
     let ast = acorn.parse(source, {
         ecmaVersion: 'latest',

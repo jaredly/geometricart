@@ -82,11 +82,13 @@ export const AnimColor = ({
     value,
     onChange,
     palette,
+    placeholder = 'Color',
 }: {
     label: string;
     value?: AnimatableColor;
     onChange: (next?: AnimatableColor, when?: ApplyTiming) => void;
     palette: Color[];
+    placeholder?: string;
 }) => {
     const colorV =
         typeof value === 'string'
@@ -116,8 +118,8 @@ export const AnimColor = ({
                             : colorToString(value)
                         : ''
                 }
-                className='w-80 font-mono'
-                placeholder="Color"
+                className="w-80 font-mono"
+                placeholder={placeholder}
                 onChange={(value) => {
                     const parsed = parseAnimatable(value);
                     onChange(value.trim() ? parsed : undefined);

@@ -57,6 +57,13 @@ export const FillEditor = ({
                     onChange={(color, when) => update.color(color as AnimatableColor, when)}
                     palette={palette}
                 />
+                <AnimColor
+                    label="Tint"
+                    value={value.tint}
+                    placeholder="rgb or hsl"
+                    onChange={(tint, when) => update.tint(tint as AnimatableColor, when)}
+                    palette={palette}
+                />
                 <AnimInput
                     label="Rounded"
                     value={value.rounded}
