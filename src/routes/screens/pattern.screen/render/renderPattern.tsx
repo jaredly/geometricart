@@ -117,7 +117,7 @@ export const renderPattern = (ctx: Ctx, _outer: CropsAndMatrices, pattern: Patte
         );
         const maxPathId = woven.reduce((m, p) => Math.max(m, p.pathId ?? 0), 0);
 
-        const pwanim = withShared(withLocals(ctx.anim, {maxPathId}), pattern.contents.shared, true);
+        const pwanim = withShared(withLocals(panim, {maxPathId}), pattern.contents.shared, true);
 
         ctx.items.push(
             ...woven.flatMap(({points, pathId, isBack, order}, i) => {
