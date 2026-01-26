@@ -7,6 +7,7 @@ import {ShapeStylesEditor} from './ShapeStylesEditor';
 import {Updater} from '../../../../json-diff/Updater';
 import {BaseKindEditor, ShapeKindEditor} from './BaseKindEditor';
 import {AnimInput, AnimValueInput} from './AnimInput';
+import { SharedEditor } from './SharedEditor';
 
 export const PatternContentsEditor = ({
     value,
@@ -96,6 +97,7 @@ export const PatternContentsEditor = ({
                         KindEditor={BaseKindEditor}
                         defaultKind={{type: 'everything'}}
                     />
+                    <SharedEditor shared={value.shared} onChange={update.variant('weave').shared} />
                 </div>
             ) : null}
             {value.type === 'shapes' ? (

@@ -38,6 +38,7 @@ import {
     numToCoord,
     RenderLog,
     resolveEnabledPMods,
+    withLocals,
     withShared,
 } from '../utils/resolveMods';
 import {renderPatternLines} from './renderPatternLines';
@@ -116,15 +117,15 @@ export const renderPattern = (ctx: Ctx, _outer: CropsAndMatrices, pattern: Patte
         );
         const backLine = backs[0];
         const frontLine = fronts[0];
+        const maxPathId = woven.reduce((m, p) => Math.max(m, p.pathId ?? 0), 0);
+
+        const pwanim = withShared(
+            withLocals( ctx.anim, {maxPathId} ) , pattern.shared, true);
+
         ctx.items.push(
             ...woven.flatMap(({points, pathId, isBack, order}, i) => {
-                const anim: Ctx['anim'] = {
-                    ...panim,
-                    values: {
-                        ...panim.values,
-                        pathId,
-                    },
-                };
+                const anim: Ctx['anim'] = withLocals(
+                    pwanim, {pathId});
 
                 const styles = isBack ? backs : fronts;
                 return styles.flatMap((style, k) => {
@@ -156,6 +157,9 @@ export const renderPattern = (ctx: Ctx, _outer: CropsAndMatrices, pattern: Patte
                                     open: true,
                                 },
                             ],
+                            opacity: line.opacity,
+                            zIndex: line.zIndex,
+                            // shadow: line.shadow,
                             // color: isBack ? {r: 0, g: 0, b: 0} : {r: 255, g: 0, b: 0},
                             // strokeWidth: isBack ? 0.2 : 0.1,
                             color: colorToRgb(line.color!),

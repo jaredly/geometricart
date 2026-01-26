@@ -323,6 +323,10 @@ export const resolveT = (
     return null;
 };
 
+export const withLocals = (anim:Ctx['anim'], locals: Record<string,any>) => ({
+    ...anim, values: {...anim.values, ...locals}
+})
+
 export const withShared = (
     anim: Ctx['anim'],
     shared?: Record<string, AnimatableValue>,

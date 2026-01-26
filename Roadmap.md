@@ -1,4 +1,21 @@
 
+Ok we gotta make linestyle editor collapsible. its just ridiculous
+
+# Copy and Paste all the things
+
+- have various "levels" of UI be selectable (tabindex) and copyable,
+  with a ClipboardData type that can handle a Mod, or a LineStyle or a FillStyle or an Entity or a Shadow, etc.
+
+# 3d bevels
+
+General approach:
+- start with shapes, then inset, and correlate points. curves would make this hard, so I'll ignore that for now.
+
+# 3d Sphere Projection
+Q: what kinds of fundamental shapes can I turn into a sphere?
+-> pentagon, as long as every side can match with itself
+-> 
+
 # Weave
 
 -> do a toposort? mayyybe.
@@ -7,8 +24,9 @@
 ok we have a basic render. Next:
 - i thiiiink I actually want the `isBack` to be defined on the `Line`, not on the `Kind`.
 
-> make it so I support multiple linesss
+- doing the multi-line weaving would be super cool
 
+- [ ] BUG -> lines showing up where they shouldn't
 
 # Memory what
 

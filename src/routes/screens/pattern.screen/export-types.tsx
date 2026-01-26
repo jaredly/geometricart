@@ -195,6 +195,7 @@ export type PatternContents =
           flip?: number;
           orderings: Record<string, number[]>;
           styles: Record<string, ShapeStyle<BaseKind & {under?: boolean}>>;
+          shared?: Record<string, AnimatableValue>;
       }
     | {
           type: 'lines';
