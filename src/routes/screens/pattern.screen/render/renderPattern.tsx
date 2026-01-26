@@ -4,8 +4,16 @@ import {coordKey} from '../../../../rendering/coordKey';
 import {dist} from '../../../../rendering/getMirrorTransforms';
 import {Coord, ThinTiling, Tiling} from '../../../../types';
 import {centroid} from '../../../findReflectionAxes';
-import {getShapeColors, getSimplePatternData} from '../../../getPatternData';
-import {EndPointMap} from '../../../shapesFromSegments';
+import {getShapeColors, getSimplePatternData, shapeSegments} from '../../../getPatternData';
+import {outerBoundary} from '../../../outerBoundary';
+import {pathsFromSegments} from '../../../pathsFromSegments';
+import {
+    edgesByEndpoint,
+    EndPointMap,
+    joinAdjacentShapeSegments,
+    unique,
+} from '../../../shapesFromSegments';
+import {weaveIntersections} from '../../../weaveIntersections';
 import {a, AnimCtx, Ctx, isColor, isCoord, RenderItem, RenderShadow} from '../eval/evaluate';
 import {
     Color,
@@ -19,7 +27,7 @@ import {
     Shadow,
     ShapeKind,
 } from '../export-types';
-import {adjustShapes2, coordPairs} from '../utils/adjustShapes';
+import {adjustShapes2, coordPairKey, coordPairs, sortCoordPair} from '../utils/adjustShapes';
 import {parseColor, Rgb} from '../utils/colors';
 import {notNull} from '../utils/notNull';
 import {
@@ -82,6 +90,53 @@ export const renderPattern = (ctx: Ctx, _outer: CropsAndMatrices, pattern: Patte
 
     if (pattern.contents.type === 'lines') {
         return renderPatternLines(baseShapes, pattern, simple, ctx, panim);
+    }
+
+    if (pattern.contents.type === 'weave') {
+        const allSegments = unique(
+            baseShapes
+                .map(joinAdjacentShapeSegments)
+                .flatMap(shapeSegments)
+                .map((pair) => sortCoordPair(pair)),
+            coordPairKey,
+        );
+
+        const byEndPoint = edgesByEndpoint(allSegments);
+        const uniquePoints = unique(allSegments.flat(), coordKey);
+        const pointNames = Object.fromEntries(uniquePoints.map((p, i) => [coordKey(p), i]));
+        const outer = outerBoundary(allSegments, byEndPoint, pointNames);
+        const paths = pathsFromSegments(allSegments, byEndPoint, outer);
+        const woven = weaveIntersections(allSegments, paths);
+        if (!woven) return;
+        ctx.items.push(
+            ...woven.flatMap(({points, pathId, isBack, order}, i) => {
+                return points.map((path, j): RenderItem => {
+                    // const pathb = pk.Path.MakeFromCmds(
+                    //     path.flatMap((p, i) => [i === 0 ? pk.MOVE_VERB : pk.LINE_VERB, p.x, p.y]),
+                    // )!;
+                    // // ctx.drawPath(pathb, front);
+                    // ctx.drawPath(pathb, isBack ? back : front);
+                    // pathb.delete();
+                    return {
+                        key: `elm-${i}-${j}`,
+                        type: 'path',
+                        shapes: [
+                            {
+                                origin: path[0],
+                                segments: path.slice(1).map((p) => ({
+                                    type: 'Line',
+                                    to: p,
+                                })),
+                                open: true,
+                            },
+                        ],
+                        color: isBack ? {r: 255, g: 0, b: 0} : {r: 0, g: 0, b: 255},
+                        strokeWidth: isBack ? 2 : 1,
+                    };
+                });
+            }),
+        );
+        return;
     }
 
     // not doing yet
