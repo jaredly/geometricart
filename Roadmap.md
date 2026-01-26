@@ -4,7 +4,10 @@
 -> do a toposort? mayyybe.
 -> know how wide a ribbon is, so we know .... how much of an intersection needs to be above?
 
+ok we have a basic render. Next:
+- i thiiiink I actually want the `isBack` to be defined on the `Line`, not on the `Kind`.
 
+> make it so I support multiple linesss
 
 
 # Memory what

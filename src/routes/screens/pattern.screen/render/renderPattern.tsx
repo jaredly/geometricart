@@ -108,31 +108,60 @@ export const renderPattern = (ctx: Ctx, _outer: CropsAndMatrices, pattern: Patte
         const paths = pathsFromSegments(allSegments, byEndPoint, outer);
         const woven = weaveIntersections(allSegments, paths);
         if (!woven) return;
+        const backs = Object.values(pattern.contents.styles).flatMap((m) =>
+            Array.isArray(m.kind) ? [] : m.kind.under ? Object.values(m.lines) : [],
+        );
+        const fronts = Object.values(pattern.contents.styles).flatMap((m) =>
+            Array.isArray(m.kind) ? [] : !m.kind.under ? Object.values(m.lines) : [],
+        );
+        const backLine = backs[0];
+        const frontLine = fronts[0];
         ctx.items.push(
             ...woven.flatMap(({points, pathId, isBack, order}, i) => {
-                return points.map((path, j): RenderItem => {
-                    // const pathb = pk.Path.MakeFromCmds(
-                    //     path.flatMap((p, i) => [i === 0 ? pk.MOVE_VERB : pk.LINE_VERB, p.x, p.y]),
-                    // )!;
-                    // // ctx.drawPath(pathb, front);
-                    // ctx.drawPath(pathb, isBack ? back : front);
-                    // pathb.delete();
-                    return {
-                        key: `elm-${i}-${j}`,
-                        type: 'path',
-                        shapes: [
-                            {
-                                origin: path[0],
-                                segments: path.slice(1).map((p) => ({
-                                    type: 'Line',
-                                    to: p,
-                                })),
-                                open: true,
-                            },
-                        ],
-                        color: isBack ? {r: 255, g: 0, b: 0} : {r: 0, g: 0, b: 255},
-                        strokeWidth: isBack ? 2 : 1,
-                    };
+                const anim: Ctx['anim'] = {
+                    ...panim,
+                    values: {
+                        ...panim.values,
+                        pathId,
+                    },
+                };
+
+                const styles = isBack ? backs : fronts;
+                return styles.flatMap((style, k) => {
+                    const line = resolveLine(anim, style);
+                    if (
+                        line.color == null ||
+                        !line.width ||
+                        (line.enabled != null && !line.enabled)
+                    )
+                        return [];
+
+                    return points.map((path, j): RenderItem => {
+                        // const pathb = pk.Path.MakeFromCmds(
+                        //     path.flatMap((p, i) => [i === 0 ? pk.MOVE_VERB : pk.LINE_VERB, p.x, p.y]),
+                        // )!;
+                        // // ctx.drawPath(pathb, front);
+                        // ctx.drawPath(pathb, isBack ? back : front);
+                        // pathb.delete();
+                        return {
+                            key: `elm-${i}-${j}-${k}`,
+                            type: 'path',
+                            shapes: [
+                                {
+                                    origin: path[0],
+                                    segments: path.slice(1).map((p) => ({
+                                        type: 'Line',
+                                        to: p,
+                                    })),
+                                    open: true,
+                                },
+                            ],
+                            // color: isBack ? {r: 0, g: 0, b: 0} : {r: 255, g: 0, b: 0},
+                            // strokeWidth: isBack ? 0.2 : 0.1,
+                            color: colorToRgb(line.color!),
+                            strokeWidth: line.width! * 0.01,
+                        };
+                    });
                 });
             }),
         );

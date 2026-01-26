@@ -92,7 +92,7 @@ export const PatternContentsEditor = ({
                     <ShapeStylesEditor<BaseKind & {under?: boolean}>
                         palette={palette}
                         styles={value.styles}
-                        update={update.variant('lines').styles}
+                        update={update.variant('weave').styles}
                         KindEditor={BaseKindEditor}
                         defaultKind={{type: 'everything'}}
                     />
