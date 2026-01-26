@@ -7,7 +7,7 @@ import {ShapeStylesEditor} from './ShapeStylesEditor';
 import {Updater} from '../../../../json-diff/Updater';
 import {BaseKindEditor, ShapeKindEditor} from './BaseKindEditor';
 import {AnimInput, AnimValueInput} from './AnimInput';
-import { SharedEditor } from './SharedEditor';
+import {SharedEditor} from './SharedEditor';
 
 export const PatternContentsEditor = ({
     value,
@@ -80,16 +80,6 @@ export const PatternContentsEditor = ({
                         value={value.flip ?? 0}
                         onChange={update.variant('weave').flip}
                     />
-                    <JsonEditor
-                        label="Orderings"
-                        value={value.orderings}
-                        onChange={update.variant('weave').orderings}
-                    />
-                    {/*<JsonEditor
-                        label="Styles"
-                        value={value.styles}
-                        onChange={update.variant('weave').styles}
-                    />*/}
                     <ShapeStylesEditor<BaseKind & {under?: boolean}>
                         palette={palette}
                         styles={value.styles}

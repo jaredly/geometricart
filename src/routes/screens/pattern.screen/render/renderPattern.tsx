@@ -115,17 +115,13 @@ export const renderPattern = (ctx: Ctx, _outer: CropsAndMatrices, pattern: Patte
         const fronts = Object.values(pattern.contents.styles).flatMap((m) =>
             Array.isArray(m.kind) ? [] : !m.kind.under ? Object.values(m.lines) : [],
         );
-        const backLine = backs[0];
-        const frontLine = fronts[0];
         const maxPathId = woven.reduce((m, p) => Math.max(m, p.pathId ?? 0), 0);
 
-        const pwanim = withShared(
-            withLocals( ctx.anim, {maxPathId} ) , pattern.shared, true);
+        const pwanim = withShared(withLocals(ctx.anim, {maxPathId}), pattern.contents.shared, true);
 
         ctx.items.push(
             ...woven.flatMap(({points, pathId, isBack, order}, i) => {
-                const anim: Ctx['anim'] = withLocals(
-                    pwanim, {pathId});
+                const anim: Ctx['anim'] = withLocals(pwanim, {pathId});
 
                 const styles = isBack ? backs : fronts;
                 return styles.flatMap((style, k) => {
