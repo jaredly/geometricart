@@ -194,7 +194,7 @@ export type PatternContents =
           type: 'weave';
           flip?: number;
           orderings: Record<string, number[]>;
-          styles: Record<string, LineStyle<BaseKind>>;
+          styles: Record<string, ShapeStyle<BaseKind & {under?: boolean}>>;
       }
     | {
           type: 'lines';

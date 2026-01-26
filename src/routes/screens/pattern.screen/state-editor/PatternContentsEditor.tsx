@@ -17,73 +17,10 @@ export const PatternContentsEditor = ({
     value: PatternContents;
     update: Updater<PatternContents>;
 }) => {
-    const [type, setType] = useState<PatternContents['type']>(value.type);
-
-    useEffect(() => {
-        setType(value.type);
-    }, [value.type]);
-
-    const swapType = (nextType: PatternContents['type']) => {
-        setType(nextType);
-        if (nextType === value.type) return;
-        switch (nextType) {
-            case 'shapes':
-                update({
-                    type: 'shapes',
-                    styles: {
-                        style1: {
-                            id: 'style1',
-                            kind: {type: 'everything'},
-                            lines: {
-                                line1: {
-                                    id: 'line1',
-                                    mods: [],
-                                    color: {r: 255, g: 0, b: 0},
-                                    width: 1,
-                                },
-                            },
-                            fills: {},
-                            mods: [],
-                            order: 0,
-                        },
-                    },
-                });
-                break;
-            case 'weave':
-                update({type: 'weave', orderings: {}, styles: {}});
-                break;
-            case 'lines':
-                update({
-                    type: 'lines',
-                    styles: {
-                        style1: {
-                            id: 'style1',
-                            kind: {type: 'everything'},
-                            lines: {
-                                line1: {
-                                    id: 'line1',
-                                    mods: [],
-                                    color: 'groupId',
-                                    width: 1,
-                                },
-                            },
-                            fills: {},
-                            mods: [],
-                            order: 0,
-                        },
-                    },
-                });
-                break;
-            case 'layers':
-                update({
-                    type: 'layers',
-                    origin: {x: 0, y: 0},
-                    reverse: false,
-                    styles: {},
-                });
-                break;
-        }
-    };
+    // const [type, setType] = useState<PatternContents['type']>(value.type);
+    // useEffect(() => {
+    //     setType(value.type);
+    // }, [value.type]);
     // <div className="rounded border border-base-300 p-3 bg-base-100 space-y-3">
 
     return (
@@ -92,8 +29,12 @@ export const PatternContentsEditor = ({
             <div className="flex flex-col md:flex-row gap-2 md:items-center">
                 <select
                     className="select select-bordered w-full md:w-auto"
-                    value={type}
-                    onChange={(evt) => swapType(evt.target.value as PatternContents['type'])}
+                    value={value.type}
+                    onChange={(evt) => {
+                        const nextType = evt.target.value as PatternContents['type'];
+                        if (nextType === value.type) return;
+                        update(swapType(nextType));
+                    }}
                 >
                     <option value="shapes">Shapes</option>
                     <option value="weave">Weave</option>
@@ -143,10 +84,17 @@ export const PatternContentsEditor = ({
                         value={value.orderings}
                         onChange={update.variant('weave').orderings}
                     />
-                    <JsonEditor
+                    {/*<JsonEditor
                         label="Styles"
                         value={value.styles}
                         onChange={update.variant('weave').styles}
+                    />*/}
+                    <ShapeStylesEditor<BaseKind & {under?: boolean}>
+                        palette={palette}
+                        styles={value.styles}
+                        update={update.variant('lines').styles}
+                        KindEditor={BaseKindEditor}
+                        defaultKind={{type: 'everything'}}
                     />
                 </div>
             ) : null}
@@ -181,4 +129,96 @@ export const PatternContentsEditor = ({
             ) : null}
         </details>
     );
+};
+
+const swapType = (nextType: PatternContents['type']): PatternContents => {
+    switch (nextType) {
+        case 'shapes':
+            return {
+                type: 'shapes',
+                styles: {
+                    style1: {
+                        id: 'style1',
+                        kind: {type: 'everything'},
+                        lines: {
+                            line1: {
+                                id: 'line1',
+                                mods: [],
+                                color: {r: 255, g: 0, b: 0},
+                                width: 1,
+                            },
+                        },
+                        fills: {},
+                        mods: [],
+                        order: 0,
+                    },
+                },
+            };
+        case 'weave':
+            return {
+                type: 'weave',
+                orderings: {},
+                styles: {
+                    line1: {
+                        id: 'line1',
+                        kind: {type: 'everything'},
+                        mods: [],
+                        order: 0,
+                        lines: {
+                            line1: {
+                                id: 'line1',
+                                mods: [],
+                                color: 0,
+                                width: 1,
+                            },
+                        },
+                        fills: {},
+                    },
+                    line2: {
+                        id: 'line2',
+                        kind: {type: 'everything', under: true},
+                        mods: [],
+                        order: 0,
+                        lines: {
+                            line1: {
+                                id: 'line1',
+                                mods: [],
+                                color: 'black',
+                                width: 1.5,
+                            },
+                        },
+                        fills: {},
+                    },
+                },
+            };
+        case 'lines':
+            return {
+                type: 'lines',
+                styles: {
+                    style1: {
+                        id: 'style1',
+                        kind: {type: 'everything'},
+                        lines: {
+                            line1: {
+                                id: 'line1',
+                                mods: [],
+                                color: 'groupId',
+                                width: 1,
+                            },
+                        },
+                        fills: {},
+                        mods: [],
+                        order: 0,
+                    },
+                },
+            };
+        case 'layers':
+            return {
+                type: 'layers',
+                origin: {x: 0, y: 0},
+                reverse: false,
+                styles: {},
+            };
+    }
+    throw new Error('nope not');
 };

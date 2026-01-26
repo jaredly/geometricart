@@ -1,74 +1,41 @@
 import {scalePos} from '../../../../editor/scalePos';
-import {applyMatrices, dist, Matrix} from '../../../../rendering/getMirrorTransforms';
+import {hslToRgb, rgbToHsl} from '../../../../rendering/colorConvert';
+import {coordKey} from '../../../../rendering/coordKey';
+import {dist} from '../../../../rendering/getMirrorTransforms';
 import {Coord, ThinTiling, Tiling} from '../../../../types';
 import {centroid} from '../../../findReflectionAxes';
-import {getSimplePatternData, getShapeColors, shapeSegments} from '../../../getPatternData';
+import {getShapeColors, getSimplePatternData} from '../../../getPatternData';
+import {EndPointMap} from '../../../shapesFromSegments';
+import {a, AnimCtx, Ctx, isColor, isCoord, RenderItem, RenderShadow} from '../eval/evaluate';
 import {
-    aabbContains,
-    allPairs,
-    cmpCoords,
-    edgesByEndpoint,
-    EndPointMap,
-    joinAdjacentShapeSegments,
-    unique,
-} from '../../../shapesFromSegments';
-import {
-    adjustShapes,
-    adjustShapes2,
-    coordPairKey,
-    coordPairs,
-    sortCoordPair,
-} from '../utils/adjustShapes';
-import {parseColor, Rgb} from '../utils/colors';
-import {AnimCtx, Ctx, RenderItem, RenderShadow, a, isColor, isCoord} from '../eval/evaluate';
-import {
-    Pattern,
+    Color,
     colorToRgb,
     ConcreteFill,
     ConcreteLine,
     Fill,
+    Hsl,
     Line,
+    Pattern,
     Shadow,
     ShapeKind,
-    PatternContents,
-    ShapeStyle,
-    Color,
-    Hsl,
 } from '../export-types';
+import {adjustShapes2, coordPairs} from '../utils/adjustShapes';
+import {parseColor, Rgb} from '../utils/colors';
+import {notNull} from '../utils/notNull';
 import {
-    CropsAndMatrices,
-    resolveEnabledPMods,
-    withShared,
-    modsToShapes,
-    resolveT,
     barePathFromCoords,
+    CropsAndMatrices,
+    LogItems,
+    modsToShapes,
     numToCoord,
     RenderLog,
-    LogItems,
+    resolveEnabledPMods,
+    withShared,
 } from '../utils/resolveMods';
-import {notNull} from '../utils/notNull';
-import {closeEnough} from '../../../../rendering/epsilonToZero';
-import {coordKey} from '../../../../rendering/coordKey';
-import {outerBoundary} from '../../../outerBoundary';
-import {pathsFromSegments} from '../../../pathsFromSegments';
-import {collectAllPaths} from '../../../followPath';
-import {boundsForCoords} from '../../../../editor/Bounds';
-import {applyTilingTransformsG} from '../../../../editor/tilingPoints';
-import {hslToRgb, rgbToHsl} from '../../../../rendering/colorConvert';
+import {renderPatternLines} from './renderPatternLines';
+import {renderPatternShape} from './renderPatternShape';
 
 export const thinTiling = (t: Tiling): ThinTiling => ({segments: t.cache.segments, shape: t.shape});
-
-const makeLineKey = (points: Coord[], open: boolean) => {
-    const segs = coordPairs(points, open);
-    let first: null | string = null;
-    segs.forEach((seg) => {
-        const k = coordPairKey(seg);
-        if (first == null || k < first) {
-            first = k;
-        }
-    });
-    return first!;
-};
 
 export const renderPattern = (ctx: Ctx, _outer: CropsAndMatrices, pattern: Pattern) => {
     if (pattern.disabled) return;
@@ -111,121 +78,12 @@ export const renderPattern = (ctx: Ctx, _outer: CropsAndMatrices, pattern: Patte
         );
         baseShapes = adjusted.shapes;
         ctx.log?.push({type: 'group', title: 'Adjust Shapes', children: adjusted.debug});
-        // renderDebug(adjusted, ctx);
     }
 
     if (pattern.contents.type === 'lines') {
-        const allSegments = unique(
-            baseShapes
-                .map(joinAdjacentShapeSegments)
-                .flatMap(shapeSegments)
-                .map((pair) => sortCoordPair(pair)),
-            coordPairKey,
-        );
-
-        const byEndPoint = edgesByEndpoint(allSegments);
-
-        const uniquePoints = unique(allSegments.flat(), coordKey);
-        const pointNames = Object.fromEntries(uniquePoints.map((p, i) => [coordKey(p), i]));
-
-        const outer = outerBoundary(allSegments, byEndPoint, pointNames);
-        const links = pathsFromSegments(allSegments, byEndPoint, outer);
-        let allPaths = collectAllPaths(links, allSegments);
-        if (!pattern.contents.includeBorders) {
-            allPaths = allPaths.filter((p) => p.pathId != null);
-        }
-
-        const maxPathId = allPaths.reduce((a, b) => Math.max(a, b.pathId ?? 0), 0);
-        // ok so for each line, we need to maybe evaluate the style dealio?
-
-        const orderedStyles = Object.values(pattern.contents.styles).sort(
-            (a, b) => a.order - b.order,
-        );
-
-        const colors = colorLines(allPaths, simple.bounds, simple.ttt, ctx.log);
-        const maxColor = Math.max(...colors.filter(notNull));
-        let pathsWithGroups = allPaths.map((path, i) => ({...path, groupId: colors[i]}));
-
-        if (pattern.contents.sort) {
-            const fn = a.value(panim, pattern.contents.sort);
-            if (typeof fn !== 'function') {
-                panim.warn(`"sort" should be a function.`);
-            } else if (fn.length === 2) {
-                let warned = false;
-                pathsWithGroups.sort((a, b) => {
-                    const res = fn(a, b);
-                    if (typeof res !== 'number') {
-                        if (warned) {
-                            panim.warn('"sort" with two arguments should return an number');
-                            warned = true;
-                        }
-                        return 0;
-                    }
-                    return res;
-                });
-            } else if (fn.length === 1) {
-                pathsWithGroups = fn(pathsWithGroups);
-                if (!Array.isArray(pathsWithGroups)) {
-                    panim.warn('sort() with one argument should return an array');
-                }
-            }
-        }
-
-        // for alternating:
-        // ignore anything without a pathId
-        // then find paths that interesect with the eigenshape
-        // do the ttt on them
-        // make a map of coordPairKey -> number
-        // for all other paths, step through their coord pairs until you find a hit
-
-        ctx.items.push(
-            ...pathsWithGroups.flatMap((path, i) => {
-                const key = i + ''; // makeLineKey(points, !!open);
-                const center = centroid(path.points);
-
-                // const thisColor = colors[i];
-
-                const matchingStyles = orderedStyles.map((style) => {
-                    // const match = true;
-                    const match = Array.isArray(style.kind)
-                        ? first(style.kind, (k) =>
-                              matchKind(k, key, path.groupId ?? -1, center, simple.eigenCorners),
-                          )
-                        : matchKind(
-                              style.kind,
-                              key,
-                              path.groupId ?? -1,
-                              center,
-                              simple.eigenCorners,
-                          );
-                    if (!match) {
-                        return;
-                    }
-                    return {style, match};
-                });
-                return renderShape(
-                    path.points,
-                    ctx,
-                    i,
-                    panim,
-                    {
-                        ...path,
-                        open: !!path.open,
-                        maxPathId,
-                        center,
-                        key,
-                        i,
-                        maxI: allPaths.length - 1,
-                        maxGroupId: maxColor,
-                    },
-                    matchingStyles.filter(notNull),
-                    path.open,
-                );
-            }),
-        );
-
-        return;
+        return renderPatternLines(baseShapes, pattern, simple, ctx, panim);
     }
+
     // not doing yet
     if (pattern.contents.type !== 'shapes') return;
 
@@ -264,7 +122,7 @@ export const renderPattern = (ctx: Ctx, _outer: CropsAndMatrices, pattern: Patte
                 }
                 return {style, match};
             });
-            return renderShape(
+            return renderPatternShape(
                 shape.points,
                 ctx,
                 i,
@@ -276,103 +134,13 @@ export const renderPattern = (ctx: Ctx, _outer: CropsAndMatrices, pattern: Patte
     );
 };
 
-const first = <T, N>(v: T[], f: (v: T) => N) => {
+export const first = <T, N>(v: T[], f: (v: T) => N) => {
     for (let item of v) {
         const res = f(item);
         if (res != null && res !== false) {
             return res;
         }
     }
-};
-
-const renderShape = <Kind,>(
-    shape: Coord[],
-    ctx: Ctx,
-    i: number,
-    panim: AnimCtx,
-    locals: any,
-    orderedStyles: {style: ShapeStyle<Kind>; match: boolean | Coord}[],
-    open = false,
-) => {
-    const fills: Record<string, ConcreteFill> = {};
-    const lines: Record<string, ConcreteLine> = {};
-
-    const anim: Ctx['anim'] = {
-        ...panim,
-        values: {
-            ...panim.values,
-            ...locals,
-        },
-    };
-
-    orderedStyles.forEach(({style: s, match}) => {
-        if (s.disabled) {
-            return;
-        }
-        // biome-ignore lint: any is fine here
-        const local: Record<string, any> = {};
-        if (s.t) {
-            const got = resolveT(s.t, anim.values.t);
-            if (got == null) return; // out of range
-            local.t = got;
-        }
-
-        // stuff.push(`style id: ${s.id}`);
-        if (typeof match === 'object') {
-            local.styleCenter = match;
-        }
-        const localAnim = {...anim, values: {...anim.values, ...local}};
-
-        const smod = resolveEnabledPMods(localAnim, s.mods);
-
-        // hmmm need to align the ... style that it came from ... with animvalues
-        // like `styleCenter`
-        Object.values(s.fills).forEach((fill) => {
-            const cfill = dropNully(resolveFill(localAnim, fill));
-            if (cfill.enabled === false) {
-                // stuff.push(`disabled fill: ${fill.id}`);
-                return;
-            }
-            cfill.mods.push(...smod);
-            // stuff.push(`fill: ${fill.id}`);
-            if (!fills[fill.id]) {
-                fills[fill.id] = cfill;
-                return;
-            }
-            // merge: mods.
-            const now = fills[fill.id];
-            cfill.mods.unshift(...now.mods);
-            Object.assign(now, cfill);
-        });
-        Object.values(s.lines).forEach((line) => {
-            try {
-                const cline = dropNully(resolveLine(localAnim, line));
-                if (cline.enabled === false) return;
-                cline.mods.push(...smod);
-                if (!lines[line.id]) {
-                    lines[line.id] = cline;
-                    return;
-                }
-                const now = lines[line.id];
-                cline.mods.unshift(...now.mods);
-                Object.assign(now, cline);
-            } catch (err) {
-                localAnim.warn((err as Error).message);
-            }
-        });
-    });
-
-    const res: (RenderItem | undefined)[] = [
-        ...Object.values(fills).flatMap((f, fi): RenderItem[] | RenderItem | undefined => {
-            return renderFill(f, anim, ctx, shape, `fill-${i}-${fi}`);
-        }),
-
-        ...Object.values(lines).flatMap((f, fi): RenderItem[] | RenderItem | undefined => {
-            return renderLine(f, anim, ctx, shape, `stroke-${i}-${fi}`, open);
-        }),
-    ];
-
-    return res.filter(notNull);
 };
 
 const clamp = (v: number, min: number, max: number) => Math.min(Math.max(min, v), max);
@@ -506,6 +274,7 @@ export const dropNully = <T extends {}>(v: T): T => {
     });
     return v;
 };
+
 export const resolveShadow = (anim: Ctx['anim'], shadow?: Shadow): RenderShadow | undefined => {
     if (typeof shadow === 'string') {
         const v = a.value(anim, shadow);
@@ -538,6 +307,7 @@ export const resolveShadow = (anim: Ctx['anim'], shadow?: Shadow): RenderShadow 
         inner: shadow.inner ? a.boolean(anim, shadow.inner) : undefined,
     });
 };
+
 const removeNullShadow = (sh: RenderShadow) => {
     if (sh.offset.x === 0 && sh.offset.y === 0 && sh.blur.x === 0 && sh.blur.y === 0) {
         return;
@@ -588,6 +358,7 @@ export const matchesDistances = (dist: number, distances: number[]) => {
     }
     return false;
 };
+
 function renderDebug(
     adjusted: {
         shapes: Coord[][];
@@ -668,98 +439,4 @@ export const maybeAddItems = (log: RenderLog[] | undefined, title: string) => {
         items: items!,
     });
     return items;
-};
-
-const colorLines = (
-    lines: {points: Coord[]; pathId?: number}[],
-    bounds: Coord[],
-    ttt: Matrix[][][],
-    debugLog?: RenderLog[],
-) => {
-    const byPair: Record<string, number> = {};
-    const prec = 4;
-
-    if (debugLog) {
-        debugLog?.push({
-            type: 'items',
-            title: 'Lines',
-            items: lines.map((line) => ({
-                item: {type: 'shape', shape: barePathFromCoords(line.points, true)},
-            })),
-        });
-    }
-
-    // Find the lines that fall within the bounds
-    const boundingBox = boundsForCoords(...bounds);
-    const baseLines = lines.filter((line) => line.points.some((p) => aabbContains(boundingBox, p)));
-
-    if (debugLog) {
-        debugLog?.push({
-            type: 'items',
-            title: 'Base Lines',
-            items: baseLines.map((line) => ({
-                item: {type: 'shape', shape: barePathFromCoords(line.points, true)},
-            })),
-        });
-    }
-
-    const baseLog = maybeAddItems(debugLog, 'Base Lines Transformed');
-    const dups: Record<number, number> = {};
-    baseLines.forEach((line, i) => {
-        const transformedLines = applyTilingTransformsG([line.points], ttt, (pts, tx) =>
-            pts.map((p) => applyMatrices(p, tx)),
-        );
-
-        const keys = transformedLines.map((points) =>
-            coordPairs(points, true).map((p) => coordPairKey(p, prec)),
-        );
-        for (let sub of keys) {
-            for (let key of sub) {
-                if (byPair[key] != null) {
-                    dups[i] = byPair[key];
-                    return;
-                }
-            }
-        }
-
-        baseLog?.push({
-            item: transformedLines.map((points) => ({
-                type: 'shape',
-                shape: barePathFromCoords(points, true),
-                hidePoints: true,
-                noFill: true,
-            })),
-            text: `base line ${i}`,
-        });
-
-        keys.forEach((keys) => keys.forEach((key) => (byPair[key] = i)));
-    });
-    const remap: Record<number, number> = {};
-    let at = 0;
-    baseLines.forEach((_, i) => {
-        if (dups[i] != null) {
-            // remap[i] = remap[dups[i]];
-        } else {
-            remap[i] = at++;
-        }
-    });
-
-    const matches = maybeAddItems(debugLog, 'Base Items');
-
-    return lines
-        .map((line, i) => {
-            if (baseLines.includes(line)) {
-                const at = baseLines.indexOf(line);
-                return dups[at] ?? at;
-            }
-
-            for (let pair of coordPairs(line.points, true)) {
-                const k = coordPairKey(pair, prec);
-                if (byPair[k] != null) {
-                    return byPair[k];
-                }
-            }
-            return null;
-        })
-        .map((n) => (n != null ? remap[n] : n));
 };
