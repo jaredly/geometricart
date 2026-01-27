@@ -13,6 +13,7 @@ import {AnimInput} from './AnimInput';
 import {ModsEditor} from './FillEditor';
 import {Updater} from '../../../../json-diff/Updater';
 import {BlurInput} from './BlurInput';
+import {BooleanInput, Labeled, NumberInput} from './ExpandableEditor';
 
 export const LineEditor = ({
     palette,
@@ -36,22 +37,24 @@ export const LineEditor = ({
             </summary>
 
             <div className="flex flex-row flex-wrap gap-2">
-                <AnimInput
-                    label="enabled"
-                    value={value.enabled}
-                    onChange={(enabled) => update.enabled(enabled as AnimatableBoolean)}
-                />
-                <AnimInput
-                    label="opacity"
-                    value={value.opacity}
-                    onChange={(opacity) => update.opacity(opacity as AnimatableNumber)}
-                />
-                <AnimInput
-                    label="zIndex"
-                    value={value.zIndex}
-                    // biome-ignore lint: this one is fine
-                    onChange={update.zIndex as Updater<any>}
-                />
+                <Labeled text="Enabled">
+                    <BooleanInput
+                        value={value.enabled}
+                        onChange={(enabled) => update.enabled(enabled)}
+                    />
+                </Labeled>
+                <Labeled text="Opacity">
+                    <NumberInput
+                        value={value.opacity}
+                        onChange={(opacity) => update.opacity(opacity)}
+                    />
+                </Labeled>
+                <Labeled text="zIndex">
+                    <NumberInput
+                        value={value.zIndex}
+                        onChange={(zIndex) => update.zIndex(zIndex)}
+                    />
+                </Labeled>
                 <AnimColor
                     palette={palette}
                     label="Color"
@@ -66,18 +69,16 @@ export const LineEditor = ({
                     placeholder="rgb or hsl"
                     onChange={(tint, when) => update.tint(tint as AnimatableColor, when)}
                 />
-                <AnimInput
-                    label="Width"
-                    value={value.width}
-                    // biome-ignore lint: this one is fine
-                    onChange={update.width as Updater<any>}
-                />
-                <AnimInput
-                    label="Sharp"
-                    value={value.sharp}
-                    // biome-ignore lint: this one is fine
-                    onChange={update.sharp as Updater<any>}
-                />
+                <Labeled text="Width">
+                    <NumberInput value={value.width} onChange={(width) => update.width(width)} />
+                </Labeled>
+                <Labeled text="Sharp">
+                    <BooleanInput
+                        value={value.sharp}
+                        // biome-ignore lint: this one is fine
+                        onChange={update.sharp as Updater<any>}
+                    />
+                </Labeled>
             </div>
             <div>
                 <ShadowEditor

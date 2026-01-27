@@ -5,6 +5,7 @@ import {BlurInput} from './BlurInput';
 import {parseAnimatable} from './createLayerTemplate';
 import {ColorInput} from './ColorInput';
 import {ApplyTiming} from '../../../../json-diff/helper2';
+import {ExpandableEditor} from './ExpandableEditor';
 
 // const ModsEditor = ({
 //     value,
@@ -100,7 +101,7 @@ export const AnimColor = ({
                 : null;
     return (
         <label className="form-control">
-            <div className="label">
+            <div className="label mr-2">
                 <span className="label-text text-sm font-semibold">{label}</span>
                 {colorV ? (
                     <ColorInput
@@ -110,7 +111,7 @@ export const AnimColor = ({
                     />
                 ) : null}
             </div>
-            <BlurInput
+            <ExpandableEditor
                 value={
                     value != null
                         ? typeof value === 'string' || typeof value === 'number'
@@ -118,7 +119,6 @@ export const AnimColor = ({
                             : colorToString(value)
                         : ''
                 }
-                className="w-80 font-mono"
                 placeholder={placeholder}
                 onChange={(value) => {
                     const parsed = parseAnimatable(value);

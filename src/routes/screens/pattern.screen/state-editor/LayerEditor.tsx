@@ -11,6 +11,7 @@ import {genid} from '../utils/genid';
 import {usePendingState} from '../utils/editState';
 import {useExportState} from '../ExportHistory';
 import {expandShapes} from '../utils/expandShapes';
+import {ExpandableEditor} from './ExpandableEditor';
 
 export const LayerEditor = ({
     layer,
@@ -36,11 +37,15 @@ export const LayerEditor = ({
             <div className="space-y-3 p-4">
                 <div className="flex flex-col md:flex-row gap-2 md:items-center">
                     <NumberField label="Order" value={layer.order} onChange={update.order} />
-                    <TextField
-                        label="Opacity"
-                        value={String(layer.opacity)}
-                        onChange={(opacity) => update.opacity(parseAnimatable(opacity))}
-                    />
+                    <label className="form-control w-full">
+                        <div className="label mr-4">
+                            <span className="label-text font-semibold">Opacity</span>
+                        </div>
+                        <ExpandableEditor
+                            value={String(layer.opacity)}
+                            onChange={(opacity) => update.opacity(parseAnimatable(opacity))}
+                        />
+                    </label>
                     <div className="flex-1" />
                     <button className="btn btn-ghost btn-sm text-error" onClick={update.remove}>
                         Remove
