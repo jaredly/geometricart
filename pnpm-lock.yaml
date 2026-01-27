@@ -69,6 +69,12 @@ importers:
       acorn:
         specifier: ^8.15.0
         version: 8.15.0
+      astravel:
+        specifier: ^0.6.1
+        version: 0.6.1
+      astring:
+        specifier: ^1.9.0
+        version: 1.9.0
       buffer:
         specifier: ^6.0.3
         version: 6.0.3
@@ -2077,6 +2083,9 @@ packages:
 
   array-timsort@1.0.3:
     resolution: {integrity: sha512-/+3GRL7dDAGEfM6TseQk/U+mi18TU2Ms9I3UlLdUMhz2hbvGNTKdj9xniwXfUqgYhHxRx0+8UnKkvlNwVU+cWQ==}
+
+  astravel@0.6.1:
+    resolution: {integrity: sha512-ZIkgWFIV0Yo423Vqalz7VcF+BAiISvSgplnkV2abPGACPFKofsWTcvr9SFyYM/t/vMZWqmdP/Eze6ATX7r84Dg==}
 
   astring@1.9.0:
     resolution: {integrity: sha512-LElXdjswlqjWrPpJFg1Fx4wpkOCxj1TDHlSV4PlaRxHGWko024xICaa97ZkMfs6DRKlCguiAI+rbXv5GWwXIkg==}
@@ -5458,6 +5467,7 @@ packages:
 
   whatwg-encoding@1.0.5:
     resolution: {integrity: sha512-b5lim54JOPN9HtzvK9HFXvBma/rnfFeqsic0hSpjtDbVxR3dJKLc+KB4V6GgiGOvl7CY/KNh8rxSo9DKQrnUEw==}
+    deprecated: Use @exodus/bytes instead for a more spec-conformant and faster implementation
 
   whatwg-mimetype@2.3.0:
     resolution: {integrity: sha512-M4yMwr6mAnQz76TbJm914+gPpB/nCwvZbJU28cUD6dR004SAxDLOOSUaB1JDRqLtaOV/vi0IC5lEAGFgrjGv/g==}
@@ -7704,6 +7714,8 @@ snapshots:
   array-from@2.1.1: {}
 
   array-timsort@1.0.3: {}
+
+  astravel@0.6.1: {}
 
   astring@1.9.0: {}
 

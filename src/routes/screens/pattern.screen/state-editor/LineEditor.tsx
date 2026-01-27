@@ -26,14 +26,14 @@ export const LineEditor = ({
     reId(newKey: string): void;
 }) => {
     return (
-        <div className="space-y-2">
-            <div className="flex flex-row md:flex-row gap-2 md:items-center">
+        <details className="space-y-2">
+            <summary className="flex flex-row md:flex-row gap-2 md:items-center">
                 Line
                 <BlurInput className="w-20 font-mono" value={value.id} onChange={reId} />
                 <button className="btn btn-ghost btn-xs text-error " onClick={update.remove}>
                     &times;
                 </button>
-            </div>
+            </summary>
 
             <div className="flex flex-row flex-wrap gap-2">
                 <AnimInput
@@ -87,6 +87,6 @@ export const LineEditor = ({
                 />
             </div>
             <ModsEditor palette={palette} mods={value.mods} update={update.mods} />
-        </div>
+        </details>
     );
 };

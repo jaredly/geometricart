@@ -27,14 +27,14 @@ export const FillEditor = ({
     reId(newKey: string): void;
 }) => {
     return (
-        <div className="space-y-2 relative">
-            <div className="flex flex-row md:flex-row gap-2 md:items-center">
+        <details className="space-y-2 relative">
+            <summary className="flex flex-row md:flex-row gap-2 md:items-center">
                 Fill
                 <BlurInput className="w-20 font-mono" value={value.id} onChange={reId} />
                 <button className="btn btn-ghost btn-xs text-error " onClick={update.remove}>
                     &times;
                 </button>
-            </div>
+            </summary>
             <div className="flex flex-wrap gap-2">
                 <AnimInput
                     label="enabled"
@@ -76,7 +76,7 @@ export const FillEditor = ({
                 />
             </div>
             <ModsEditor palette={palette} mods={value.mods} update={update.mods} />
-        </div>
+        </details>
     );
 };
 

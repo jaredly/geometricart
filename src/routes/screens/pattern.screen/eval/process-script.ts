@@ -3,6 +3,24 @@ import * as acorn from 'acorn';
 import assignParent from 'estree-assign-parent';
 // @ts-ignore
 import {crawl, getScope} from './scope-analyzer.js';
+import * as astring from 'astring';
+import * as astravel from 'astravel';
+
+export function autofmt(source: string) {
+    if (source.match(/^\s*{\s*[a-zA-Z_0-9]+\s*:/) && source.match(/}\s*$/)) {
+        source = `(${source})`;
+    }
+    const comments: acorn.Comment[] = [];
+    // 1. Parse to ESTree-ish AST
+    const ast = acorn.parse(source, {
+        ecmaVersion: 'latest',
+        sourceType: 'script',
+        allowReturnOutsideFunction: true,
+        onComment: comments,
+    });
+    astravel.attachComments(ast, comments);
+    return astring.generate(ast, {comments: true});
+}
 
 export function processScript(source: string) {
     if (source.match(/^\s*{\s*[a-zA-Z_0-9]+\s*:/) && source.match(/}\s*$/)) {
