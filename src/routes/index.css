@@ -1,2 +1,51 @@
-@import 'tailwindcss';
+@import "tailwindcss";
 @plugin "daisyui";
+
+:root {
+  --hl-kw: #ff6b6b;
+  --hl-id: #8bd5ff;
+  --hl-num: #ffd166;
+  --hl-str: #7ae582;
+  --hl-re: #b07cff;
+  --hl-lit: #f3a712;
+  --hl-op: #9fb3c8;
+  --hl-priv: #ff9f1c;
+  --hl-pun: #94a1b2;
+}
+
+.kw {
+  color: var(--hl-kw);
+  font-weight: 600;
+}
+
+.id {
+  color: var(--hl-id);
+}
+
+.num {
+  color: var(--hl-num);
+}
+
+.str {
+  color: var(--hl-str);
+}
+
+.re {
+  color: var(--hl-re);
+}
+
+.lit {
+  color: var(--hl-lit);
+}
+
+.op {
+  color: var(--hl-op);
+}
+
+.priv {
+  color: var(--hl-priv);
+}
+
+.pun {
+  color: var(--hl-pun);
+}
