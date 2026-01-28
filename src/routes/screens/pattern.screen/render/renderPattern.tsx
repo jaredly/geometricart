@@ -110,10 +110,10 @@ export const renderPattern = (ctx: Ctx, _outer: CropsAndMatrices, pattern: Patte
         const woven = weaveIntersections(allSegments, paths);
         if (!woven) return;
         const backs = Object.values(pattern.contents.styles).flatMap((m) =>
-            Array.isArray(m.kind) ? [] : m.kind.under ? Object.values(m.lines) : [],
+            m.disabled || Array.isArray(m.kind) ? [] : m.kind.under ? Object.values(m.lines) : [],
         );
         const fronts = Object.values(pattern.contents.styles).flatMap((m) =>
-            Array.isArray(m.kind) ? [] : !m.kind.under ? Object.values(m.lines) : [],
+            m.disabled || Array.isArray(m.kind) ? [] : !m.kind.under ? Object.values(m.lines) : [],
         );
         const maxPathId = woven.reduce((m, p) => Math.max(m, p.pathId ?? 0), 0);
 
