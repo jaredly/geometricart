@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useState} from 'react';
 import {
     Color,
     Fill,
@@ -14,6 +14,8 @@ import {PModEditor} from './PModEditor';
 import {BlurInput} from './BlurInput';
 import {ShadowEditor} from './ShadowEditor';
 import {Updater} from '../../../../json-diff/Updater';
+import {BooleanInput, ExpandableEditor, Labeled, NumberInput} from './ExpandableEditor';
+import {CogIcon} from '../../../../icons/Icon';
 
 export const FillEditor = ({
     value,
@@ -26,57 +28,81 @@ export const FillEditor = ({
     update: Updater<Fill>;
     reId(newKey: string): void;
 }) => {
+    const [showAll, setShowAll] = useState(false);
     return (
-        <details className="space-y-2 relative">
-            <summary className="flex flex-row md:flex-row gap-2 md:items-center">
-                Fill
-                <BlurInput className="w-20 font-mono" value={value.id} onChange={reId} />
+        <div className="space-y-2 relative">
+            <div className="flex flex-wrap gap-2 items-center">
                 <button className="btn btn-ghost btn-xs text-error " onClick={update.remove}>
                     &times;
                 </button>
-            </summary>
-            <div className="flex flex-wrap gap-2">
-                <AnimInput
-                    label="enabled"
-                    value={value.enabled}
-                    onChange={(enabled) => update.enabled(enabled as AnimatableBoolean)}
-                />
-                <AnimInput
-                    label="opacity"
-                    value={value.opacity}
-                    onChange={(opacity) => update.opacity(opacity as AnimatableNumber)}
-                />
-                <AnimInput
-                    label="zIndex"
-                    value={value.zIndex}
-                    onChange={(zIndex) => update.zIndex(zIndex as AnimatableNumber)}
-                />
-                <AnimColor
-                    label="Color"
-                    value={value.color}
-                    onChange={(color, when) => update.color(color as AnimatableColor, when)}
-                    palette={palette}
-                />
-                <AnimColor
-                    label="Tint"
-                    value={value.tint}
-                    placeholder="rgb or hsl"
-                    onChange={(tint, when) => update.tint(tint as AnimatableColor, when)}
-                    palette={palette}
-                />
-                <AnimInput
-                    label="Rounded"
-                    value={value.rounded}
-                    onChange={(rounded) => update.rounded(rounded as AnimatableNumber)}
-                />
-                <ShadowEditor
-                    value={value.shadow ?? null}
-                    update={update.shadow}
-                    palette={palette}
-                />
+                <ExpandableEditor value={value.id} onChange={reId} />
+                <button className="btn btn-ghost btn-xs " onClick={() => setShowAll(!showAll)}>
+                    <CogIcon />
+                </button>
+                {[
+                    <Labeled text="Enabled" key="enabled">
+                        <BooleanInput
+                            value={value.enabled}
+                            onChange={(enabled) => update.enabled(enabled)}
+                        />
+                    </Labeled>,
+                    <Labeled text="Opacity" key="opacity">
+                        <NumberInput
+                            value={value.opacity}
+                            onChange={(opacity) => update.opacity(opacity)}
+                        />
+                    </Labeled>,
+                    <Labeled text="zIndex" key="zIndex">
+                        <NumberInput
+                            value={value.zIndex}
+                            onChange={(zIndex) => update.zIndex(zIndex)}
+                        />
+                    </Labeled>,
+                    <AnimColor
+                        key="color"
+                        palette={palette}
+                        label="Color"
+                        value={value.color}
+                        // biome-ignore lint: this one is fine
+                        onChange={update.color as Updater<any>}
+                    />,
+                    <AnimColor
+                        key="tint"
+                        palette={palette}
+                        label="Tint"
+                        value={value.tint}
+                        placeholder="rgb or hsl"
+                        onChange={(tint, when) => update.tint(tint as AnimatableColor, when)}
+                    />,
+                    <Labeled text="Rounded" key="rounded">
+                        <NumberInput
+                            value={value.rounded}
+                            onChange={(rounded) => update.rounded(rounded)}
+                        />
+                    </Labeled>,
+                    <Labeled text="shadow" key="shadow" className="bg-base-100 p-2 relative">
+                        <ShadowEditor
+                            value={value.shadow ?? null}
+                            update={update.shadow}
+                            palette={palette}
+                        />
+                    </Labeled>,
+                    <ModsEditor
+                        key="mods"
+                        palette={palette}
+                        mods={value.mods}
+                        update={update.mods}
+                    />,
+                ].map((node) =>
+                    showAll ||
+                    (Array.isArray(value[node.key as keyof typeof value])
+                        ? value[node.key as keyof typeof value].length
+                        : value[node.key as keyof typeof value] != null)
+                        ? node
+                        : null,
+                )}
             </div>
-            <ModsEditor palette={palette} mods={value.mods} update={update.mods} />
-        </details>
+        </div>
     );
 };
 

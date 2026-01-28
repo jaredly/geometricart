@@ -50,7 +50,10 @@ export const ShadowEditor = ({
     return (
         <div className="space-y-2">
             <div className="flex flex-col md:flex-row gap-2 md:items-center">
-                <button className="btn btn-ghost btn-xs text-error" onClick={() => update.remove()}>
+                <button
+                    className="btn btn-ghost btn-xs text-error absolute top-2 right-2"
+                    onClick={() => update.remove()}
+                >
                     Remove
                 </button>
             </div>

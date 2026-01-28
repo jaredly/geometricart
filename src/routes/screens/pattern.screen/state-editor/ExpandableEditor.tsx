@@ -179,9 +179,17 @@ export const ExpandableEditor = ({
     }
 };
 
-export const Labeled = ({text, children}: {text: string; children: React.ReactNode}) => {
+export const Labeled = ({
+    text,
+    children,
+    className,
+}: {
+    text: string;
+    children: React.ReactNode;
+    className?: string;
+}) => {
     return (
-        <label className="form-control">
+        <label className={'form-control ' + (className ?? '')}>
             <div className="label mr-2">
                 <span className="label-text text-sm font-semibold">{text}</span>
             </div>

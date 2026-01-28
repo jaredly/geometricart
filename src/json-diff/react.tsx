@@ -179,7 +179,6 @@ const makeProvider = <T, An, Tag extends string = 'type'>(Ctx: React.Context<CH<
                 notifyAllPaths(value.current.listenersByPath);
             }
         }, [initial]);
-        console.log('providing', value.current);
         return <Ctx.Provider value={value.current} children={children} />;
     };
 };

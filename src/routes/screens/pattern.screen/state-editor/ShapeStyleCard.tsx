@@ -10,6 +10,7 @@ import {ShapeKindEditor} from './BaseKindEditor';
 import {
     AddIcon,
     ChevronUp12,
+    CogIcon,
     DotsHorizontalOutline,
     DragMove2Fill,
     SelectDragIcon,
@@ -60,6 +61,9 @@ export const ShapeStyleCard = <Kind,>({
 
                         <ChunkEditor chunk={value.t} update={update.t} />
                         <div className="flex-1" />
+                        <button className="btn btn-square" onClick={() => setShow(!show)}>
+                            <CogIcon />
+                        </button>
                         <button
                             className="btn btn-square btn-sm"
                             onClick={(evt) => {
@@ -79,18 +83,15 @@ export const ShapeStyleCard = <Kind,>({
                             Remove
                         </button>
                     </div>
-                    <KindOrKinds<Kind>
-                        KindEditor={KindEditor}
-                        value={value.kind}
-                        update={update.kind}
-                        defaultValue={defaultValue}
-                    />
                 </div>
-                <button className="btn w-full btn-xs" onClick={() => setShow(!show)}>
-                    {show ? <ChevronUp12 /> : <DotsHorizontalOutline />}
-                </button>
                 {show && (
                     <div className="flex flex-col gap-3">
+                        <KindOrKinds<Kind>
+                            KindEditor={KindEditor}
+                            value={value.kind}
+                            update={update.kind}
+                            defaultValue={defaultValue}
+                        />
                         <SubStyleList
                             label="Fills"
                             emptyLabel="No fills"

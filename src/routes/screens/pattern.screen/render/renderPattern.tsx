@@ -119,52 +119,53 @@ export const renderPattern = (ctx: Ctx, _outer: CropsAndMatrices, pattern: Patte
 
         const pwanim = withShared(withLocals(panim, {maxPathId}), pattern.contents.shared, true);
 
-        ctx.items.push(
-            ...woven.flatMap(({points, pathId, isBack, order}, i) => {
-                const anim: Ctx['anim'] = withLocals(pwanim, {pathId});
+        const got = woven.map(({points, pathId, isBack, order}, i) => {
+            const anim: Ctx['anim'] = withLocals(pwanim, {pathId});
 
-                const styles = isBack ? backs : fronts;
-                return styles.flatMap((style, k) => {
-                    const line = resolveLine(anim, style);
-                    if (
-                        line.color == null ||
-                        !line.width ||
-                        (line.enabled != null && !line.enabled)
-                    )
-                        return [];
+            const styles = isBack ? backs : fronts;
+            return styles.flatMap((style, k) => {
+                const line = resolveLine(anim, style);
+                if (line.color == null || !line.width || (line.enabled != null && !line.enabled))
+                    return [];
 
-                    return points.map((path, j): RenderItem => {
-                        // const pathb = pk.Path.MakeFromCmds(
-                        //     path.flatMap((p, i) => [i === 0 ? pk.MOVE_VERB : pk.LINE_VERB, p.x, p.y]),
-                        // )!;
-                        // // ctx.drawPath(pathb, front);
-                        // ctx.drawPath(pathb, isBack ? back : front);
-                        // pathb.delete();
-                        return {
-                            key: `elm-${i}-${j}-${k}`,
-                            type: 'path',
-                            shapes: [
-                                {
-                                    origin: path[0],
-                                    segments: path.slice(1).map((p) => ({
-                                        type: 'Line',
-                                        to: p,
-                                    })),
-                                    open: true,
-                                },
-                            ],
-                            opacity: line.opacity,
-                            zIndex: line.zIndex,
-                            // shadow: line.shadow,
-                            // color: isBack ? {r: 0, g: 0, b: 0} : {r: 255, g: 0, b: 0},
-                            // strokeWidth: isBack ? 0.2 : 0.1,
-                            color: colorToRgb(line.color!),
-                            strokeWidth: line.width! * 0.01,
-                        };
-                    });
+                return points.map((path, j): RenderItem => {
+                    // const pathb = pk.Path.MakeFromCmds(
+                    //     path.flatMap((p, i) => [i === 0 ? pk.MOVE_VERB : pk.LINE_VERB, p.x, p.y]),
+                    // )!;
+                    // // ctx.drawPath(pathb, front);
+                    // ctx.drawPath(pathb, isBack ? back : front);
+                    // pathb.delete();
+                    return {
+                        key: `elm-${i}-${j}-${k}`,
+                        type: 'path',
+                        shapes: [
+                            {
+                                origin: path[0],
+                                segments: path.slice(1).map((p) => ({
+                                    type: 'Line',
+                                    to: p,
+                                })),
+                                open: true,
+                            },
+                        ],
+                        opacity: line.opacity,
+                        zIndex: line.zIndex,
+                        // shadow: line.shadow,
+                        // color: isBack ? {r: 0, g: 0, b: 0} : {r: 255, g: 0, b: 0},
+                        // strokeWidth: isBack ? 0.2 : 0.1,
+                        color: colorToRgb(line.color!),
+                        strokeWidth: line.width! * 0.01,
+                    };
                 });
-            }),
-        );
+            });
+        });
+
+        got.forEach((inner) => {
+            inner.forEach((item) => {
+                ctx.items.push(item);
+            });
+        });
+        // ctx.items.push(...got.flat());
         return;
     }
 

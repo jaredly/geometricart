@@ -45,7 +45,7 @@ export const SubStyleList = <T extends {id: string}>({
             {entries.length === 0 ? <div className="text-xs opacity-60">{emptyLabel}</div> : null}
             <div className="space-y-2">
                 {entries.map(([key, value]) => (
-                    <div key={key} className="rounded border border-base-300 p-2">
+                    <div key={key} className="rounded border border-base-300 p-2 bg-base-200">
                         {render(key, value, update[key], (newKey) => {
                             update((_, up) => [(up[key] as any).id(newKey), up.move(key, newKey)]);
                         })}

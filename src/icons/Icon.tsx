@@ -414,7 +414,7 @@ export function RedoIcon(props: React.SVGProps<SVGSVGElement>) {
     );
 }
 
-function CogIcon(props: React.SVGProps<SVGSVGElement>) {
+export function CogIcon(props: React.SVGProps<SVGSVGElement>) {
     return (
         <svg viewBox="0 0 16 16" fill="currentColor" height="1em" width="1em" {...props}>
             <path

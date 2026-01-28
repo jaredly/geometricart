@@ -323,9 +323,10 @@ export const resolveT = (
     return null;
 };
 
-export const withLocals = (anim:Ctx['anim'], locals: Record<string,any>) => ({
-    ...anim, values: {...anim.values, ...locals}
-})
+export const withLocals = (anim: Ctx['anim'], locals: Record<string, any>) => ({
+    ...anim,
+    values: {...anim.values, ...locals},
+});
 
 export const withShared = (
     anim: Ctx['anim'],
@@ -510,6 +511,7 @@ export const renderGroup = (ctx: Ctx, crops: CropsAndMatrices, group: Group) => 
                 try {
                     renderPattern(ctx, crops, entity);
                 } catch (err) {
+                    console.log(err);
                     ctx.anim.warn(`An error occurred while rendering pattern ${id}. ${err}`);
                 }
                 break;

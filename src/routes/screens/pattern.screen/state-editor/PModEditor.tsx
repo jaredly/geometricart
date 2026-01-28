@@ -6,6 +6,7 @@ import {AnimCoordOrNumberInput} from './AnimCoordOrNumberInput';
 import {useExportState} from '../ExportHistory';
 import {EyeIcon, EyeInvisibleIcon} from '../../../../icons/Eyes';
 import {Updater} from '../../../../json-diff/Updater';
+import {BooleanInput, ExpandableEditor, Labeled, NumberInput} from './ExpandableEditor';
 
 const Disableable = ({
     children,
@@ -55,12 +56,13 @@ export const PModEditor = ({
                     remove={update.remove}
                 >
                     <span className="mr-2">{value.type}</span>
-                    <AnimInput
-                        label="v"
-                        value={value.v}
-                        // biome-ignore lint: this one is fine
-                        onChange={update.variant(value.type).v as Updater<any>}
-                    />
+                    <Labeled text="v">
+                        <NumberInput
+                            value={value.v}
+                            // biome-ignore lint: this one is fine
+                            onChange={update.variant(value.type).v as Updater<any>}
+                        />
+                    </Labeled>
                 </Disableable>
             );
         case 'translate':
@@ -149,12 +151,13 @@ export const PModEditor = ({
                     remove={update.remove}
                 >
                     {value.type}
-                    <AnimInput
-                        label="v"
-                        value={value.v}
-                        // biome-ignore lint: this one is fine
-                        onChange={update.variant('rotate').v as Updater<any>}
-                    />
+                    <Labeled text="v">
+                        <NumberInput
+                            value={value.v}
+                            // biome-ignore lint: this one is fine
+                            onChange={update.variant('rotate').v as Updater<any>}
+                        />
+                    </Labeled>
                     <AnimCoordInput
                         label="origin"
                         value={value.origin}
@@ -170,17 +173,19 @@ export const PModEditor = ({
                     remove={update.remove}
                 >
                     {value.type}
-                    <AnimInput
-                        label="width"
-                        value={value.width}
-                        // biome-ignore lint: this one is fine
-                        onChange={update.variant(value.type).width as Updater<any>}
-                    />
-                    <AnimValueInput
-                        label="round"
-                        value={value.round + ''}
-                        onChange={(v) => update.variant(value.type).round(v ?? false)}
-                    />
+                    <Labeled text="width">
+                        <NumberInput
+                            value={value.width}
+                            // biome-ignore lint: this one is fine
+                            onChange={update.variant(value.type).width as Updater<any>}
+                        />
+                    </Labeled>
+                    <Labeled text="round">
+                        <BooleanInput
+                            value={value.round + ''}
+                            onChange={(v) => update.variant(value.type).round(v ?? false)}
+                        />
+                    </Labeled>
                 </Disableable>
             );
     }
