@@ -13,7 +13,7 @@ import {
     joinAdjacentShapeSegments,
     unique,
 } from '../../../shapesFromSegments';
-import {weaveIntersections} from '../../../weaveIntersections';
+import {weaveIntersections, weaveIntersections2} from '../../../weaveIntersections';
 import {a, AnimCtx, Ctx, isColor, isCoord, RenderItem, RenderShadow} from '../eval/evaluate';
 import {
     Color,
@@ -107,41 +107,72 @@ export const renderPattern = (ctx: Ctx, _outer: CropsAndMatrices, pattern: Patte
         const pointNames = Object.fromEntries(uniquePoints.map((p, i) => [coordKey(p), i]));
         const outer = outerBoundary(allSegments, byEndPoint, pointNames);
         const paths = pathsFromSegments(allSegments, byEndPoint, outer);
-        const woven = weaveIntersections(allSegments, paths);
-        if (!woven) return;
+        const newStyle = true;
+
         const backs = Object.values(pattern.contents.styles).flatMap((m) =>
             m.disabled || Array.isArray(m.kind) ? [] : m.kind.under ? Object.values(m.lines) : [],
         );
         const fronts = Object.values(pattern.contents.styles).flatMap((m) =>
             m.disabled || Array.isArray(m.kind) ? [] : !m.kind.under ? Object.values(m.lines) : [],
         );
-        const maxPathId = woven.reduce((m, p) => Math.max(m, p.pathId ?? 0), 0);
 
-        const pwanim = withShared(withLocals(panim, {maxPathId}), pattern.contents.shared, true);
+        if (newStyle) {
+            const woven = weaveIntersections2(allSegments, paths);
+            if (!woven) return;
+            const maxPathId = woven.reduce((m, p) => Math.max(m, p.pathId ?? 0), 0);
+            const minPathId = woven.reduce((m, p) => Math.min(m, p.pathId ?? 0), 0);
 
-        woven.forEach(({points, pathId, isBack, order}, i) => {
-            const anim: Ctx['anim'] = withLocals(pwanim, {pathId});
+            const pwanim = withShared(
+                withLocals(panim, {maxPathId}),
+                pattern.contents.shared,
+                true,
+            );
 
-            const styles = isBack ? backs : fronts;
-            styles.forEach((style, k) => {
-                const line = resolveLine(anim, style);
-                if (line.color == null || !line.width || (line.enabled != null && !line.enabled))
-                    return;
+            const animNone = withLocals(pwanim, {pathId: undefined});
+            const stylesForPathId: Record<string, ConcreteLine[]> = {};
+            stylesForPathId.null = fronts.map((style, k) => {
+                return resolveLine(animNone, style);
+            });
 
-                points.forEach((path, j) => {
+            for (let i = minPathId; i <= maxPathId; i++) {
+                const anim: Ctx['anim'] = withLocals(pwanim, {pathId: i});
+                stylesForPathId[i] = fronts.map((style, k) => resolveLine(anim, style));
+            }
+            const maxLineWidthForPathId = Object.fromEntries(
+                Object.entries(stylesForPathId).map(([key, lines]) => [
+                    key,
+                    lines.reduce(
+                        (max, line) =>
+                            line.color == null ||
+                            !line.width ||
+                            (line.enabled != null && !line.enabled)
+                                ? max
+                                : Math.max(max, line.width),
+                        0,
+                    ),
+                ]),
+            );
+
+            woven.slice(0, 1).forEach(({line: points, pathId, masks}, i) => {
+                if (!stylesForPathId[pathId ?? 'null']) {
+                    throw new Error(`not prepared for ${pathId}`);
+                }
+                stylesForPathId[pathId ?? 'null'].forEach((line, k) => {
+                    if (
+                        line.color == null ||
+                        !line.width ||
+                        (line.enabled != null && !line.enabled)
+                    )
+                        return;
+
                     ctx.items.push({
-                        key: `elm-${i}-${j}-${k}`,
+                        key: `elm-${i}--${k}`,
                         type: 'path',
-                        shapes: [
-                            {
-                                origin: path[0],
-                                segments: path.slice(1).map((p) => ({
-                                    type: 'Line',
-                                    to: p,
-                                })),
-                                open: true,
-                            },
-                        ],
+                        shapes: [barePathFromCoords(points, true)],
+                        masks: masks.map(({line, pathId}) => ({
+                            shape: barePathFromCoords(line, true),
+                            strokeWidth: maxLineWidthForPathId[pathId ?? 'null'] * 0.01,
+                        })),
                         opacity: line.opacity,
                         zIndex: line.zIndex,
                         color: colorToRgb(line.color!),
@@ -149,7 +180,53 @@ export const renderPattern = (ctx: Ctx, _outer: CropsAndMatrices, pattern: Patte
                     });
                 });
             });
-        });
+        } else {
+            const woven = weaveIntersections(allSegments, paths);
+            if (!woven) return;
+            const maxPathId = woven.reduce((m, p) => Math.max(m, p.pathId ?? 0), 0);
+
+            const pwanim = withShared(
+                withLocals(panim, {maxPathId}),
+                pattern.contents.shared,
+                true,
+            );
+
+            woven.forEach(({points, pathId, isBack, order}, i) => {
+                const anim: Ctx['anim'] = withLocals(pwanim, {pathId});
+
+                const styles = isBack ? backs : fronts;
+                styles.forEach((style, k) => {
+                    const line = resolveLine(anim, style);
+                    if (
+                        line.color == null ||
+                        !line.width ||
+                        (line.enabled != null && !line.enabled)
+                    )
+                        return;
+
+                    points.forEach((path, j) => {
+                        ctx.items.push({
+                            key: `elm-${i}-${j}-${k}`,
+                            type: 'path',
+                            shapes: [
+                                {
+                                    origin: path[0],
+                                    segments: path.slice(1).map((p) => ({
+                                        type: 'Line',
+                                        to: p,
+                                    })),
+                                    open: true,
+                                },
+                            ],
+                            opacity: line.opacity,
+                            zIndex: line.zIndex,
+                            color: colorToRgb(line.color!),
+                            strokeWidth: line.width! * 0.01,
+                        });
+                    });
+                });
+            });
+        }
 
         return;
     }

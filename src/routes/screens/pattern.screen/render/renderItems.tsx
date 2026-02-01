@@ -31,7 +31,7 @@ export const renderItems = (
             item.pk ??
             pk.Path.MakeFromCmds(
                 item.shapes.flatMap((shape) =>
-                    shape.origin ? segmentsCmds(shape.origin, shape.segments, shape.open) : [],
+                    segmentsCmds(shape.origin, shape.segments, shape.open),
                 ),
             );
         if (!pkp) {
@@ -60,6 +60,31 @@ export const renderItems = (
 
         if (item.opacity != null) {
             paint.setAlphaf(item.opacity);
+        }
+
+        if (item.masks) {
+            ctx.save();
+            const debugPaint = new pk.Paint();
+            debugPaint.setStyle(pk.PaintStyle.Stroke);
+            debugPaint.setStrokeWidth(lw / 100);
+            debugPaint.setColor([1, 0, 0]);
+
+            const toClip = item.masks.map(({shape, strokeWidth}) => {
+                const path = pk.Path.MakeFromCmds(
+                    segmentsCmds(shape.origin, shape.segments, shape.open),
+                );
+                if (!path) return;
+                if (strokeWidth != null) {
+                    path.stroke({width: strokeWidth * (item.adjustForZoom ? lw : 1)});
+                }
+                ctx.drawPath(path, debugPaint);
+                return path;
+            });
+            toClip.forEach((path) =>
+                path ? ctx.clipPath(path, pk.ClipOp.Difference, true) : null,
+            );
+            toClip.forEach((path) => path?.delete());
+            debugPaint.delete();
         }
 
         if (item.shadow) {
@@ -113,6 +138,10 @@ export const renderItems = (
         paint.delete();
         if (!item.pk) {
             pkp.delete();
+        }
+
+        if (item.masks) {
+            ctx.restore();
         }
     });
     ctx.restore();
