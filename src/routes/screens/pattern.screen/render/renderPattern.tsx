@@ -153,7 +153,7 @@ export const renderPattern = (ctx: Ctx, _outer: CropsAndMatrices, pattern: Patte
                 ]),
             );
 
-            woven.slice(0, 1).forEach(({line: points, pathId, masks}, i) => {
+            woven.forEach(({line: points, pathId, masks}, i) => {
                 if (!stylesForPathId[pathId ?? 'null']) {
                     throw new Error(`not prepared for ${pathId}`);
                 }
@@ -165,19 +165,30 @@ export const renderPattern = (ctx: Ctx, _outer: CropsAndMatrices, pattern: Patte
                     )
                         return;
 
-                    ctx.items.push({
-                        key: `elm-${i}--${k}`,
-                        type: 'path',
-                        shapes: [barePathFromCoords(points, true)],
-                        masks: masks.map(({line, pathId}) => ({
-                            shape: barePathFromCoords(line, true),
-                            strokeWidth: maxLineWidthForPathId[pathId ?? 'null'] * 0.01,
-                        })),
-                        opacity: line.opacity,
-                        zIndex: line.zIndex,
-                        color: colorToRgb(line.color!),
-                        strokeWidth: line.width! * 0.01,
-                    });
+                    ctx.items.push(
+                        {
+                            key: `elm-${i}--${k}`,
+                            type: 'path',
+                            shapes: [barePathFromCoords(points, true)],
+                            masks: masks.map(({line, pathId}) => ({
+                                shape: barePathFromCoords(line, true),
+                                strokeWidth: maxLineWidthForPathId[pathId ?? 'null'] * 0.01,
+                            })),
+                            opacity: line.opacity,
+                            // opacity: i % 10 === 0 ? 1 : 0.1,
+                            zIndex: line.zIndex,
+                            color: colorToRgb(line.color!),
+                            strokeWidth: line.width! * 0.01,
+                        },
+                        // {
+                        //     type: 'point',
+                        //     coord: points[1],
+                        //     key: `pt-${i}-${k}`,
+                        //     zIndex: 100,
+                        //     color: {r: 0, g: 0, b: 1},
+                        //     size: 1,
+                        // },
+                    );
                 });
             });
         } else {
