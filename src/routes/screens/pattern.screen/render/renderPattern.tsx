@@ -118,121 +118,47 @@ export const renderPattern = (ctx: Ctx, _outer: CropsAndMatrices, pattern: Patte
 
         frontier.add(closest![1]);
 
-        const newStyle = true;
-        if (newStyle) {
-            let iter = 0;
-            graduallyExpandShape(baseShapes, closest![1]).forEach((shape) => {
-                // ctx.items.push(
-                //     ...toEdges(shape).flatMap(([a, b]): RenderItem[] => [
-                //         {
-                //             type: 'path',
-                //             zIndex: 1,
-                //             // color: colorToRgb(hslToRgb((iter / 10) % 1, 1, 0.5)),
-                //             color: {r: 255, g: 0, b: 0},
-                //             strokeWidth: 0.01,
-                //             // shapes: [...seen.keys().map((i) => barePathFromCoords(baseShapes[i], false))],
-                //             shapes: [
-                //                 {
-                //                     origin: a,
-                //                     segments: [{type: 'Line', to: midPoint(a, b)}],
-                //                     open: true,
-                //                 },
-                //             ],
-                //             key: iter++ + '',
-                //             opacity: 0.5,
-                //         },
-                //         {
-                //             type: 'path',
-                //             zIndex: 0,
-                //             // color: colorToRgb(hslToRgb((iter / 10) % 1, 1, 0.5)),
-                //             color: {r: 255, g: 200, b: 200},
-                //             strokeWidth: 0.01,
-                //             // shapes: [...seen.keys().map((i) => barePathFromCoords(baseShapes[i], false))],
-                //             shapes: [
-                //                 {
-                //                     origin: a,
-                //                     segments: [{type: 'Line', to: b}],
-                //                     open: true,
-                //                 },
-                //             ],
-                //             key: iter++ + '',
-                //             opacity: 0.5,
-                //         },
-                //     ]),
-                // );
+        const count = graduallyExpandShape(baseShapes, closest![1]).reverse();
 
-                ctx.items.push({
-                    type: 'path',
-                    zIndex: -iter,
-                    color: colorToRgb(hslToRgb((iter / 10) % 1, 1, 0.5)),
-                    shapes: [barePathFromCoords(shape, false)],
-                    key: iter++ + '',
-                });
+        const orderedStyles = Object.values(pattern.contents.styles).sort(
+            (a, b) => a.order - b.order,
+        );
+
+        let iter = 0;
+        count.forEach((shape, i) => {
+            const matchingStyles = orderedStyles.map((style) => {
+                // const match = Array.isArray(style.kind)
+                //     ? first(style.kind, (k) =>
+                //           matchKind(k, key, path.groupId ?? -1, center, simple.eigenCorners),
+                //       )
+                //     : matchKind(style.kind, key, path.groupId ?? -1, center, simple.eigenCorners);
+                // if (!match) {
+                //     return;
+                // }
+                return {style, match: true};
             });
-        } else {
-            const uniquePoints = unique(baseShapes.flat(), coordKey);
-            const pointNames = Object.fromEntries(uniquePoints.map((p, i) => [coordKey(p), i]));
-            const byEdge = shapesByEdge(pointNames, baseShapes);
-            const neighbors: Record<string, Set<number>> = {};
-            const add = (a: number, b: number) => {
-                if (!neighbors[a]) neighbors[a] = new Set();
-                neighbors[a].add(b);
-            };
-            Object.values(byEdge).forEach((edge) => {
-                if (edge.shapes.length === 2) {
-                    const [a, b] = edge.shapes;
-                    add(a, b);
-                    add(b, a);
-                }
-            });
+            ctx.items.push(
+                ...renderPatternShape(
+                    shape,
+                    ctx,
+                    i,
+                    panim,
+                    {i, maxI: count.length - 1},
+                    matchingStyles.filter(notNull),
+                    false,
+                ),
+            );
 
-            // OKKKK I need a much more performant method.
-            // New plan:
-            // keep ... a frontier of edges ...
-            // and when we add a shape, remove any edges that we've already touched.
-            // that way, we can like ... stitch it up gradually. Yeah that sounds great.
-            // so a-b-c (b -> b-d-e) -> a-d-e-c
+            // ctx.items.push({
+            //     type: 'path',
+            //     zIndex: -iter,
+            //     color: colorToRgb(hslToRgb((iter / 10) % 1, 1, 0.5)),
+            //     shapes: [barePathFromCoords(shape, false)],
+            //     key: iter++ + '',
+            // });
+        });
 
-            let iter = 0;
-            const seen = new Set<number>();
-            // const path = new pk.Path();
-            while (seen.size < baseShapes.length && iter < 100) {
-                frontier.forEach((s) => {
-                    seen.add(s);
-                    // const np = pkPathFromCoords(baseShapes[s], false);
-                    // path.op(np!, pk.PathOp.Union);
-                    // np?.delete();
-                });
-                // path.simplify();
-                ctx.items.push({
-                    type: 'path',
-                    zIndex: -iter,
-                    color: colorToRgb(hslToRgb((iter / 10) % 1, 1, 0.5)),
-                    // color: {r: 255, g: 0, b: 0},
-                    // strokeWidth: 0.1,
-                    shapes: [...seen.keys().map((i) => barePathFromCoords(baseShapes[i], false))],
-                    // shapes: pkPathToSegments(path),
-                    key: iter++ + '',
-                    // opacity: 0.1,
-                });
-                let next = new Set<number>();
-                frontier.forEach((i) => {
-                    neighbors[i].forEach((j) => (seen.has(j) ? null : next.add(j)));
-                });
-
-                frontier = next;
-            }
-        }
-        // path.delete();
         return;
-
-        // const allSegments = unique(
-        //     baseShapes
-        //         .map(joinAdjacentShapeSegments)
-        //         .flatMap(shapeSegments)
-        //         .map((pair) => sortCoordPair(pair)),
-        //     coordPairKey,
-        // );
     }
 
     // not doing yet
@@ -638,7 +564,9 @@ export const graduallyExpandShape = (baseShapes: Coord[][], initial: number) => 
     let leadingEdge = shapeNums[initial].map((i) => edgeReverse[i]);
 
     let added: Record<number, true> = {[initial]: true};
-    for (let i = 0; i < 20; i++) {
+    let changes = true;
+    while (changes) {
+        changes = false;
         // AHHH we need to 'back up' if this is the first one...
         result.push(edgesToShape(leadingEdge.map((i) => allEdges[edgeReverse[i]])));
         const next: number[] = [];
@@ -673,6 +601,7 @@ export const graduallyExpandShape = (baseShapes: Coord[][], initial: number) => 
             const at = shape.indexOf(i);
             if (at === -1) throw new Error(`edgge not actually in shape`);
             pendingShape = shape.slice(at + 1).concat(shape.slice(0, at));
+            changes = true;
             // .map((i) => edgeReverse[i]);
         });
         if (pendingShape != null) {

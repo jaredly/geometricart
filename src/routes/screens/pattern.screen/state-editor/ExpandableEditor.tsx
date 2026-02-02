@@ -82,6 +82,12 @@ const BasicTextarea = ({value, onChange, onBlur, onCommit, sel}: EditProps) => {
             ref={tar}
             value={value}
             onBlur={() => onBlur()}
+            onKeyDown={(evt) => {
+                if (evt.key === 'Enter' && (evt.metaKey || evt.shiftKey)) {
+                    evt.preventDefault();
+                    onCommit();
+                }
+            }}
             className="textarea font-mono"
             onChange={(evt) => onChange(evt.target.value, evt.currentTarget.selectionStart)}
         />
