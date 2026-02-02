@@ -90,7 +90,7 @@ export const renderItems = (
             });
             // console.log('maskinggs', item.masks);
             toClip.forEach((path) =>
-                path ? ctx.clipPath(path, pk.ClipOp.Difference, true) : null,
+                path ? ctx.clipPath(path, pk.ClipOp.Difference, false) : null,
             );
             toClip.forEach((path) => path?.delete());
             // debugPaint.delete();

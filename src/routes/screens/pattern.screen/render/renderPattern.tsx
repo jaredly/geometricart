@@ -116,128 +116,73 @@ export const renderPattern = (ctx: Ctx, _outer: CropsAndMatrices, pattern: Patte
             m.disabled || Array.isArray(m.kind) ? [] : !m.kind.under ? Object.values(m.lines) : [],
         );
 
-        if (newStyle) {
-            const woven = weaveIntersections2(allSegments, paths);
-            if (!woven) return;
-            const maxPathId = woven.reduce((m, p) => Math.max(m, p.pathId ?? 0), 0);
-            const minPathId = woven.reduce((m, p) => Math.min(m, p.pathId ?? 0), 0);
+        const woven = weaveIntersections2(allSegments, paths);
+        if (!woven) return;
+        const maxPathId = woven.reduce((m, p) => Math.max(m, p.pathId ?? 0), 0);
+        const minPathId = woven.reduce((m, p) => Math.min(m, p.pathId ?? 0), 0);
 
-            const pwanim = withShared(
-                withLocals(panim, {maxPathId}),
-                pattern.contents.shared,
-                true,
-            );
+        const pwanim = withShared(withLocals(panim, {maxPathId}), pattern.contents.shared, true);
 
-            const animNone = withLocals(pwanim, {pathId: undefined});
-            const stylesForPathId: Record<string, ConcreteLine[]> = {};
-            stylesForPathId.null = fronts.map((style, k) => {
-                return resolveLine(animNone, style);
+        const pathPoints: Record<string, Coord[]> = {};
+        woven.forEach((item) => {
+            const at = item.pathId ?? 'null';
+            if (!pathPoints[at]) pathPoints[at] = [];
+            pathPoints[at].push(...item.line);
+        });
+        const pathCenters = Object.fromEntries(
+            Object.entries(pathPoints).map(([k, pts]) => [k, centroid(pts)]),
+        );
+
+        const animNone = withLocals(pwanim, {pathId: undefined, pathCenter: pathCenters.null});
+        const stylesForPathId: Record<string, ConcreteLine[]> = {};
+        stylesForPathId.null = fronts.map((style, k) => {
+            return resolveLine(animNone, style);
+        });
+
+        for (let i = minPathId; i <= maxPathId; i++) {
+            const anim: Ctx['anim'] = withLocals(pwanim, {
+                pathId: i,
+                pathCenter: pathCenters[i],
             });
-
-            for (let i = minPathId; i <= maxPathId; i++) {
-                const anim: Ctx['anim'] = withLocals(pwanim, {pathId: i});
-                stylesForPathId[i] = fronts.map((style, k) => resolveLine(anim, style));
-            }
-            const maxLineWidthForPathId = Object.fromEntries(
-                Object.entries(stylesForPathId).map(([key, lines]) => [
-                    key,
-                    lines.reduce(
-                        (max, line) =>
-                            line.color == null ||
-                            !line.width ||
-                            (line.enabled != null && !line.enabled)
-                                ? max
-                                : Math.max(max, line.width),
-                        0,
-                    ),
-                ]),
-            );
-
-            woven.forEach(({line: points, pathId, masks}, i) => {
-                if (!stylesForPathId[pathId ?? 'null']) {
-                    throw new Error(`not prepared for ${pathId}`);
-                }
-                stylesForPathId[pathId ?? 'null'].forEach((line, k) => {
-                    if (
-                        line.color == null ||
-                        !line.width ||
-                        (line.enabled != null && !line.enabled)
-                    )
-                        return;
-
-                    ctx.items.push(
-                        {
-                            key: `elm-${i}--${k}`,
-                            type: 'path',
-                            shapes: [barePathFromCoords(points, true)],
-                            masks: masks.map(({line, pathId}) => ({
-                                shape: barePathFromCoords(line, true),
-                                strokeWidth: maxLineWidthForPathId[pathId ?? 'null'] * 0.01,
-                            })),
-                            opacity: line.opacity,
-                            // opacity: i % 10 === 0 ? 1 : 0.1,
-                            zIndex: line.zIndex,
-                            color: colorToRgb(line.color!),
-                            strokeWidth: line.width! * 0.01,
-                        },
-                        // {
-                        //     type: 'point',
-                        //     coord: points[1],
-                        //     key: `pt-${i}-${k}`,
-                        //     zIndex: 100,
-                        //     color: {r: 0, g: 0, b: 1},
-                        //     size: 1,
-                        // },
-                    );
-                });
-            });
-        } else {
-            const woven = weaveIntersections(allSegments, paths);
-            if (!woven) return;
-            const maxPathId = woven.reduce((m, p) => Math.max(m, p.pathId ?? 0), 0);
-
-            const pwanim = withShared(
-                withLocals(panim, {maxPathId}),
-                pattern.contents.shared,
-                true,
-            );
-
-            woven.forEach(({points, pathId, isBack, order}, i) => {
-                const anim: Ctx['anim'] = withLocals(pwanim, {pathId});
-
-                const styles = isBack ? backs : fronts;
-                styles.forEach((style, k) => {
-                    const line = resolveLine(anim, style);
-                    if (
-                        line.color == null ||
-                        !line.width ||
-                        (line.enabled != null && !line.enabled)
-                    )
-                        return;
-
-                    points.forEach((path, j) => {
-                        ctx.items.push({
-                            key: `elm-${i}-${j}-${k}`,
-                            type: 'path',
-                            shapes: [
-                                {
-                                    origin: path[0],
-                                    segments: path.slice(1).map((p) => ({
-                                        type: 'Line',
-                                        to: p,
-                                    })),
-                                    open: true,
-                                },
-                            ],
-                            opacity: line.opacity,
-                            zIndex: line.zIndex,
-                            color: colorToRgb(line.color!),
-                            strokeWidth: line.width! * 0.01,
-                        });
-                    });
-                });
-            });
+            stylesForPathId[i] = fronts.map((style, k) => resolveLine(anim, style));
         }
+        const maxLineWidthForPathId = Object.fromEntries(
+            Object.entries(stylesForPathId).map(([key, lines]) => [
+                key,
+                lines.reduce(
+                    (max, line) =>
+                        line.color == null || !line.width || (line.enabled != null && !line.enabled)
+                            ? max
+                            : Math.max(max, line.width),
+                    0,
+                ),
+            ]),
+        );
+
+        woven.forEach(({line: points, pathId, masks}, i) => {
+            if (!stylesForPathId[pathId ?? 'null']) {
+                throw new Error(`not prepared for ${pathId}`);
+            }
+            stylesForPathId[pathId ?? 'null'].forEach((line, k) => {
+                if (line.color == null || !line.width || (line.enabled != null && !line.enabled))
+                    return;
+
+                ctx.items.push({
+                    key: `elm-${i}--${k}`,
+                    type: 'path',
+                    shapes: [barePathFromCoords(points, true)],
+                    masks: masks.map(({line, pathId}) => ({
+                        shape: barePathFromCoords(line, true),
+                        strokeWidth: maxLineWidthForPathId[pathId ?? 'null'] * 0.01,
+                    })),
+                    opacity: line.opacity,
+                    // opacity: i % 10 === 0 ? 1 : 0.1,
+                    zIndex: line.zIndex,
+                    color: colorToRgb(line.color!),
+                    strokeWidth: line.width! * 0.01,
+                });
+            });
+        });
 
         return;
     }
