@@ -2,6 +2,8 @@ import {scalePos} from '../../../../editor/scalePos';
 import {hslToRgb, rgbToHsl} from '../../../../rendering/colorConvert';
 import {coordKey} from '../../../../rendering/coordKey';
 import {dist} from '../../../../rendering/getMirrorTransforms';
+import {coordsEqual} from '../../../../rendering/pathsAreIdentical';
+import {ensureClockwise, isClockwisePoints} from '../../../../rendering/pathToPoints';
 import {pkPathToSegments} from '../../../../sidebar/pkClipPaths';
 import {Coord, ThinTiling, Tiling} from '../../../../types';
 import {centroid} from '../../../findReflectionAxes';
@@ -12,9 +14,14 @@ import {
     pkPathFromCoords,
     shapeSegments,
 } from '../../../getPatternData';
-import {shapesByEdge} from '../../../patternColoring';
+import {shapesByEdge, toEdges} from '../../../patternColoring';
 import {pk} from '../../../pk';
-import {EndPointMap, joinAdjacentShapeSegments, unique} from '../../../shapesFromSegments';
+import {
+    EndPointMap,
+    joinAdjacentShapeSegments,
+    midPoint,
+    unique,
+} from '../../../shapesFromSegments';
 import {a, AnimCtx, Ctx, isColor, isCoord, RenderItem, RenderShadow} from '../eval/evaluate';
 import {
     Color,
@@ -111,57 +118,110 @@ export const renderPattern = (ctx: Ctx, _outer: CropsAndMatrices, pattern: Patte
 
         frontier.add(closest![1]);
 
-        const uniquePoints = unique(baseShapes.flat(), coordKey);
-        const pointNames = Object.fromEntries(uniquePoints.map((p, i) => [coordKey(p), i]));
-        const byEdge = shapesByEdge(pointNames, baseShapes);
-        const neighbors: Record<string, Set<number>> = {};
-        const add = (a: number, b: number) => {
-            if (!neighbors[a]) neighbors[a] = new Set();
-            neighbors[a].add(b);
-        };
-        Object.values(byEdge).forEach((edge) => {
-            if (edge.shapes.length === 2) {
-                const [a, b] = edge.shapes;
-                add(a, b);
-                add(b, a);
+        const newStyle = true;
+        if (newStyle) {
+            let iter = 0;
+            graduallyExpandShape(baseShapes, closest![1]).forEach((shape) => {
+                // ctx.items.push(
+                //     ...toEdges(shape).flatMap(([a, b]): RenderItem[] => [
+                //         {
+                //             type: 'path',
+                //             zIndex: 1,
+                //             // color: colorToRgb(hslToRgb((iter / 10) % 1, 1, 0.5)),
+                //             color: {r: 255, g: 0, b: 0},
+                //             strokeWidth: 0.01,
+                //             // shapes: [...seen.keys().map((i) => barePathFromCoords(baseShapes[i], false))],
+                //             shapes: [
+                //                 {
+                //                     origin: a,
+                //                     segments: [{type: 'Line', to: midPoint(a, b)}],
+                //                     open: true,
+                //                 },
+                //             ],
+                //             key: iter++ + '',
+                //             opacity: 0.5,
+                //         },
+                //         {
+                //             type: 'path',
+                //             zIndex: 0,
+                //             // color: colorToRgb(hslToRgb((iter / 10) % 1, 1, 0.5)),
+                //             color: {r: 255, g: 200, b: 200},
+                //             strokeWidth: 0.01,
+                //             // shapes: [...seen.keys().map((i) => barePathFromCoords(baseShapes[i], false))],
+                //             shapes: [
+                //                 {
+                //                     origin: a,
+                //                     segments: [{type: 'Line', to: b}],
+                //                     open: true,
+                //                 },
+                //             ],
+                //             key: iter++ + '',
+                //             opacity: 0.5,
+                //         },
+                //     ]),
+                // );
+
+                ctx.items.push({
+                    type: 'path',
+                    zIndex: -iter,
+                    color: colorToRgb(hslToRgb((iter / 10) % 1, 1, 0.5)),
+                    shapes: [barePathFromCoords(shape, false)],
+                    key: iter++ + '',
+                });
+            });
+        } else {
+            const uniquePoints = unique(baseShapes.flat(), coordKey);
+            const pointNames = Object.fromEntries(uniquePoints.map((p, i) => [coordKey(p), i]));
+            const byEdge = shapesByEdge(pointNames, baseShapes);
+            const neighbors: Record<string, Set<number>> = {};
+            const add = (a: number, b: number) => {
+                if (!neighbors[a]) neighbors[a] = new Set();
+                neighbors[a].add(b);
+            };
+            Object.values(byEdge).forEach((edge) => {
+                if (edge.shapes.length === 2) {
+                    const [a, b] = edge.shapes;
+                    add(a, b);
+                    add(b, a);
+                }
+            });
+
+            // OKKKK I need a much more performant method.
+            // New plan:
+            // keep ... a frontier of edges ...
+            // and when we add a shape, remove any edges that we've already touched.
+            // that way, we can like ... stitch it up gradually. Yeah that sounds great.
+            // so a-b-c (b -> b-d-e) -> a-d-e-c
+
+            let iter = 0;
+            const seen = new Set<number>();
+            // const path = new pk.Path();
+            while (seen.size < baseShapes.length && iter < 100) {
+                frontier.forEach((s) => {
+                    seen.add(s);
+                    // const np = pkPathFromCoords(baseShapes[s], false);
+                    // path.op(np!, pk.PathOp.Union);
+                    // np?.delete();
+                });
+                // path.simplify();
+                ctx.items.push({
+                    type: 'path',
+                    zIndex: -iter,
+                    color: colorToRgb(hslToRgb((iter / 10) % 1, 1, 0.5)),
+                    // color: {r: 255, g: 0, b: 0},
+                    // strokeWidth: 0.1,
+                    shapes: [...seen.keys().map((i) => barePathFromCoords(baseShapes[i], false))],
+                    // shapes: pkPathToSegments(path),
+                    key: iter++ + '',
+                    // opacity: 0.1,
+                });
+                let next = new Set<number>();
+                frontier.forEach((i) => {
+                    neighbors[i].forEach((j) => (seen.has(j) ? null : next.add(j)));
+                });
+
+                frontier = next;
             }
-        });
-
-        // OKKKK I need a much more performant method.
-        // New plan:
-        // keep ... a frontier of edges ...
-        // and when we add a shape, remove any edges that we've already touched.
-        // that way, we can like ... stitch it up gradually. Yeah that sounds great.
-        // so a-b-c (b -> b-d-e) -> a-d-e-c
-
-        let iter = 0;
-        const seen = new Set<number>();
-        // const path = new pk.Path();
-        while (seen.size < baseShapes.length && iter < 100) {
-            frontier.forEach((s) => {
-                seen.add(s);
-                // const np = pkPathFromCoords(baseShapes[s], false);
-                // path.op(np!, pk.PathOp.Union);
-                // np?.delete();
-            });
-            // path.simplify();
-            ctx.items.push({
-                type: 'path',
-                zIndex: -iter,
-                color: colorToRgb(hslToRgb((iter / 10) % 1, 1, 0.5)),
-                // color: {r: 255, g: 0, b: 0},
-                // strokeWidth: 0.1,
-                shapes: [...seen.keys().map((i) => barePathFromCoords(baseShapes[i], false))],
-                // shapes: pkPathToSegments(path),
-                key: iter++ + '',
-                // opacity: 0.1,
-            });
-            let next = new Set<number>();
-            frontier.forEach((i) => {
-                neighbors[i].forEach((j) => (seen.has(j) ? null : next.add(j)));
-            });
-
-            frontier = next;
         }
         // path.delete();
         return;
@@ -530,4 +590,124 @@ export const maybeAddItems = (log: RenderLog[] | undefined, title: string) => {
         items: items!,
     });
     return items;
+};
+
+/*
+
+OK so the 'frontier shape' should always be
+counter-clockwise
+so that the baseShapes will match up.
+
+
+*/
+
+export const graduallyExpandShape = (baseShapes: Coord[][], initial: number) => {
+    const edgeKeys: Record<string, number> = {};
+    const allEdges: [Coord, Coord][] = [];
+    const edgeReverse: number[] = [];
+    const edgeShapes: number[] = [];
+
+    const add = (edge: [Coord, Coord], shape: number) => {
+        const k = coordPairKey(edge);
+        let at = edgeKeys[k];
+        if (at != null) {
+            edgeShapes[at] = shape;
+            return at;
+        }
+        at = allEdges.length;
+        edgeShapes[at] = shape;
+        edgeKeys[k] = at;
+        allEdges.push(edge);
+        edgeReverse.push(allEdges.length);
+        const rev: [Coord, Coord] = [edge[1], edge[0]];
+        edgeKeys[coordPairKey(rev)] = allEdges.length;
+        allEdges.push(rev);
+        edgeReverse.push(at);
+        return at;
+    };
+
+    const shapeNums = baseShapes.map((shape, i) => {
+        // TODO maybe ensure clockwise?
+        return toEdges(isClockwisePoints(shape) ? shape : shape.toReversed()).map((edge) =>
+            add(edge, i),
+        );
+    });
+
+    const result: Coord[][] = [];
+
+    let leadingEdge = shapeNums[initial].map((i) => edgeReverse[i]);
+
+    let added: Record<number, true> = {[initial]: true};
+    for (let i = 0; i < 20; i++) {
+        // AHHH we need to 'back up' if this is the first one...
+        result.push(edgesToShape(leadingEdge.map((i) => allEdges[edgeReverse[i]])));
+        const next: number[] = [];
+        let pendingShape = null as null | number[];
+        let offset = 0;
+        while (
+            offset < leadingEdge.length &&
+            edgeShapes[leadingEdge[offset]] ===
+                edgeShapes[leadingEdge[offset === 0 ? leadingEdge.length - 1 : offset - 1]]
+        ) {
+            offset++;
+        }
+        // we need to back up, maybe
+        leadingEdge.forEach((_, j) => {
+            const i = leadingEdge[(offset + j) % leadingEdge.length];
+            if (pendingShape != null) {
+                if (pendingShape[pendingShape.length - 1] === i) {
+                    pendingShape.pop();
+                    return; // keep at it
+                }
+                next.push(...pendingShape.map((i) => edgeReverse[i]));
+                pendingShape = null;
+            }
+            const es = edgeShapes[i];
+            if (!es || added[es]) {
+                // a boundary or already used
+                next.push(i);
+                return;
+            }
+            added[es] = true;
+            const shape = shapeNums[es];
+            const at = shape.indexOf(i);
+            if (at === -1) throw new Error(`edgge not actually in shape`);
+            pendingShape = shape.slice(at + 1).concat(shape.slice(0, at));
+            // .map((i) => edgeReverse[i]);
+        });
+        if (pendingShape != null) {
+            next.push(...pendingShape.map((i) => edgeReverse[i]));
+        }
+        const remove: number[] = [];
+        next.forEach((n, i) => {
+            const prev = i === 0 ? next.length - 1 : i - 1;
+            if (next[prev] === edgeReverse[n]) {
+                remove.push(prev, i);
+                for (
+                    let off = 1;
+                    prev - off >= 0 && next[prev - off] === edgeReverse[next[i + off]];
+                    off++
+                ) {
+                    remove.push(prev - off, i + off);
+                }
+            }
+        });
+        leadingEdge = next.filter((_, i) => !remove.includes(i));
+    }
+
+    // const frontier
+    // return [baseShapes[initial]];
+    // console.log('got the ones', result);
+    return result;
+};
+
+const edgesToShape = (edges: [Coord, Coord][]) => {
+    return edges.map(([a, b], i) => {
+        const last = edges[i === 0 ? edges.length - 1 : i - 1][1];
+        if (!coordsEqual(last, a)) {
+            console.log(edges, {last, a, i});
+            throw new Error(`not equal`);
+        }
+        return b;
+    });
 };
