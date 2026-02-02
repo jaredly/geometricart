@@ -2,18 +2,19 @@ import {scalePos} from '../../../../editor/scalePos';
 import {hslToRgb, rgbToHsl} from '../../../../rendering/colorConvert';
 import {coordKey} from '../../../../rendering/coordKey';
 import {dist} from '../../../../rendering/getMirrorTransforms';
+import {pkPathToSegments} from '../../../../sidebar/pkClipPaths';
 import {Coord, ThinTiling, Tiling} from '../../../../types';
 import {centroid} from '../../../findReflectionAxes';
-import {getShapeColors, getSimplePatternData, shapeSegments} from '../../../getPatternData';
-import {outerBoundary} from '../../../outerBoundary';
-import {pathsFromSegments} from '../../../pathsFromSegments';
 import {
-    edgesByEndpoint,
-    EndPointMap,
-    joinAdjacentShapeSegments,
-    unique,
-} from '../../../shapesFromSegments';
-import {weaveIntersections, weaveIntersections2} from '../../../weaveIntersections';
+    coordsFromPkPath,
+    getShapeColors,
+    getSimplePatternData,
+    pkPathFromCoords,
+    shapeSegments,
+} from '../../../getPatternData';
+import {shapesByEdge} from '../../../patternColoring';
+import {pk} from '../../../pk';
+import {EndPointMap, joinAdjacentShapeSegments, unique} from '../../../shapesFromSegments';
 import {a, AnimCtx, Ctx, isColor, isCoord, RenderItem, RenderShadow} from '../eval/evaluate';
 import {
     Color,
@@ -38,11 +39,11 @@ import {
     numToCoord,
     RenderLog,
     resolveEnabledPMods,
-    withLocals,
     withShared,
 } from '../utils/resolveMods';
 import {renderPatternLines} from './renderPatternLines';
 import {renderPatternShape} from './renderPatternShape';
+import {renderPatternWeave} from './renderPatternWeave';
 
 export const thinTiling = (t: Tiling): ThinTiling => ({segments: t.cache.segments, shape: t.shape});
 
@@ -94,97 +95,84 @@ export const renderPattern = (ctx: Ctx, _outer: CropsAndMatrices, pattern: Patte
     }
 
     if (pattern.contents.type === 'weave') {
-        const allSegments = unique(
-            baseShapes
-                .map(joinAdjacentShapeSegments)
-                .flatMap(shapeSegments)
-                .map((pair) => sortCoordPair(pair)),
-            coordPairKey,
-        );
+        return renderPatternWeave(baseShapes, pattern, pattern.contents, ctx, panim);
+    }
 
-        const byEndPoint = edgesByEndpoint(allSegments);
-        const uniquePoints = unique(allSegments.flat(), coordKey);
-        const pointNames = Object.fromEntries(uniquePoints.map((p, i) => [coordKey(p), i]));
-        const outer = outerBoundary(allSegments, byEndPoint, pointNames);
-        const paths = pathsFromSegments(allSegments, byEndPoint, outer);
-        const newStyle = true;
-
-        const backs = Object.values(pattern.contents.styles).flatMap((m) =>
-            m.disabled || Array.isArray(m.kind) ? [] : m.kind.under ? Object.values(m.lines) : [],
-        );
-        const fronts = Object.values(pattern.contents.styles).flatMap((m) =>
-            m.disabled || Array.isArray(m.kind) ? [] : !m.kind.under ? Object.values(m.lines) : [],
-        );
-
-        const woven = weaveIntersections2(allSegments, paths);
-        if (!woven) return;
-        const maxPathId = woven.reduce((m, p) => Math.max(m, p.pathId ?? 0), 0);
-        const minPathId = woven.reduce((m, p) => Math.min(m, p.pathId ?? 0), 0);
-
-        const pwanim = withShared(withLocals(panim, {maxPathId}), pattern.contents.shared, true);
-
-        const pathPoints: Record<string, Coord[]> = {};
-        woven.forEach((item) => {
-            const at = item.pathId ?? 'null';
-            if (!pathPoints[at]) pathPoints[at] = [];
-            pathPoints[at].push(...item.line);
-        });
-        const pathCenters = Object.fromEntries(
-            Object.entries(pathPoints).map(([k, pts]) => [k, centroid(pts)]),
-        );
-
-        const animNone = withLocals(pwanim, {pathId: undefined, pathCenter: pathCenters.null});
-        const stylesForPathId: Record<string, ConcreteLine[]> = {};
-        stylesForPathId.null = fronts.map((style, k) => {
-            return resolveLine(animNone, style);
-        });
-
-        for (let i = minPathId; i <= maxPathId; i++) {
-            const anim: Ctx['anim'] = withLocals(pwanim, {
-                pathId: i,
-                pathCenter: pathCenters[i],
-            });
-            stylesForPathId[i] = fronts.map((style, k) => resolveLine(anim, style));
-        }
-        const maxLineWidthForPathId = Object.fromEntries(
-            Object.entries(stylesForPathId).map(([key, lines]) => [
-                key,
-                lines.reduce(
-                    (max, line) =>
-                        line.color == null || !line.width || (line.enabled != null && !line.enabled)
-                            ? max
-                            : Math.max(max, line.width),
-                    0,
-                ),
-            ]),
-        );
-
-        woven.forEach(({line: points, pathId, masks}, i) => {
-            if (!stylesForPathId[pathId ?? 'null']) {
-                throw new Error(`not prepared for ${pathId}`);
+    if (pattern.contents.type === 'layers') {
+        let frontier: Set<number> = new Set();
+        let closest: null | [number, number] = null;
+        baseShapes.forEach((shape, i) => {
+            const pos = centroid(shape);
+            const dst = pos.x * pos.x + pos.y * pos.y;
+            if (closest == null || closest[0] > dst) {
+                closest = [dst, i];
             }
-            stylesForPathId[pathId ?? 'null'].forEach((line, k) => {
-                if (line.color == null || !line.width || (line.enabled != null && !line.enabled))
-                    return;
-
-                ctx.items.push({
-                    key: `elm-${i}--${k}`,
-                    type: 'path',
-                    shapes: [barePathFromCoords(points, true)],
-                    masks: masks.map(({line, pathId}) => ({
-                        shape: barePathFromCoords(line, true),
-                        strokeWidth: maxLineWidthForPathId[pathId ?? 'null'] * 0.01,
-                    })),
-                    opacity: line.opacity,
-                    // opacity: i % 10 === 0 ? 1 : 0.1,
-                    zIndex: line.zIndex,
-                    color: colorToRgb(line.color!),
-                    strokeWidth: line.width! * 0.01,
-                });
-            });
         });
 
+        frontier.add(closest![1]);
+
+        const uniquePoints = unique(baseShapes.flat(), coordKey);
+        const pointNames = Object.fromEntries(uniquePoints.map((p, i) => [coordKey(p), i]));
+        const byEdge = shapesByEdge(pointNames, baseShapes);
+        const neighbors: Record<string, Set<number>> = {};
+        const add = (a: number, b: number) => {
+            if (!neighbors[a]) neighbors[a] = new Set();
+            neighbors[a].add(b);
+        };
+        Object.values(byEdge).forEach((edge) => {
+            if (edge.shapes.length === 2) {
+                const [a, b] = edge.shapes;
+                add(a, b);
+                add(b, a);
+            }
+        });
+
+        // OKKKK I need a much more performant method.
+        // New plan:
+        // keep ... a frontier of edges ...
+        // and when we add a shape, remove any edges that we've already touched.
+        // that way, we can like ... stitch it up gradually. Yeah that sounds great.
+        // so a-b-c (b -> b-d-e) -> a-d-e-c
+
+        let iter = 0;
+        const seen = new Set<number>();
+        // const path = new pk.Path();
+        while (seen.size < baseShapes.length && iter < 100) {
+            frontier.forEach((s) => {
+                seen.add(s);
+                // const np = pkPathFromCoords(baseShapes[s], false);
+                // path.op(np!, pk.PathOp.Union);
+                // np?.delete();
+            });
+            // path.simplify();
+            ctx.items.push({
+                type: 'path',
+                zIndex: -iter,
+                color: colorToRgb(hslToRgb((iter / 10) % 1, 1, 0.5)),
+                // color: {r: 255, g: 0, b: 0},
+                // strokeWidth: 0.1,
+                shapes: [...seen.keys().map((i) => barePathFromCoords(baseShapes[i], false))],
+                // shapes: pkPathToSegments(path),
+                key: iter++ + '',
+                // opacity: 0.1,
+            });
+            let next = new Set<number>();
+            frontier.forEach((i) => {
+                neighbors[i].forEach((j) => (seen.has(j) ? null : next.add(j)));
+            });
+
+            frontier = next;
+        }
+        // path.delete();
         return;
+
+        // const allSegments = unique(
+        //     baseShapes
+        //         .map(joinAdjacentShapeSegments)
+        //         .flatMap(shapeSegments)
+        //         .map((pair) => sortCoordPair(pair)),
+        //     coordPairKey,
+        // );
     }
 
     // not doing yet
