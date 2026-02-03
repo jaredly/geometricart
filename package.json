@@ -15,6 +15,7 @@
         "build": "bunx --bun react-router build",
         "start": "bunx --bun react-router dev",
         "start-isolated": "env ISOLATED=1 bunx --bun react-router dev --port 5174",
+        "build-isolated": "env ISOLATED=1 bunx --bun react-router build",
         "copy-wasm": "mkdir -p build/client/node_modules/canvaskit-wasm/bin/ && cp node_modules/canvaskit-wasm/bin/canvaskit.wasm build/client/node_modules/canvaskit-wasm/bin/",
         "vest": "node src/vest/run.js",
         "test": "jest",

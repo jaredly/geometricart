@@ -108,14 +108,36 @@ const LoadAndMigratePattern = ({id}: {id: string}) => {
         // Show a dialog asking if the user wants to
         // a) edit it using an older version
         // b) migrate to the current version
+        return (
+            <div>
+                <div id="my_modal_1" className="modal visible pointer-events-auto">
+                    <div className="modal-box opacity-100">
+                        <h3 className="font-bold text-lg">Document uses an old format</h3>
+                        <p className="py-4">
+                            You can use an older editor, or migrate it to the latest format.
+                        </p>
+                        <a
+                            className="btn"
+                            href={`http://localhost:5174/?src=http://localhost:5173/fs/exports/${id}.json`}
+                        >
+                            Use Older Version of the Editor
+                        </a>
+                        <button
+                            className="btn"
+                            onClick={() => {
+                                // here we are
+                            }}
+                        >
+                            Migrate to latest (will lose some history)
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
     }
 
     return <LoadPattern state={state.value.value} id={id} />;
 };
-
-// const loadLSUrl = (key: string) => {
-//     return localStorage[key];
-// };
 
 const LoadPattern = ({id, state}: {id: string; state: ExportHistory}) => {
     const onSave = useCallback(

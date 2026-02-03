@@ -15,13 +15,19 @@ export const loadState = (value: unknown): {version: null; value: ExportHistory}
     if (!value) {
         throw new Error(`Document doesn't exist.`);
     }
+    console.log('here we are', value);
     if (isValidHistory(value)) {
+        console.log('valid history');
         return {version: null, value};
     }
     if (isValidState(value)) {
+        console.log('valid state');
         return {version: null, value: blankHistory(value)};
     }
-    if (isValidHistoryV0(value)) return {version: 0, value};
+    if (isValidHistoryV0(value)) {
+        console.log('its v0');
+        return {version: 0, value};
+    }
 
     console.log(validateHistory(value));
     throw new Error(`Unable to parse export state`);
