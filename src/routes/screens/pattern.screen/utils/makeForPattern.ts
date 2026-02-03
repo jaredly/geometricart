@@ -31,6 +31,7 @@ export const makeForPattern = (tiling: ThinTiling, hash: string): State => {
         };
     }
     return {
+        version: 1,
         shapes: {},
         layers: {
             root: {

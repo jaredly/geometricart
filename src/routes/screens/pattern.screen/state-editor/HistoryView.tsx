@@ -149,7 +149,7 @@ const renderNode = (id: string, ctx: NCtx) => {
                 id={`annotation-${id}`}
             >
                 <div className="font-mono">{id}</div>
-                {history.annotations[id]?.map((an, i) => (
+                {Object.values(history.annotations[id] ?? {}).map((an, i) => (
                     <AnnotationView
                         key={i}
                         src={anSnapshot(an, snapshotUrl)}

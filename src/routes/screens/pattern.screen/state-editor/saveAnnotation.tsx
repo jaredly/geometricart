@@ -33,7 +33,12 @@ export async function saveAnnotation(
     snapshotUrl: SnapshotUrl,
     blob: Blob,
     tip: string,
-    updateAnnotations: DiffBuilderA<Record<string, ExportAnnotation[]>, 'type', void, null>,
+    updateAnnotations: DiffBuilderA<
+        Record<string, Record<string, ExportAnnotation>>,
+        'type',
+        void,
+        null
+    >,
     img: boolean,
 ) {
     const aid = genid();
@@ -53,31 +58,31 @@ export async function saveAnnotation(
     }
 
     const an: ExportAnnotation = {type: img ? 'img' : 'video', id: aid};
-    updateAnnotations[tip]((v, up) => (v ? up.push(an) : up([an])));
+    updateAnnotations[tip]((v, up) => (v ? up[an.id].add(an) : up({[an.id]: an})));
 }
 
 export async function deleteAnnotation(
     snapshotUrl: SnapshotUrl,
     tip: string,
     aid: string,
-    updateAnnotations: DiffBuilderA<Record<string, ExportAnnotation[]>, 'type', void, null>,
+    updateAnnotations: DiffBuilderA<
+        Record<string, Record<string, ExportAnnotation>>,
+        'type',
+        void,
+        null
+    >,
 ) {
     if (snapshotUrl.type === 'idb') {
         await db.del('snapshots', [snapshotUrl.id, aid]);
         await db.del('snapshotMeta', [snapshotUrl.id, aid]);
     }
     updateAnnotations[tip]((v, up) => {
-        const at = v.findIndex((n) => n.id === aid);
-        if (at === -1) {
-            console.warn(`COuldnt find it`, v, aid);
-            return [];
-        }
         if (snapshotUrl.type !== 'idb') {
-            fetch(makeSnapshotUrl(snapshotUrl, aid, v[at].type === 'img' ? 'png' : 'mp4'), {
+            fetch(makeSnapshotUrl(snapshotUrl, aid, v[aid].type === 'img' ? 'png' : 'mp4'), {
                 method: 'DELETE',
             });
         }
 
-        return up[at].remove();
+        return up[aid].remove();
     });
 }

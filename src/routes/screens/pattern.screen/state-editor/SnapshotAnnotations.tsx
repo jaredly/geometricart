@@ -62,8 +62,8 @@ export const SnapshotAnnotations = ({
             <div className="flex flex-row flex-wrap p-4 gap-4">
                 {Object.entries(history.annotations).map(([key, ans]) => (
                     <div key={key} className="contents">
-                        {ans.map((an, i) => (
-                            <div key={i} className="relative">
+                        {Object.values(ans).map((an) => (
+                            <div key={an.id} className="relative">
                                 <AnnotationView
                                     src={anSnapshot(an, snapshotUrl)}
                                     image={an.type === 'img'}
