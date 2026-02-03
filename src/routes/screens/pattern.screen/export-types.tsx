@@ -190,7 +190,7 @@ export type Adjustment = {
     shared: Orderable<OValue<AnimatableValue>>;
 };
 
-export type OValue<T> = {id: string; order: number; value: T};
+export type OValue<T> = {id: string; order: number; value: T; disabled: boolean};
 
 export type PatternContents =
     | {
@@ -234,8 +234,8 @@ export type ShapeStyle<Kind> = {
     // Could also be interesting to have an `animatedKind` where we select
     // the items effected by some script
     kind: Kind | Kind[];
-    fills: Orderable<Fill>;
-    lines: Orderable<Line>;
+    fills: Record<string, Fill>;
+    lines: Record<string, Line>;
     t: TChunk | null;
     mods: PMods[];
 };
@@ -276,6 +276,7 @@ export type ConcreteFill = {
 
 export type Fill = {
     id: string;
+    // order: number;
     enabled?: AnimatableBoolean;
     shadow?: Shadow;
     zIndex?: AnimatableNumber;
@@ -305,6 +306,7 @@ export type ConcreteLine = {
 
 export type Line = {
     id: string;
+    // order: number;
     enabled?: AnimatableBoolean;
     shadow?: Shadow;
     zIndex?: AnimatableNumber;
