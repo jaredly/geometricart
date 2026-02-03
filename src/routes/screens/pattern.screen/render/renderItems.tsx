@@ -25,13 +25,21 @@ export const renderItems = (
 
     items.forEach((item) => {
         if (item.type === 'point') {
+            if (!item.color || !item.size) return;
+            const paint = new pk.Paint();
+            paint.setStyle(pk.PaintStyle.Fill);
+            // paint.setStrokeWidth(item.size);
+            paint.setColor([1, 1, 1]);
+            // paint.setColor([item.color.r / 255, item.color.g / 255, item.color.b / 255]);
+            ctx.drawCircle(item.coord.x, item.coord.y, item.size * 0.01, paint);
+            // paint.delete();
             return;
         }
         const pkp =
             item.pk ??
             pk.Path.MakeFromCmds(
                 item.shapes.flatMap((shape) =>
-                    shape.origin ? segmentsCmds(shape.origin, shape.segments, shape.open) : [],
+                    segmentsCmds(shape.origin, shape.segments, shape.open),
                 ),
             );
         if (!pkp) {
@@ -60,6 +68,32 @@ export const renderItems = (
 
         if (item.opacity != null) {
             paint.setAlphaf(item.opacity);
+        }
+
+        if (item.masks) {
+            ctx.save();
+            // const debugPaint = new pk.Paint();
+            // debugPaint.setStyle(pk.PaintStyle.Stroke);
+            // debugPaint.setStrokeWidth(lw / 100);
+            // debugPaint.setColor([1, 0, 0]);
+
+            const toClip = item.masks.map(({shape, strokeWidth}) => {
+                const path = pk.Path.MakeFromCmds(
+                    segmentsCmds(shape.origin, shape.segments, shape.open),
+                );
+                if (!path) return;
+                if (strokeWidth != null) {
+                    path.stroke({width: strokeWidth * (item.adjustForZoom ? lw : 1)});
+                }
+                // ctx.drawPath(path, debugPaint);
+                return path;
+            });
+            // console.log('maskinggs', item.masks);
+            toClip.forEach((path) =>
+                path ? ctx.clipPath(path, pk.ClipOp.Difference, false) : null,
+            );
+            toClip.forEach((path) => path?.delete());
+            // debugPaint.delete();
         }
 
         if (item.shadow) {
@@ -113,6 +147,10 @@ export const renderItems = (
         paint.delete();
         if (!item.pk) {
             pkp.delete();
+        }
+
+        if (item.masks) {
+            ctx.restore();
         }
     });
     ctx.restore();

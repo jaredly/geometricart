@@ -38,6 +38,7 @@ export type RenderItem =
           strokeWidth?: number;
           zIndex?: number | null;
           shapes: BarePath[];
+          masks?: {shape: BarePath; strokeWidth?: number}[];
           opacity?: number;
           key: string;
       }

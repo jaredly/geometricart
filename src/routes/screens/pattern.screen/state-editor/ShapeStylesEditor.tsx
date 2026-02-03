@@ -4,7 +4,6 @@ import {ShapeStyleCard} from './ShapeStyleCard';
 import {createShapeStyle} from './createLayerTemplate';
 import {DragToReorderList} from './DragToReorderList';
 import {Updater} from '../../../../json-diff/Updater';
-import {ShapeKindEditor} from './BaseKindEditor';
 
 export const ShapeStylesEditor = <Kind,>({
     styles,

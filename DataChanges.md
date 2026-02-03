@@ -7,3 +7,4 @@ Data changes to make:
 - `alternating` should be renamed to `group`? or like `autoGroup` or someething.
 - exports -> creations maybe
 - make a bunch of undefinedable stuff non-undefindable, like PatternContents' sort
+- pattern contents should be a list

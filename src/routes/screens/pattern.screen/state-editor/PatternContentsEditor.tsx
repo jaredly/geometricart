@@ -61,6 +61,18 @@ export const PatternContentsEditor = ({
                             onChange={(evt) => update.variant('layers').reverse(evt.target.checked)}
                         />
                     </label>
+                    <ShapeStylesEditor<BaseKind>
+                        palette={palette}
+                        styles={value.styles}
+                        update={update.variant('layers').styles}
+                        KindEditor={BaseKindEditor}
+                        defaultKind={{type: 'everything'}}
+                    />
+                    <SharedEditor
+                        shared={value.shared}
+                        onChange={update.variant('layers').shared}
+                    />
+
                     {/* <JsonEditor
                         label="Styles"
                         value={value.styles}
@@ -80,7 +92,7 @@ export const PatternContentsEditor = ({
                         value={value.flip ?? 0}
                         onChange={update.variant('weave').flip}
                     />
-                    <ShapeStylesEditor<BaseKind & {under?: boolean}>
+                    <ShapeStylesEditor<BaseKind>
                         palette={palette}
                         styles={value.styles}
                         update={update.variant('weave').styles}
@@ -160,23 +172,14 @@ const swapType = (nextType: PatternContents['type']): PatternContents => {
                             line1: {
                                 id: 'line1',
                                 mods: [],
-                                color: 0,
+                                color: 'black',
                                 width: 10,
                             },
-                        },
-                        fills: {},
-                    },
-                    line2: {
-                        id: 'line2',
-                        kind: {type: 'everything', under: true},
-                        mods: [],
-                        order: 0,
-                        lines: {
-                            line1: {
-                                id: 'line1',
+                            line2: {
+                                id: 'line2',
                                 mods: [],
-                                color: 'black',
-                                width: 15,
+                                color: 0,
+                                width: 5,
                             },
                         },
                         fills: {},
@@ -209,7 +212,23 @@ const swapType = (nextType: PatternContents['type']): PatternContents => {
                 type: 'layers',
                 origin: {x: 0, y: 0},
                 reverse: false,
-                styles: {},
+                styles: {
+                    style1: {
+                        id: 'style1',
+                        kind: {type: 'everything'},
+                        fills: {
+                            fill1: {
+                                id: 'fill1',
+                                mods: [],
+                                color: 0,
+                                opacity: 0.1,
+                            },
+                        },
+                        lines: {},
+                        mods: [],
+                        order: 0,
+                    },
+                },
             };
     }
     throw new Error('nope not');

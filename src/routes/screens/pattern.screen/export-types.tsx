@@ -207,7 +207,8 @@ export type PatternContents =
           type: 'layers';
           origin: AnimatableCoord;
           reverse: AnimatableBoolean;
-          styles: Record<string, LayerStyle>;
+          styles: Record<string, ShapeStyle<BaseKind>>;
+          shared?: Record<string, AnimatableValue>;
       };
 
 export type BaseKind =
@@ -315,15 +316,6 @@ export type LineStyle<Kind> = {
     order: number;
     kind: Kind;
     style: Line;
-    mods: PMods[];
-};
-
-export type LayerStyle = {
-    id: string;
-    order: number;
-    kind: BaseKind;
-    fills: Record<string, Fill>;
-    lines: Record<string, Line>;
     mods: PMods[];
 };
 

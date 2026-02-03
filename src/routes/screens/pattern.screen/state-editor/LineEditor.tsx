@@ -10,7 +10,7 @@ import {
 import {ShadowEditor} from './ShadowEditor';
 import {AnimColor} from './AnimColor';
 import {AnimInput} from './AnimInput';
-import {ModsEditor} from './FillEditor';
+import {ModsEditor, nonNullArray} from './FillEditor';
 import {Updater} from '../../../../json-diff/Updater';
 import {BlurInput} from './BlurInput';
 import {BooleanInput, ExpandableEditor, Labeled, NumberInput} from './ExpandableEditor';
@@ -100,12 +100,7 @@ export const LineEditor = ({
                         update={update.mods}
                     />,
                 ].map((node) =>
-                    showAll ||
-                    (Array.isArray(value[node.key as keyof typeof value])
-                        ? value[node.key as keyof typeof value].length
-                        : value[node.key as keyof typeof value] != null)
-                        ? node
-                        : null,
+                    showAll || nonNullArray(value[node.key as keyof typeof value]) ? node : null,
                 )}
             </div>
             <div></div>

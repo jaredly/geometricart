@@ -95,6 +95,7 @@ const ExportSettingsForm = ({
     const [images, setImages] = useState<ExImage[]>([]);
 
     const ctx = useExportState();
+    const [antiAlias, setAntiAlias] = useState(true);
 
     return (
         <div className="p-2">
@@ -111,6 +112,15 @@ const ExportSettingsForm = ({
                 value={settings.kind}
                 onChange={(v) => (v ? update.kind(v) : null)}
             />
+            <label>
+                Anti Alias
+                <input
+                    checked={antiAlias}
+                    onChange={(e) => setAntiAlias(!antiAlias)}
+                    type="checkbox"
+                    className="checkbox"
+                />
+            </label>
             <button
                 className="btn btn-accent ml-4"
                 onClick={() => {
@@ -121,7 +131,7 @@ const ExportSettingsForm = ({
                         const {items, bg} = res;
                         const blob =
                             settings.kind === 'png'
-                                ? runPNGExport(settings.size, box, items, bg)
+                                ? runPNGExport(settings.size, box, items, bg, antiAlias)
                                 : settings.kind === 'svg'
                                   ? runSVGExport(settings, box, items, bg)
                                   : null;

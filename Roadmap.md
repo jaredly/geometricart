@@ -1,5 +1,16 @@
+#
 
 Ok we gotta make linestyle editor collapsible. its just ridiculous
+
+-->
+- [x] get js autofmt goin
+- [ ] make a base 'expandable-editor' node. it'll do
+  - start small
+  - once big, popout to be big
+    - does that mean ... a contenteditable? so I can do highlighting?
+
+
+
 
 # Copy and Paste all the things
 

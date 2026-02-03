@@ -35,11 +35,17 @@ export const runSVGExport = (
     return new Blob([text], {type: 'image/svg+xml'});
 };
 
-export const runPNGExport = (size: number, box: Box, items: RenderItem[], bg: Color | null) => {
+export const runPNGExport = (
+    size: number,
+    box: Box,
+    items: RenderItem[],
+    bg: Color | null,
+    antiAlias = true,
+) => {
     const canvas = new OffscreenCanvas(size, size);
     const surface = pk.MakeWebGLCanvasSurface(canvas)!;
 
-    renderItems(surface, box, items, bg, true);
+    renderItems(surface, box, items, bg, antiAlias);
     const img = surface.makeImageSnapshot();
     const bytes = img.encodeToBytes(pk.ImageFormat.PNG)!;
     surface.delete();

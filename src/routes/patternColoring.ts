@@ -137,6 +137,29 @@ const colorShapePoints = (shapes: number[][]) => {
     );
 };
 
+export const shapesByEdge = (pointNames: Record<string, number>, shapes: Coord[][]) => {
+    const byEdge: Record<string, {edge: [Coord, Coord]; shapes: number[]}> = {};
+    shapes.forEach((shape, i) => {
+        const edges = toEdges(shape);
+        edges.forEach((edge) => {
+            const length = dist(edge[0], edge[1]);
+            if (length < 0.01) return; // ignore this one
+            const p1 = pointNames[coordKey(edge[0])];
+            const p2 = pointNames[coordKey(edge[1])];
+            // const k = p1 < p2 ? p1 * 100000 + p2 : p2 * 100000 + p1;
+            const k = p1 < p2 ? `${p1}:${p2}` : `${p2}:${p1}`;
+
+            // console.log(`Shape ${i} - ${k}`);
+
+            if (!byEdge[k]) byEdge[k] = {edge, shapes: []};
+            byEdge[k].shapes.push(i);
+            // addToMap(byEdge, k, i);
+        });
+    });
+
+    return byEdge;
+};
+
 export const colorShapes = (
     pointNames: Record<string, number>,
     shapes: Coord[][],
@@ -156,29 +179,12 @@ export const colorShapes = (
     });
     // const by = Math.log10(100 / minLength);
     // const by = Math.log10(100 / minLength);
-    const byEdge: Record<string, {edge: [Coord, Coord]; shapes: number[]}> = {};
-    shapes.forEach((shape, i) => {
-        const edges = toEdges(shape);
-        edges.forEach((edge) => {
-            const length = dist(edge[0], edge[1]);
-            if (length < 0.01) return; // ignore this one
-            const p1 = pointNames[coordKey(edge[0])];
-            const p2 = pointNames[coordKey(edge[1])];
-            // const k = p1 < p2 ? p1 * 100000 + p2 : p2 * 100000 + p1;
-            const k = p1 < p2 ? `${p1}:${p2}` : `${p2}:${p1}`;
-
-            // console.log(`Shape ${i} - ${k}`);
-
-            if (!byEdge[k]) byEdge[k] = {edge, shapes: []};
-            byEdge[k].shapes.push(i);
-            // addToMap(byEdge, k, i);
-        });
-    });
-    if (debug) {
-        Object.keys(byEdge).forEach((key) => {
-            console.log(`edge ${key}`, byEdge[key]);
-        });
-    }
+    const byEdge = shapesByEdge(pointNames, shapes);
+    // if (debug) {
+    //     Object.keys(byEdge).forEach((key) => {
+    //         console.log(`edge ${key}`, byEdge[key]);
+    //     });
+    // }
     const edgePairs = Object.values(byEdge).filter((e) => e.shapes.length === 2);
     childLog?.push({
         type: 'items',

@@ -94,17 +94,15 @@ export const FillEditor = ({
                         update={update.mods}
                     />,
                 ].map((node) =>
-                    showAll ||
-                    (Array.isArray(value[node.key as keyof typeof value])
-                        ? value[node.key as keyof typeof value].length
-                        : value[node.key as keyof typeof value] != null)
-                        ? node
-                        : null,
+                    showAll || nonNullArray(value[node.key as keyof typeof value]) ? node : null,
                 )}
             </div>
         </div>
     );
 };
+
+export const nonNullArray = (value: unknown) =>
+    Array.isArray(value) ? value.length : value != null;
 
 export const ModsEditor = ({
     mods,

@@ -1,4 +1,7 @@
 onlyBuiltDependencies:
-  - '@tailwindcss/oxide'
+  - "@tailwindcss/oxide"
   - es5-ext
   - esbuild
+
+packages:
+  - .
