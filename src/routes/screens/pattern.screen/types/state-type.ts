@@ -1,5 +1,9 @@
+import {History} from '../../../../json-diff/history';
 import {BarePath} from '../../../../types';
 import {Layer, Crop, AnimatableColor, Box, AnimatableNumber, Color} from '../export-types';
+import {ExportAnnotation} from '../ExportHistory';
+
+export type ExportHistory = History<State, ExportAnnotation>;
 
 export type State = {
     // version: 1;

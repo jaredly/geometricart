@@ -1,7 +1,6 @@
-
 {
   "$schema": "https://developer.microsoft.com/json-schemas/api-extractor/api-extractor.schema.json",
-  "mainEntryPointFilePath": "<projectFolder>/temp/types/src/routes/screens/pattern.screen/state-type.d.ts",
+  "mainEntryPointFilePath": "<projectFolder>/temp/types/src/routes/screens/pattern.screen/types/state-type.d.ts",
 
   "dtsRollup": {
     "enabled": true,
