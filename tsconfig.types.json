@@ -8,5 +8,5 @@
     "outDir": "temp/types",
     "stripInternal": true
   },
-  "include": ["src/**/*.ts"]
+  "include": ["src/**/*.ts", "typedefs/**.ts"]
 }
