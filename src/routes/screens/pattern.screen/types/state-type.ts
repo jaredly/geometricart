@@ -6,7 +6,7 @@ import {ExportAnnotation} from '../ExportHistory';
 export type ExportHistory = History<State, ExportAnnotation>;
 
 export type State = {
-    // version: 1;
+    version: 1;
     // multiply = a pattern id in a layer.
     // that's used to determine the dooblydoo.
     shapes: Record<string, BarePath & {multiply?: string}>;

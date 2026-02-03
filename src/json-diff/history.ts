@@ -38,7 +38,7 @@ export type History<T, An> = {
     version: 1;
     initial: T;
     nodes: Record<string, HistoryNode<T, An>>;
-    annotations: Record<string, An[]>;
+    annotations: Record<string, Record<string, An>>;
     root: string;
     tip: string;
     current: T;
