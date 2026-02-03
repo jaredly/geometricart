@@ -14,7 +14,7 @@ then consider the fronteir
 const numSort = (a: number, b: number) => a - b;
 
 export type Inter = {
-    elevation?: -1 | 1 | 0;
+    elevation?: -1 | 1 | 0 | number;
     // the coordinate of the intersection
     pos: Coord;
     // list of segment indices
