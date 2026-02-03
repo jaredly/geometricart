@@ -66,7 +66,6 @@ export const PatternContentsEditor = ({
                         styles={value.styles}
                         update={update.variant('layers').styles}
                         KindEditor={BaseKindEditor}
-                        defaultKind={{type: 'everything'}}
                     />
                     <SharedEditor
                         shared={value.shared}
@@ -97,7 +96,6 @@ export const PatternContentsEditor = ({
                         styles={value.styles}
                         update={update.variant('weave').styles}
                         KindEditor={BaseKindEditor}
-                        defaultKind={{type: 'everything'}}
                     />
                     <SharedEditor shared={value.shared} onChange={update.variant('weave').shared} />
                 </div>
@@ -108,7 +106,6 @@ export const PatternContentsEditor = ({
                     styles={value.styles}
                     update={update.variant('shapes').styles}
                     KindEditor={ShapeKindEditor}
-                    defaultKind={{type: 'everything'}}
                 />
             ) : null}
             {value.type === 'lines' ? (
@@ -127,7 +124,6 @@ export const PatternContentsEditor = ({
                         styles={value.styles}
                         update={update.variant('lines').styles}
                         KindEditor={BaseKindEditor}
-                        defaultKind={{type: 'everything'}}
                     />
                 </>
             ) : null}
@@ -143,7 +139,7 @@ const swapType = (nextType: PatternContents['type']): PatternContents => {
                 styles: {
                     style1: {
                         id: 'style1',
-                        kind: {type: 'everything'},
+                        kind: [],
                         t: null,
                         disabled: false,
                         lines: {
@@ -168,7 +164,7 @@ const swapType = (nextType: PatternContents['type']): PatternContents => {
                 styles: {
                     line1: {
                         id: 'line1',
-                        kind: {type: 'everything'},
+                        kind: [],
                         mods: [],
                         order: 0,
                         disabled: false,
@@ -200,7 +196,7 @@ const swapType = (nextType: PatternContents['type']): PatternContents => {
                         id: 'style1',
                         disabled: false,
                         t: null,
-                        kind: {type: 'everything'},
+                        kind: [],
                         lines: {
                             line1: {
                                 id: 'line1',
@@ -224,7 +220,7 @@ const swapType = (nextType: PatternContents['type']): PatternContents => {
                 styles: {
                     style1: {
                         id: 'style1',
-                        kind: {type: 'everything'},
+                        kind: [],
                         disabled: false,
                         t: null,
                         fills: {

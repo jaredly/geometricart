@@ -219,7 +219,6 @@ export type PatternContents =
       };
 
 export type BaseKind =
-    | {type: 'everything'}
     | {type: 'alternating'; index: number}
     | {type: 'explicit'; ids: Record<string, true>}
     | {type: 'distance'; corner: number; repeat: boolean; distances: number[]};
@@ -233,7 +232,7 @@ export type ShapeStyle<Kind> = {
     // TODO: maybe have a kind that's like "anything intersecting with this shape"?
     // Could also be interesting to have an `animatedKind` where we select
     // the items effected by some script
-    kind: Kind | Kind[];
+    kind: Kind[];
     fills: Record<string, Fill>;
     lines: Record<string, Line>;
     t: TChunk | null;

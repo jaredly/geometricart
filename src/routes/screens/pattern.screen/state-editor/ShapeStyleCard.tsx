@@ -25,7 +25,6 @@ export const ShapeStyleCard = <Kind,>({
     onRemove,
     palette,
     handleProps,
-    defaultValue,
     KindEditor,
 }: {
     palette: Color[];
@@ -34,7 +33,6 @@ export const ShapeStyleCard = <Kind,>({
     update: Updater<ShapeStyle<Kind>>;
     onRemove: () => void;
     KindEditor: React.ComponentType<{value: Kind; update: Updater<Kind>}>;
-    defaultValue: Kind;
 }) => {
     const [show, setShow] = useState(false);
     return (
@@ -90,7 +88,6 @@ export const ShapeStyleCard = <Kind,>({
                             KindEditor={KindEditor}
                             value={value.kind}
                             update={update.kind}
-                            defaultValue={defaultValue}
                         />
                         <SubStyleList
                             label="Fills"
@@ -136,50 +133,43 @@ const KindOrKinds = <Kind,>({
     value,
     update,
     KindEditor,
-    defaultValue,
 }: {
-    value: Kind | Kind[];
-    // onChange: (next: Kind | Kind[]) => void;
-    update: Updater<Kind | Kind[]>;
+    value: Kind[];
+    update: Updater<Kind[]>;
     KindEditor: React.ComponentType<{value: Kind; update: Updater<Kind>}>;
-    defaultValue: Kind;
 }) => {
-    const kinds = Array.isArray(value) ? value : [value];
-    const single = update as unknown as SingleUpdater<Kind>;
+    // const kinds = Array.isArray(value) ? value : [value];
+    // const single = update as unknown as SingleUpdater<Kind>;
     return (
         <div className="bg-base-200 rounded-lg p-3 border border-base-300 space-y-2">
             <div className="flex items-center justify-between">
                 <div className="font-semibold text-sm">Kind</div>
                 <button
                     onClick={() => {
-                        if (Array.isArray(value)) {
-                            const res = kinds.slice();
-                            res.push(defaultValue);
-                            single.single(false).push(defaultValue);
-                        } else {
-                            update.replace([value, defaultValue]);
-                        }
+                        // if (Array.isArray(value)) {
+                        //     const res = kinds.slice();
+                        //     res.push(defaultValue);
+                        //     single.single(false).push(defaultValue);
+                        // } else {
+                        //     update.replace([value, defaultValue]);
+                        // }
+                        // TODO: need a dropdown I guess
                     }}
                     className="btn btn-square"
                 >
                     <AddIcon />
                 </button>
-                {kinds.length >= 1 ? (
-                    <KindEditor value={kinds[0]} update={single.single(true)} />
-                ) : null}
             </div>
-            {kinds.slice(1).map((kind, i) => {
+            {value.map((kind, i) => {
                 return (
                     <div key={i}>
                         <button
-                            onClick={() => {
-                                single.single(false)[i + 1].remove();
-                            }}
+                            onClick={() => update[i + 1].remove()}
                             className="btn btn-square text-red-400"
                         >
                             &times;
                         </button>
-                        <KindEditor value={kind} update={single.single(false)[i + 1]} />
+                        <KindEditor value={kind} update={update[i + 1]} />
                     </div>
                 );
             })}

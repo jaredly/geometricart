@@ -27,7 +27,7 @@ export const makeForPattern = (tiling: ThinTiling, hash: string): State => {
                 },
             },
             lines: {},
-            kind: {type: 'alternating', index: i},
+            kind: [{type: 'alternating', index: i}],
             mods: [],
             order: i,
         };

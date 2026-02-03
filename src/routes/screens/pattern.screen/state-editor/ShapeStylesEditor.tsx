@@ -11,13 +11,11 @@ export const ShapeStylesEditor = <Kind,>({
     update,
     palette,
     KindEditor,
-    defaultKind,
 }: {
     palette: Color[];
     styles: Record<string, ShapeStyle<Kind>>;
     update: Updater<Record<string, ShapeStyle<Kind>>>;
     KindEditor: React.ComponentType<{value: Kind; update: Updater<Kind>}>;
-    defaultKind: Kind;
 }) => {
     const entries = useMemo(() => orderedItems(styles), [styles]);
 
@@ -32,7 +30,7 @@ export const ShapeStylesEditor = <Kind,>({
                         for (let i = 0; i < 100; i++) {
                             const id = `style-${i}`;
                             if (!styles[id]) {
-                                const style = createShapeStyle(id, defaultKind);
+                                const style = createShapeStyle<Kind>(id);
                                 update[id].add(style);
                                 return;
                             }
@@ -56,7 +54,6 @@ export const ShapeStylesEditor = <Kind,>({
                                 update={update[style.id]}
                                 onRemove={update[style.id].remove}
                                 KindEditor={KindEditor}
-                                defaultValue={defaultKind}
                             />
                         ),
                     }))}

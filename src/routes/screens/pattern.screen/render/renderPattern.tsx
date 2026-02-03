@@ -167,11 +167,7 @@ export const renderPattern = (ctx: Ctx, _outer: CropsAndMatrices, pattern: Patte
 
     const orderedStyles = Object.values(pattern.contents.styles).sort((a, b) => a.order - b.order);
 
-    const needColors = orderedStyles.some((s) =>
-        Array.isArray(s.kind)
-            ? s.kind.some((k) => k.type === 'alternating')
-            : s.kind.type === 'alternating',
-    );
+    const needColors = orderedStyles.some((s) => s.kind.some((k) => k.type === 'alternating'));
     const {colors} = needColors
         ? getShapeColors(baseShapes, simple.minSegLength, ctx.log)
         : {colors: []};
@@ -190,11 +186,12 @@ export const renderPattern = (ctx: Ctx, _outer: CropsAndMatrices, pattern: Patte
             const key = coordKey(center);
             const radius = Math.min(...shape.points.map((s) => dist(s, center)));
             const matchingStyles = orderedStyles.map((style) => {
-                const match = Array.isArray(style.kind)
-                    ? first(style.kind, (k) =>
-                          matchKind(k, key, colors[i], center, simple.eigenCorners),
-                      )
-                    : matchKind(style.kind, key, colors[i], center, simple.eigenCorners);
+                const match =
+                    style.kind.length === 0
+                        ? {x: 0, y: 0}
+                        : first(style.kind, (k) =>
+                              matchKind(k, key, colors[i], center, simple.eigenCorners),
+                          );
                 if (!match) {
                     return;
                 }
@@ -400,8 +397,6 @@ export const matchKind = (
     eigenCorners: Coord[][],
 ): boolean | Coord => {
     switch (k.type) {
-        case 'everything':
-            return {x: 0, y: 0};
         case 'alternating':
             return color === k.index ? {x: 0, y: 0} : false;
         case 'explicit':

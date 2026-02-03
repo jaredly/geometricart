@@ -74,10 +74,10 @@ export const parseAnimatable = (value: string): AnimatableNumber => {
     return Number.isFinite(num) ? (num as AnimatableNumber) : (trimmed as AnimatableNumber);
 };
 
-export const createShapeStyle = <Kind,>(id: string, kind: Kind): ShapeStyle<Kind> => ({
+export const createShapeStyle = <Kind,>(id: string): ShapeStyle<Kind> => ({
     id,
     order: 0,
-    kind,
+    kind: [],
     fills: {},
     lines: {},
     mods: [],

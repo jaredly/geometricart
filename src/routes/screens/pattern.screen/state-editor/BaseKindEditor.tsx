@@ -26,9 +26,6 @@ export const ShapeKindEditor = ({
                     value={type}
                     onChange={(evt) => {
                         switch (evt.target.value) {
-                            case 'everything':
-                                update.replace({type: 'everything'});
-                                return;
                             case 'alternating':
                                 update.replace(
                                     value.type === 'alternating'
@@ -138,9 +135,6 @@ export const BaseKindEditor = ({value, update}: {value: BaseKind; update: Update
                     value={type}
                     onChange={(evt) => {
                         switch (evt.target.value) {
-                            case 'everything':
-                                update.replace({type: 'everything'});
-                                return;
                             case 'alternating':
                                 update.replace(
                                     value.type === 'alternating'
