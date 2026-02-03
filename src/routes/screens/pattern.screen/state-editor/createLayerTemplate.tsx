@@ -1,4 +1,4 @@
-import {Segment, ThinTiling} from '../../../../types';
+import {Coord, Segment, ThinTiling} from '../../../../types';
 import {
     PMods,
     Layer,
@@ -16,7 +16,7 @@ export const addMod = (type: PMods['type']): PMods => {
         case 'inset':
             return {type, v: 1};
         case 'translate':
-            return {type, v: {x: 0, y: 0}};
+            return {type, v: '0,0'};
         case 'crop':
             return {type, id: ''};
         case 'scale':
@@ -46,6 +46,7 @@ export const createGroup = (id: string): Group => ({
     id,
     name: id,
     entities: {},
+    disabled: false,
 });
 
 export const createPattern = (id: string, hash: string, tiling: ThinTiling): Pattern => ({
@@ -56,6 +57,8 @@ export const createPattern = (id: string, hash: string, tiling: ThinTiling): Pat
     psize: {x: 1, y: 1},
     contents: {type: 'shapes', styles: {}},
     mods: [],
+    disabled: false,
+    shared: {},
 });
 const defaultCropShape = (): Segment[] => [
     {type: 'Line', to: {x: 1, y: 0}},
@@ -78,6 +81,8 @@ export const createShapeStyle = <Kind,>(id: string, kind: Kind): ShapeStyle<Kind
     fills: {},
     lines: {},
     mods: [],
+    disabled: false,
+    t: null,
 });
 
 export const createFill = (id: string): Fill => ({

@@ -4,6 +4,7 @@ import {ShapeStyleCard} from './ShapeStyleCard';
 import {createShapeStyle} from './createLayerTemplate';
 import {DragToReorderList} from './DragToReorderList';
 import {Updater} from '../../../../json-diff/Updater';
+import {nextOrder, orderedItems} from './nextOrder';
 
 export const ShapeStylesEditor = <Kind,>({
     styles,
@@ -18,10 +19,7 @@ export const ShapeStylesEditor = <Kind,>({
     KindEditor: React.ComponentType<{value: Kind; update: Updater<Kind>}>;
     defaultKind: Kind;
 }) => {
-    const entries = useMemo(
-        () => Object.entries(styles).sort(([, a], [, b]) => a.order - b.order),
-        [styles],
-    );
+    const entries = useMemo(() => orderedItems(styles), [styles]);
 
     return (
         <div className="bg-base-200 rounded-lg border border-base-300 space-y-3">
@@ -47,38 +45,27 @@ export const ShapeStylesEditor = <Kind,>({
             {entries.length === 0 ? <div className="text-sm opacity-60">No styles yet.</div> : null}
             <div className="space-y-3">
                 <DragToReorderList
-                    items={entries.map(([key, style], i) => ({
-                        key,
+                    items={entries.map((style, i) => ({
+                        key: style.id,
                         render: (handleProps) => (
                             <ShapeStyleCard<Kind>
                                 handleProps={handleProps}
-                                key={key + ':' + i}
+                                key={style.id + ':' + i}
                                 palette={palette}
                                 value={style}
-                                update={update[key]}
-                                onRemove={update[key].remove}
+                                update={update[style.id]}
+                                onRemove={update[style.id].remove}
                                 KindEditor={KindEditor}
                                 defaultValue={defaultKind}
                             />
                         ),
                     }))}
                     onReorder={(prev, next) => {
-                        const id = entries[prev][0];
+                        const id = entries[prev].id;
                         update[id].order(nextOrder(prev, next, entries));
                     }}
                 />
             </div>
         </div>
     );
-};
-
-const nextOrder = (prev: number, next: number, entries: [string, {order: number}][]) => {
-    if (next === 0) {
-        return entries[0][1].order - 10;
-    }
-    if (next >= entries.length - 1) {
-        return entries[entries.length - 1][1].order + 10;
-    }
-    const [left, right] = prev < next ? [next, next + 1] : [next - 1, next];
-    return (entries[left][1].order + entries[right][1].order) / 2;
 };

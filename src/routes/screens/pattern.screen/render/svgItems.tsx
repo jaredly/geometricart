@@ -47,7 +47,7 @@ export const svgItems = (
             palette: state.styleConfig.palette,
             warn,
         };
-        Object.entries(layer.shared).forEach(([name, value]) => {
+        Object.entries(layer.shared).forEach(([name, {value}]) => {
             values[name] = a.value(anim, value);
         });
 

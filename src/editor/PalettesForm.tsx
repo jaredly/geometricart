@@ -16,6 +16,7 @@ const {SliderPicker, SketchPicker} = rc;
 import kMeans from 'kmeans-js';
 
 import {Rgb, AttachmentsChooser} from './Rgb';
+import {rgbToHex} from './rgbToHex';
 
 export const averageAt = (data: ImageData, pos: Coord): Rgb => {
     const colors = [
@@ -42,11 +43,6 @@ const colorAt = (imageData: ImageData, {x, y}: Coord): Rgb => {
     };
     // color['alpha'] = imageData.data[((y*(imageData.width*4)) + (x*4)) + 3];
 };
-
-export const rgbToString = ({r, g, b}: Rgb) => `rgb(${r},${g},${b})`;
-
-const toHex = (n: number) => n.toString(16).padStart(2, '0');
-const rgbToHex = ({r, g, b}: Rgb) => `#${toHex(r)}${toHex(g)}${toHex(b)}`;
 
 export function PalettesForm({
     state,

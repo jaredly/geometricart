@@ -144,11 +144,13 @@ const swapType = (nextType: PatternContents['type']): PatternContents => {
                     style1: {
                         id: 'style1',
                         kind: {type: 'everything'},
+                        t: null,
+                        disabled: false,
                         lines: {
                             line1: {
                                 id: 'line1',
                                 mods: [],
-                                color: {r: 255, g: 0, b: 0},
+                                color: '#f00',
                                 width: 1,
                             },
                         },
@@ -162,12 +164,15 @@ const swapType = (nextType: PatternContents['type']): PatternContents => {
             return {
                 type: 'weave',
                 orderings: {},
+                shared: {},
                 styles: {
                     line1: {
                         id: 'line1',
                         kind: {type: 'everything'},
                         mods: [],
                         order: 0,
+                        disabled: false,
+                        t: null,
                         lines: {
                             line1: {
                                 id: 'line1',
@@ -189,9 +194,12 @@ const swapType = (nextType: PatternContents['type']): PatternContents => {
         case 'lines':
             return {
                 type: 'lines',
+                sort: '',
                 styles: {
                     style1: {
                         id: 'style1',
+                        disabled: false,
+                        t: null,
                         kind: {type: 'everything'},
                         lines: {
                             line1: {
@@ -210,12 +218,15 @@ const swapType = (nextType: PatternContents['type']): PatternContents => {
         case 'layers':
             return {
                 type: 'layers',
-                origin: {x: 0, y: 0},
+                origin: '0,0',
                 reverse: false,
+                shared: {},
                 styles: {
                     style1: {
                         id: 'style1',
                         kind: {type: 'everything'},
+                        disabled: false,
+                        t: null,
                         fills: {
                             fill1: {
                                 id: 'fill1',

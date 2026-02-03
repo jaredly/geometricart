@@ -172,7 +172,14 @@ const AdjustmentsEditor = ({
                     value=""
                     onClick={() => {
                         const id = genid();
-                        update[id].add({id, mods: [], shapes: []});
+                        update[id].add({
+                            id,
+                            mods: [],
+                            shapes: [],
+                            t: null,
+                            shared: {},
+                            disabled: false,
+                        });
                     }}
                 >
                     Add

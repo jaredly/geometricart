@@ -17,6 +17,8 @@ export const makeForPattern = (tiling: ThinTiling, hash: string): State => {
     for (let i = 0; i <= pd.colorInfo.maxColor; i++) {
         styles[`alt-${i}`] = {
             id: `alt-${i}`,
+            disabled: false,
+            t: null,
             fills: {
                 [`fill-${i}`]: {
                     id: `fill-${i}`,
@@ -41,12 +43,15 @@ export const makeForPattern = (tiling: ThinTiling, hash: string): State => {
                     'root-group': {
                         type: 'Group',
                         id: 'root-group',
+                        disabled: false,
                         entities: {'one-pattern': 0},
                     },
                     'one-pattern': {
                         type: 'Pattern',
                         adjustments: {},
                         id: 'one-pattern',
+                        disabled: false,
+                        shared: {},
                         mods: [],
                         psize: 3,
                         contents: {type: 'shapes', styles},

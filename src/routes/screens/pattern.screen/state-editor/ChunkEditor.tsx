@@ -45,8 +45,8 @@ export const ChunkEditor = ({
     chunk,
     update,
 }: {
-    chunk?: TChunk;
-    update: Updater<TChunk | undefined>;
+    chunk: TChunk | null;
+    update: Updater<TChunk | null>;
 }) => {
     return (
         <details className={'dropdown'}>

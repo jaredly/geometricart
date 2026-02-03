@@ -11,16 +11,18 @@ import {calcPolygonArea, coordsFromBarePath, pkPathFromCoords} from '../../../ge
 import {pk} from '../../../pk';
 import {segmentsCmds} from '../../animator.screen/cropPath';
 import {easeFn} from '../eval/evalEase';
-import {a, AnimCtx, Ctx, RenderItem} from '../eval/evaluate';
+import {a, AnimCtx, Ctx, RenderItem, RenderShadow} from '../eval/evaluate';
 import {
     AnimatableValue,
     Color,
     colorToRgb,
+    ConcreteShadow,
     CropMode,
     EObject,
     Group,
     insetPkPath,
     modMatrix,
+    OValue,
     PMods,
 } from '../export-types';
 import {
@@ -32,6 +34,7 @@ import {
     resolveShadow,
 } from '../render/renderPattern';
 import {multiplyShape} from './expandShapes';
+import {orderedItems} from '../state-editor/nextOrder';
 
 type CCrop = {type: 'crop'; id: string; mode?: CropMode; hole?: boolean};
 type CInset = {type: 'inset'; v: number};
@@ -330,14 +333,14 @@ export const withLocals = (anim: Ctx['anim'], locals: Record<string, any>) => ({
 
 export const withShared = (
     anim: Ctx['anim'],
-    shared?: Record<string, AnimatableValue>,
+    shared?: Record<string, OValue<AnimatableValue>>,
     debug = false,
 ) => {
     if (!shared) return anim;
     // biome-ignore lint: this one is fine
     const values: Record<string, any> = {};
-    Object.entries(shared).forEach(([name, value]) => {
-        values[name] = a.value(anim, value);
+    orderedItems(shared).forEach(({id, value}) => {
+        values[id] = a.value(anim, value);
     });
     if (debug) {
         // console.log('shared', anim.values.t, values);
@@ -415,7 +418,7 @@ const renderObject = (ctx: Ctx, crops: CropsAndMatrices, object: EObject) => {
             key: '',
             color: colorToRgb(f.color),
             opacity: f.opacity,
-            shadow: resolveShadow(anim, f.shadow),
+            shadow: f.shadow,
             shapes: thisPaths.flatMap((path) => cmdsToSegments([...path.toCmds()])),
             zIndex: f.zIndex,
         });
@@ -442,7 +445,7 @@ const renderObject = (ctx: Ctx, crops: CropsAndMatrices, object: EObject) => {
             color: colorToRgb(f.color),
             strokeWidth: a.number(anim, f.width ?? 0) / 100,
             opacity: f.opacity,
-            shadow: resolveShadow(anim, f.shadow),
+            shadow: concreteToRenderShadow(f.shadow),
             // shapes: cmdsToSegments([...thisPath.toCmds()]),
             shapes: thisPaths.flatMap((path) => cmdsToSegments([...path.toCmds()])),
             sharp: f.sharp,
@@ -456,6 +459,15 @@ const renderObject = (ctx: Ctx, crops: CropsAndMatrices, object: EObject) => {
     // path.delete();
     // object.style.mods
 };
+
+export const concreteToRenderShadow = (shadow?: ConcreteShadow): RenderShadow | undefined =>
+    shadow?.color
+        ? {
+              color: colorToRgb(shadow.color),
+              blur: shadow.blur ?? {x: 0, y: 0},
+              offset: shadow.offset ?? {x: 0, y: 0},
+          }
+        : undefined;
 
 export const pathMod = (cropCache: Ctx['cropCache'], mod: CropsAndMatrices[0], path: PKPath) => {
     if (Array.isArray(mod)) {

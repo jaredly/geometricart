@@ -214,7 +214,7 @@ export const a = {
                     (v: any): v is number | Coord => typeof v === 'number' || isCoord(v),
                     {x: 0, y: 0},
                 ),
-    color: (ctx: AnimCtx, v: AnimatableColor): Color | null => {
+    color: (ctx: AnimCtx, v: AnimatableColor | Color): Color | null => {
         if (typeof v === 'string') {
             const parsed = parseColor(v);
             if (parsed) return parsed;

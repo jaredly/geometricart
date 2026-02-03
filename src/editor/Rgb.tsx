@@ -2,7 +2,8 @@ import * as React from 'react';
 import {Attachment, Coord} from '../types';
 import {createPortal} from 'react-dom';
 import {hslToRgb} from '../rendering/colorConvert';
-import {averageAt, findMajorColorsExpensive, rgbToString} from './PalettesForm';
+import {averageAt, findMajorColorsExpensive} from './PalettesForm';
+import {rgbToString} from './rgbToHex';
 
 const ImageChooser = ({
     contents,

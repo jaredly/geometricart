@@ -40,6 +40,7 @@ import {parseColor, Rgb} from '../utils/colors';
 import {notNull} from '../utils/notNull';
 import {
     barePathFromCoords,
+    concreteToRenderShadow,
     CropsAndMatrices,
     LogItems,
     modsToShapes,
@@ -261,7 +262,6 @@ export const renderFill = (
     }
     const zIndex = f.zIndex;
     const opacity = f.opacity;
-    const shadow = resolveShadow(anim, f.shadow);
 
     return {
         type: 'path',
@@ -273,7 +273,7 @@ export const renderFill = (
                   {shape: {points: shape, open: false}, i: 0},
               ]).map((s) => barePathFromCoords(s.shape.points, s.shape.open))
             : [barePathFromCoords(shape)],
-        shadow,
+        shadow: f.shadow,
         zIndex,
     };
 };
@@ -293,7 +293,7 @@ export const renderLine = (
         rgb = tintColor(rgb, f.tint);
     }
     const width = f.width / 100;
-    const shadow = resolveShadow(anim, f.shadow);
+    const shadow = concreteToRenderShadow(f.shadow);
 
     return {
         type: 'path',

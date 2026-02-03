@@ -1,5 +1,5 @@
 import {useMemo} from 'react';
-import {AnimatableValue} from '../export-types';
+import {AnimatableValue, OValue} from '../export-types';
 import {BlurInput} from './BlurInput';
 import {cmp} from './cmp';
 import {nextKey} from './PatternEditor';
@@ -9,20 +9,22 @@ import {Coord} from '../../../../types';
 import {shapeD} from '../../../shapeD';
 import {AnimCtx, getScript} from '../eval/evaluate';
 import {globals} from '../eval/eval-globals';
+import {genid} from '../utils/genid';
+import {maxOrder, orderedItems} from './nextOrder';
 
 export const SharedEditor = ({
     shared,
     onChange,
 }: {
-    shared?: Record<string, AnimatableValue>;
-    onChange(v: Record<string, AnimatableValue>): void;
+    shared: Record<string, OValue<AnimatableValue>>;
+    onChange(v: Record<string, OValue<AnimatableValue>>): void;
 }) => {
     const usesT = useMemo(
         () =>
             shared
                 ? Object.keys(shared).filter((k) => {
                       try {
-                          const {undeclared, arg, needsReturn} = processScript(shared[k]);
+                          const {undeclared, arg, needsReturn} = processScript(shared[k].value);
                           return undeclared.includes('t');
                       } catch (err) {
                           return false;
@@ -39,72 +41,77 @@ export const SharedEditor = ({
             <div className="border border-base-300 rounded-md p-4 space-y-4">
                 <button
                     onClick={() => {
-                        const nk = nextKey(shared ?? {});
-                        if (!nk) return;
-                        onChange({...shared, [nk]: '1 + 1'});
+                        const nk = genid();
+                        onChange({
+                            ...shared,
+                            [nk]: {
+                                value: '1 + 1',
+                                id: nk,
+                                order: maxOrder(shared) + 1,
+                                disabled: false,
+                            },
+                        });
                     }}
                     className="btn btn-sm"
                 >
                     Add shared value
                 </button>
-                {Object.entries(shared ?? {})
-                    .sort((a, b) => cmp(a[0], b[0]))
-                    .map(([key, value]) => (
-                        <div key={key} className="flex flex-row">
-                            <BlurInput
-                                className="w-10 font-mono"
-                                value={key}
-                                placeholder="key"
-                                onChange={(nkey) => {
-                                    if (key === nkey || !nkey) return;
-                                    const next = {...shared};
-                                    delete next[key];
-                                    next[nkey] = value;
-                                    onChange(next);
-                                }}
-                            />
-                            <BlurInput
-                                className="flex-1 font-mono"
-                                style={{fontSize: '.6rem'}}
-                                value={value}
-                                onChange={(value) => onChange({...shared, [key]: value})}
-                                placeholder="value"
-                            />
-                            {usesT.includes(key) ? (
-                                <>
-                                    <button
-                                        popoverTarget={`popover-${key}`}
-                                        style={{
-                                            // @ts-ignore
-                                            anchorName: `--anchor-${key}`,
-                                        }}
-                                        className="btn btn-square"
-                                    >
-                                        <GraphUp />
-                                    </button>
-                                    <div
-                                        popover={'auto'}
-                                        className="dropdown dropdown-end menu shadow-sm border border-base-300 rounded-box bg-base-100"
-                                        id={`popover-${key}`}
+                {orderedItems(shared).map((item) => (
+                    <div key={item.id} className="flex flex-row">
+                        <BlurInput
+                            className="w-10 font-mono"
+                            value={item.id}
+                            placeholder="key"
+                            onChange={(nkey) => {
+                                if (item.id === nkey || !nkey) return;
+                                const next = {...shared};
+                                delete next[item.id];
+                                next[nkey] = item;
+                                onChange(next);
+                            }}
+                        />
+                        <BlurInput
+                            className="flex-1 font-mono"
+                            style={{fontSize: '.6rem'}}
+                            value={item.value}
+                            onChange={(value) => onChange({...shared, [item.id]: {...item, value}})}
+                            placeholder="value"
+                        />
+                        {usesT.includes(item.id) ? (
+                            <>
+                                <button
+                                    popoverTarget={`popover-${item.id}`}
+                                    style={{
                                         // @ts-ignore
-                                        style={{positionAnchor: `--anchor-${key}`}}
-                                    >
-                                        <TimePreview s={value} />
-                                    </div>
-                                </>
-                            ) : null}
-                            <button
-                                className="btn btn-sm btn-square"
-                                onClick={() => {
-                                    const next = {...shared};
-                                    delete next[key];
-                                    onChange(next);
-                                }}
-                            >
-                                &times;
-                            </button>
-                        </div>
-                    ))}
+                                        anchorName: `--anchor-${item.id}`,
+                                    }}
+                                    className="btn btn-square"
+                                >
+                                    <GraphUp />
+                                </button>
+                                <div
+                                    popover={'auto'}
+                                    className="dropdown dropdown-end menu shadow-sm border border-base-300 rounded-box bg-base-100"
+                                    id={`popover-${item.id}`}
+                                    // @ts-ignore
+                                    style={{positionAnchor: `--anchor-${item.id}`}}
+                                >
+                                    <TimePreview s={item.value} />
+                                </div>
+                            </>
+                        ) : null}
+                        <button
+                            className="btn btn-sm btn-square"
+                            onClick={() => {
+                                const next = {...shared};
+                                delete next[item.id];
+                                onChange(next);
+                            }}
+                        >
+                            &times;
+                        </button>
+                    </div>
+                ))}
             </div>
         </details>
     );
