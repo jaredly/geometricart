@@ -2,7 +2,7 @@ import typia from 'typia';
 import {ExportHistory} from '../ExportHistory';
 import {State} from './state-type';
 import {blankHistory} from '../../../../json-diff/history';
-import {ExportHistoryV0} from './migrate';
+import {ExportHistory as ExportHistoryV0} from './state-v1';
 
 export const isValidHistory = typia.createIs<ExportHistory>();
 export const isValidHistoryV0 = typia.createIs<ExportHistoryV0>();

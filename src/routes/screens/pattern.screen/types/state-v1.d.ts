@@ -1,3 +1,9 @@
+declare type AddOp<T> = {
+    op: 'add';
+    path: Path;
+    value: unknown;
+};
+
 declare type Adjustment = {
     id: string;
     shapes: string[];
@@ -98,6 +104,12 @@ declare type Coord = {
     y: number;
 };
 
+declare type CopyOp<T> = {
+    op: 'copy';
+    from: Path;
+    path: Path;
+};
+
 declare type Crop = {
     id: string;
     shape: string;
@@ -122,6 +134,16 @@ declare type EObject = {
     };
 };
 
+declare type ExportAnnotation = {
+    type: 'img';
+    id: string;
+} | {
+    type: 'video';
+    id: string;
+};
+
+export declare type ExportHistory = History_2<State, ExportAnnotation>;
+
 declare type Fill = {
     id: string;
     enabled?: AnimatableBoolean;
@@ -145,6 +167,24 @@ declare type Group = {
 
 declare type GuideGeom = Line_2 | Split | Circle | CloneCircle | CircleMark | AngleBisector | PerpendicularBisector | Perpendicular | InCicle | Polygon | CircumCircle;
 
+declare type History_2<T, An> = {
+    version: 1;
+    initial: T;
+    nodes: Record<string, HistoryNode<T, An>>;
+    annotations: Record<string, An[]>;
+    root: string;
+    tip: string;
+    current: T;
+    undoTrail: string[];
+};
+
+declare type HistoryNode<T, An> = {
+    id: string;
+    changes: JsonPatchOp<T>[];
+    pid: string;
+    children: string[];
+};
+
 declare type Hsl = {
     h: number;
     s: number;
@@ -157,6 +197,8 @@ declare type InCicle = {
     p2: Coord;
     p3: Coord;
 };
+
+declare type JsonPatchOp<T> = AddOp<T> | ReplaceOp<T> | RemoveOp<T> | MoveOp<T> | CopyOp<T>;
 
 declare type Layer = {
     id: string;
@@ -194,6 +236,26 @@ declare type Line_2 = {
 declare type LineSegment = {
     type: 'Line';
     to: Coord;
+};
+
+declare type MoveOp<T> = {
+    op: 'move';
+    from: Path;
+    path: Path;
+};
+
+declare type Path = PathSegment[];
+
+declare type PathSegment = {
+    type: 'key';
+    key: string | number;
+} | {
+    type: 'tag';
+    key: string;
+    value: string;
+} | {
+    type: 'single';
+    isSingle: boolean;
 };
 
 declare type Pattern = {
@@ -293,6 +355,19 @@ declare type QuadSegment = {
     type: 'Quad';
     control: Coord;
     to: Coord;
+};
+
+declare type RemoveOp<T> = {
+    op: 'remove';
+    path: Path;
+    value: unknown;
+};
+
+declare type ReplaceOp<T> = {
+    op: 'replace';
+    path: Path;
+    value: unknown;
+    previous: unknown;
 };
 
 declare type Rgb = {
