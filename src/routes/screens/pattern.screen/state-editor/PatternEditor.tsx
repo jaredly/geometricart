@@ -1,5 +1,5 @@
 import {Adjustment, Color, Pattern} from '../export-types';
-import {CoordField} from './CoordField';
+import {CoordField, CoordOrNumberField} from './CoordField';
 import {NumberField} from './NumberField';
 import {PatternContentsEditor} from './PatternContentsEditor';
 import {ModsEditor} from './FillEditor';
@@ -24,11 +24,11 @@ export const PatternEditor = ({
     return (
         <div className="space-y-3">
             <div className="flex flex-row">
-                {typeof value.psize === 'number' ? (
-                    <NumberField label="Size" value={value.psize} onChange={update.psize} />
-                ) : (
-                    <CoordField label="Pattern size" value={value.psize} onChange={update.psize} />
-                )}
+                <CoordOrNumberField
+                    label="Pattern size"
+                    value={value.psize}
+                    onChange={update.psize}
+                />
                 <button
                     onClick={() =>
                         value.disabled ? update.disabled(false) : update.disabled(true)

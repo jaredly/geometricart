@@ -1,6 +1,37 @@
 import React from 'react';
 import {Coord} from '../../../../types';
 import {NumberField} from './NumberField';
+import {BlurInput} from './BlurInput';
+import {closeEnough} from '../../../../rendering/epsilonToZero';
+
+const numOrZero = (v: string) => {
+    const n = Number(v);
+    return Number.isFinite(n) ? n : 0;
+};
+
+export const CoordOrNumberField = ({
+    label,
+    value,
+    onChange,
+}: {
+    label: string;
+    value: Coord;
+    onChange: (next: Coord) => void;
+}) => {
+    return (
+        <BlurInput
+            value={closeEnough(value.x, value.y) ? value.x.toString() : `${value.x},${value.y}`}
+            onChange={(v) => {
+                if (v.includes(',')) {
+                    const [x, y] = v.split(',');
+                    return onChange({x: numOrZero(x), y: numOrZero(y)});
+                }
+                const n = numOrZero(v);
+                return onChange({x: n, y: n});
+            }}
+        />
+    );
+};
 
 export const CoordField = ({
     label,

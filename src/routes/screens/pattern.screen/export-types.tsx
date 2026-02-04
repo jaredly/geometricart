@@ -61,7 +61,7 @@ export const colorToRgb = (c: Color): {r: number; g: number; b: number} =>
 
 const rgbFromArr = (c: [number, number, number]) => ({r: c[0], g: c[1], b: c[2]});
 
-export type Crop = {id: string; shape: string; mods?: PMods[]};
+export type Crop = {id: string; shape: string; mods: PMods[]};
 
 export type OrderItem = {id: string; order: number};
 export type Orderable<T extends OrderItem> = Record<string, T>;
@@ -172,7 +172,7 @@ export type Pattern = {
     id: string;
     tiling: {id: string; tiling: ThinTiling};
 
-    psize: Coord | number;
+    psize: Coord;
     contents: PatternContents;
     // shape and the mods
     adjustments: Record<string, Adjustment>;
