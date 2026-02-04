@@ -53,7 +53,7 @@ export const makeForPattern = (tiling: ThinTiling, hash: string): State => {
                         disabled: false,
                         shared: {},
                         mods: [],
-                        psize: {x: 3, y: 3},
+                        psize: {type: 'uniform', size: 3},
                         contents: {type: 'shapes', styles},
                         tiling: {id: hash, tiling},
                     },

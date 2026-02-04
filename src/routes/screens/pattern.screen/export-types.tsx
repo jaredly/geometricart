@@ -167,12 +167,14 @@ export const modMatrix = (mod: ConcretePMod, origin?: Coord) => {
     return tx;
 };
 
+export type PatternSize = {type: 'uniform'; size: number} | {type: 'coord'; coord: Coord};
+
 export type Pattern = {
     type: 'Pattern';
     id: string;
     tiling: {id: string; tiling: ThinTiling};
 
-    psize: Coord;
+    psize: PatternSize;
     contents: PatternContents;
     // shape and the mods
     adjustments: Record<string, Adjustment>;

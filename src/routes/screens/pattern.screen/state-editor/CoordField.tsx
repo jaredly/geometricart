@@ -3,6 +3,7 @@ import {Coord} from '../../../../types';
 import {NumberField} from './NumberField';
 import {BlurInput} from './BlurInput';
 import {closeEnough} from '../../../../rendering/epsilonToZero';
+import {PatternSize} from '../export-types';
 
 const numOrZero = (v: string) => {
     const n = Number(v);
@@ -15,19 +16,24 @@ export const CoordOrNumberField = ({
     onChange,
 }: {
     label: string;
-    value: Coord;
-    onChange: (next: Coord) => void;
+    value: PatternSize;
+    onChange: (next: PatternSize) => void;
 }) => {
     return (
         <BlurInput
-            value={closeEnough(value.x, value.y) ? value.x.toString() : `${value.x},${value.y}`}
+            className="w-12"
+            value={
+                value.type === 'uniform'
+                    ? value.size.toString()
+                    : `${value.coord.x},${value.coord.y}`
+            }
             onChange={(v) => {
                 if (v.includes(',')) {
                     const [x, y] = v.split(',');
-                    return onChange({x: numOrZero(x), y: numOrZero(y)});
+                    return onChange({type: 'coord', coord: {x: numOrZero(x), y: numOrZero(y)}});
                 }
                 const n = numOrZero(v);
-                return onChange({x: n, y: n});
+                return onChange({type: 'uniform', size: n});
             }}
         />
     );

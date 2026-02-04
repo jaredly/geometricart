@@ -118,17 +118,41 @@ const LoadAndMigratePattern = ({id}: {id: string}) => {
                         </p>
                         <a
                             className="btn"
-                            href={`http://localhost:5174/?src=http://localhost:5173/fs/exports/${id}.json`}
+                            onClick={(evt) => {
+                                evt.currentTarget.href = URL.createObjectURL(
+                                    new Blob([JSON.stringify(state.value.value)], {
+                                        type: 'application/json',
+                                    }),
+                                );
+                            }}
+                            download={`document-${id}.json`}
                         >
-                            Use Older Version of the Editor
+                            Download JSON
                         </a>
+                        {!id.startsWith(idbprefix) ? (
+                            <a
+                                className="btn"
+                                href={`http://localhost:5174/?src=http://localhost:5173/fs/exports/${id}.json`}
+                            >
+                                Use Older Version of the Editor
+                            </a>
+                        ) : null}
                         <button
                             className="btn"
                             onClick={() => {
+                                if (state.value.version === 'unknown') {
+                                    const migrated = makeForPattern(
+                                        state.value.pattern,
+                                        state.value.id,
+                                    );
+                                    savePattern(id, blankHistory(migrated)).then(() => {
+                                        location.reload();
+                                    });
+                                }
                                 // here we are
                             }}
                         >
-                            Migrate to latest (will lose some history)
+                            Migrate from {state.value.version} to latest (will lose some history)
                         </button>
                     </div>
                 </div>
@@ -139,25 +163,24 @@ const LoadAndMigratePattern = ({id}: {id: string}) => {
     return <LoadPattern state={state.value.value} id={id} />;
 };
 
+const savePattern = async (id: string, state: ExportHistory) => {
+    if (id.startsWith(idbprefix)) {
+        const lid = id.slice(idbprefix.length);
+        await db.transaction('readwrite', (tx) => {
+            tx.set('exports', lid, state);
+            tx.update('exportMeta', lid, (meta) => ({...meta, updated: Date.now()}));
+        });
+        return;
+    }
+    return fetch(`/fs/exports/${id}.json`, {
+        method: 'POST',
+        body: JSON.stringify(state, null, 2),
+        headers: {'Content-type': 'application/json'},
+    });
+};
+
 const LoadPattern = ({id, state}: {id: string; state: ExportHistory}) => {
-    const onSave = useCallback(
-        async (state: ExportHistory) => {
-            if (id.startsWith(idbprefix)) {
-                const lid = id.slice(idbprefix.length);
-                await db.transaction('readwrite', (tx) => {
-                    tx.set('exports', lid, state);
-                    tx.update('exportMeta', lid, (meta) => ({...meta, updated: Date.now()}));
-                });
-                return;
-            }
-            return fetch(`/fs/exports/${id}.json`, {
-                method: 'POST',
-                body: JSON.stringify(state, null, 2),
-                headers: {'Content-type': 'application/json'},
-            });
-        },
-        [id],
-    );
+    const onSave = useCallback(async (state: ExportHistory) => savePattern(id, state), [id]);
 
     const snapshotUrl = useMemo(
         (): SnapshotUrl =>

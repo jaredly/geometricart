@@ -51,7 +51,7 @@ export const multiplyShape = (value: State['shapes'][''], layers: State['layers'
         shape,
         bounds[2],
         bounds,
-        typeof size === 'number' ? simpleSize(shape, size) : size,
+        size.type === 'uniform' ? simpleSize(shape, size.size) : size.coord,
     );
     const transformedShapes = applyTilingTransformsG([value], ttt, transformBarePath);
 

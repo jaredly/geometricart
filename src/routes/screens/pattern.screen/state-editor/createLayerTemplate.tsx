@@ -54,7 +54,7 @@ export const createPattern = (id: string, hash: string, tiling: ThinTiling): Pat
     id,
     tiling: {id: hash, tiling},
     adjustments: {},
-    psize: {x: 1, y: 1},
+    psize: {type: 'uniform', size: 1},
     contents: {type: 'shapes', styles: {}},
     mods: [],
     disabled: false,

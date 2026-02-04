@@ -10,3 +10,8 @@ Data changes to make:
 - [ ] make a bunch of undefinedable stuff non-undefindable, like PatternContents' sort
   - partway done
 - [ ] pattern contents should be a list / orderable
+- [ ] crops with compound shapes
+- [ ] export cameras
+- [ ] ppu / upi
+- [ ] center/zoom(?)
+- [ ] pattern zoom
