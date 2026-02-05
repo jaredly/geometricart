@@ -218,8 +218,8 @@ export const StateEditor = ({value, worker, update, snapshotUrl}: StateEditorPro
                             shape={shape}
                             update={update.shapes[id]}
                             onCrop={() => {
-                                const cid = genid();
-                                update.crops[cid].add({id: cid, shape: id, mods: []});
+                                // const cid = genid();
+                                // update.crops[cid].add({id: cid, shape: id, mods: []});
                             }}
                             onDup={(pt) => {
                                 const id = genid();

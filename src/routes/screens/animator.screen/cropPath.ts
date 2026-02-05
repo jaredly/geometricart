@@ -134,6 +134,10 @@ export const segmentsCmds = (origin: Coord, segments: Segment[], open = false) =
     ];
 };
 
+export const pkPathWithBarePath = (barePath: BarePath) => {
+    return pkPathWithCmds(barePath.origin, barePath.segments, barePath.open);
+};
+
 export const pkPathWithCmds = (origin: Coord, segments: Segment[], open = false) => {
     const got = pk.Path.MakeFromCmds(segmentsCmds(origin, segments, open));
     if (!got) throw new Error(`unable to construct path`);

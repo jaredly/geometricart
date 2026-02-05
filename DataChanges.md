@@ -15,3 +15,8 @@ Data changes to make:
 - [ ] ppu / upi
 - [ ] center/zoom(?)
 - [ ] pattern zoom
+
+Mod lists get edited in an accordian dealio
+Shape combinations
+
+-> yeah shapenode ok looks fine

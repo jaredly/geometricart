@@ -97,6 +97,37 @@ const insetShape = (shape: Coord[], inset: number) => {
         .map((shape) => shape.map((s) => ({x: s.x / by, y: s.y / by})));
 };
 
+export const clipPkPath = (shape: PKPath, mod: CCrop, crop: PKPath) => {
+    if (mod.mode === 'rough') {
+        const [left, top, right, bottom] = shape.getBounds();
+        if (crop.contains((left + right) / 2, (top + bottom) / 2) === !!mod.hole) {
+            shape.reset();
+            return;
+        }
+        return;
+    } else if (mod.mode === 'half') {
+        const other = shape.copy();
+        other.op(crop, mod.hole ? pk.PathOp.Difference : pk.PathOp.Intersect);
+        other.simplify();
+        const size = pkPathToSegments(other)
+            .map(coordsFromBarePath)
+            .map(calcPolygonArea)
+            .reduce((a, b) => a + b, 0);
+        other.delete();
+        const area = pkPathToSegments(shape)
+            .map(coordsFromBarePath)
+            .reduce((a, b) => a + calcPolygonArea(b), 0);
+        if (size < area / 2 + epsilon) {
+            shape.reset();
+            return;
+        }
+        return;
+    } else {
+        shape.op(crop, mod.hole ? pk.PathOp.Difference : pk.PathOp.Intersect);
+        return;
+    }
+};
+
 const clipShape = (shape: {points: Coord[]; open: boolean}, mod: CCrop, crop: PKPath) => {
     if (mod.mode === 'rough') {
         const center = centroid(shape.points);
@@ -253,6 +284,46 @@ const intoCmds = (path: PKPath) => {
 //         shapes.map(({shape}) => pkPathFromCoords(shape)!),
 //     );
 // };
+
+export const applyModsToPkPath = (
+    cropCache: Ctx['cropCache'],
+    mods: CropsAndMatrices,
+    path: PKPath,
+) => {
+    mods.forEach((mod) => {
+        if (Array.isArray(mod)) {
+            mod.forEach(([[a, b, c], [d, e, f]]) => {
+                path.transform(a, b, c, d, e, f);
+            });
+            return;
+        }
+        switch (mod.type) {
+            case 'inset':
+                if (Math.abs(mod.v) <= 0.01) return;
+                insetPkPath(path, mod.v / 100);
+                return;
+            case 'stroke':
+                path.stroke({
+                    width: mod.width,
+                    cap: mod.round ? pk.StrokeCap.Round : pk.StrokeCap.Square,
+                    join: mod.round ? pk.StrokeJoin.Round : pk.StrokeJoin.Miter,
+                });
+                return;
+            case 'inner':
+                return;
+            case 'crop': {
+                const cached = cropCache.get(mod.id);
+                if (!cached) {
+                    console.log(`No crop cache for ${mod.id}`);
+                    return;
+                    // throw new Error(`No crop? ${mod.id} : ${[...cropCache.keys()]}`);
+                }
+                clipPkPath(path, mod, cached.path);
+                return;
+            }
+        }
+    });
+};
 
 export const modsToShapes = (
     cropCache: Ctx['cropCache'],

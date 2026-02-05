@@ -61,7 +61,17 @@ export const colorToRgb = (c: Color): {r: number; g: number; b: number} =>
 
 const rgbFromArr = (c: [number, number, number]) => ({r: c[0], g: c[1], b: c[2]});
 
-export type Crop = {id: string; shape: string; mods: PMods[]};
+export type Crop = {
+    id: string;
+    shape: ShapeNode;
+    // shape: string;
+    mods: PMods[];
+};
+
+export type ShapeNode =
+    | {type: 'shape'; path: BarePath; mods: PMods[]}
+    | {type: 'multiply'; shape: ShapeNode; multiply: string; mods: PMods[]}
+    | {type: 'op'; shapes: ShapeNode[]; mods: PMods[]; op: 'union' | 'intersection' | 'difference'};
 
 export type OrderItem = {id: string; order: number};
 export type Orderable<T extends OrderItem> = Record<string, T>;
