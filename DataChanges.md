@@ -7,7 +7,7 @@ Data changes to make:
   - not sure about this
 - [ ] `alternating` should be renamed to `group`? or like `autoGroup` or someething.
 - [ ] exports -> creations maybe
-- [ ] make a bunch of undefinedable stuff non-undefindable, like PatternContents' sort
+- [x] make a bunch of undefinedable stuff non-undefindable, like PatternContents' sort
   - partway done
 - [ ] pattern contents should be a list / orderable
 - [ ] crops with compound shapes

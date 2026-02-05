@@ -10,6 +10,7 @@ const numOrZero = (v: string) => {
     return Number.isFinite(n) ? n : 0;
 };
 
+// TODO: up/down arrwos plssss
 export const CoordOrNumberField = ({
     label,
     value,
