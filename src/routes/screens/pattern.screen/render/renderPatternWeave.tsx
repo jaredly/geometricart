@@ -32,8 +32,8 @@ export const renderPatternWeave = (
     const pointNames = Object.fromEntries(uniquePoints.map((p, i) => [coordKey(p), i]));
     const outer = outerBoundary(allSegments, byEndPoint, pointNames);
     const paths = pathsFromSegments(allSegments, byEndPoint, outer);
-    const fronts = Object.values(pattern.contents.styles).flatMap((m) =>
-        m.disabled || Array.isArray(m.kind) ? [] : Object.values(m.lines),
+    const fronts = Object.values(contents.styles).flatMap((m) =>
+        m.disabled ? [] : Object.values(m.lines),
     );
 
     const woven = weaveIntersections2(allSegments, paths);

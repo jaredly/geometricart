@@ -8,7 +8,7 @@ import {outerBoundary} from '../../../outerBoundary';
 import {pathsFromSegments} from '../../../pathsFromSegments';
 import {unique, joinAdjacentShapeSegments, edgesByEndpoint} from '../../../shapesFromSegments';
 import {Ctx, AnimCtx, a} from '../eval/evaluate';
-import {Pattern} from '../export-types';
+import {Pattern, PatternContents} from '../export-types';
 import {sortCoordPair, coordPairKey} from '../utils/adjustShapes';
 import {notNull} from '../utils/notNull';
 import {first, matchKind} from './renderPattern';
@@ -18,6 +18,7 @@ import {colorLines} from './colorLines';
 export function renderPatternLines(
     baseShapes: Coord[][],
     pattern: Pattern,
+    contents: PatternContents & {type: 'lines'},
     simple: {
         initialShapes: Coord[][];
         minSegLength: number;
@@ -39,7 +40,6 @@ export function renderPatternLines(
     ctx: Ctx,
     panim: AnimCtx,
 ) {
-    if (pattern.contents.type !== 'lines') return;
     const allSegments = unique(
         baseShapes
             .map(joinAdjacentShapeSegments)
@@ -56,20 +56,20 @@ export function renderPatternLines(
     const outer = outerBoundary(allSegments, byEndPoint, pointNames);
     const links = pathsFromSegments(allSegments, byEndPoint, outer);
     let allPaths = collectAllPaths(links, allSegments);
-    if (!pattern.contents.includeBorders) {
+    if (!contents.includeBorders) {
         allPaths = allPaths.filter((p) => p.pathId != null);
     }
 
     const maxPathId = allPaths.reduce((a, b) => Math.max(a, b.pathId ?? 0), 0);
     // ok so for each line, we need to maybe evaluate the style dealio?
-    const orderedStyles = Object.values(pattern.contents.styles).sort((a, b) => a.order - b.order);
+    const orderedStyles = Object.values(contents.styles).sort((a, b) => a.order - b.order);
 
     const colors = colorLines(allPaths, simple.bounds, simple.ttt, ctx.log);
     const maxColor = Math.max(...colors.filter(notNull));
     let pathsWithGroups = allPaths.map((path, i) => ({...path, groupId: colors[i]}));
 
-    if (pattern.contents.sort) {
-        const fn = a.value(panim, pattern.contents.sort);
+    if (contents.sort) {
+        const fn = a.value(panim, contents.sort);
         if (typeof fn !== 'function') {
             panim.warn(`"sort" should be a function.`);
         } else if (fn.length === 2) {

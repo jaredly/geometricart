@@ -1,4 +1,4 @@
-import {Adjustment, Color, Pattern} from '../export-types';
+import {Adjustment, Color, Orderable, OrderItem, Pattern} from '../export-types';
 import {CoordField, CoordOrNumberField} from './CoordField';
 import {NumberField} from './NumberField';
 import {PatternContentsEditor} from './PatternContentsEditor';
@@ -11,6 +11,9 @@ import {AnimInput} from './AnimInput';
 import {Updater} from '../../../../json-diff/Updater';
 import {SharedEditor} from './SharedEditor';
 import {EyeIcon, EyeInvisibleIcon} from '../../../../icons/Eyes';
+import {DragToReorderList, HandleProps} from './DragToReorderList';
+import {useMemo} from 'react';
+import {nextOrder, orderedItems} from './nextOrder';
 
 export const PatternEditor = ({
     value,
@@ -45,10 +48,12 @@ export const PatternEditor = ({
                 update={update.adjustments}
                 palette={palette}
             />
-            <PatternContentsEditor
-                palette={palette}
+            <OrderableEditor
                 value={value.contents}
                 update={update.contents}
+                Inner={({value, update}) => (
+                    <PatternContentsEditor palette={palette} value={value} update={update} />
+                )}
             />
             <SharedEditor shared={value.shared} onChange={update.shared} />
         </div>
@@ -194,5 +199,36 @@ const AdjustmentsEditor = ({
                 />
             ))}
         </details>
+    );
+};
+
+export const OrderableEditor = <T extends OrderItem>({
+    value,
+    update,
+    Inner,
+}: {
+    value: Orderable<T>;
+    update: Updater<Orderable<T>>;
+    Inner: React.ComponentType<{value: T; update: Updater<T>; handleProps: HandleProps}>;
+}) => {
+    const entries = useMemo(() => orderedItems(value), [value]);
+    return (
+        <DragToReorderList
+            items={entries.map((item, i) => ({
+                key: item.id,
+                render: (handleProps) => (
+                    <Inner
+                        key={item.id + ':' + i}
+                        value={item}
+                        update={update[item.id]}
+                        handleProps={handleProps}
+                    />
+                ),
+            }))}
+            onReorder={(prev, next) => {
+                const id = entries[prev].id;
+                (update[id] as Updater<OrderItem>).order(nextOrder(prev, next, entries));
+            }}
+        />
     );
 };

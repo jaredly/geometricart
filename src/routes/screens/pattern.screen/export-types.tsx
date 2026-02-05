@@ -185,7 +185,7 @@ export type Pattern = {
     tiling: {id: string; tiling: ThinTiling};
 
     psize: PatternSize;
-    contents: PatternContents;
+    contents: Orderable<PatternContents>;
     // shape and the mods
     adjustments: Record<string, Adjustment>;
     mods: PMods[];
@@ -207,10 +207,16 @@ export type OValue<T> = {id: string; order: number; value: T; disabled: boolean}
 export type PatternContents =
     | {
           type: 'shapes';
+          id: string;
+          order: number;
+          disabled?: boolean;
           styles: Orderable<ShapeStyle<ShapeKind>>;
       }
     | {
           type: 'weave';
+          id: string;
+          order: number;
+          disabled?: boolean;
           flip?: number;
           orderings: Record<string, number[]>;
           styles: Orderable<ShapeStyle<BaseKind & {under?: boolean}>>;
@@ -218,12 +224,18 @@ export type PatternContents =
       }
     | {
           type: 'lines';
+          id: string;
+          order: number;
+          disabled?: boolean;
           styles: Orderable<ShapeStyle<BaseKind>>;
           includeBorders?: boolean;
           sort: AnimatableValue;
       }
     | {
           type: 'layers';
+          id: string;
+          order: number;
+          disabled?: boolean;
           origin: AnimatableCoord;
           reverse: AnimatableBoolean;
           styles: Orderable<ShapeStyle<BaseKind>>;

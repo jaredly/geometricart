@@ -34,7 +34,7 @@ export const PatternContentsEditor = ({
                     onChange={(evt) => {
                         const nextType = evt.target.value as PatternContents['type'];
                         if (nextType === value.type) return;
-                        update(swapType(nextType));
+                        update(swapType(nextType, value.id, value.order));
                     }}
                 >
                     <option value="shapes">Shapes</option>
@@ -131,11 +131,17 @@ export const PatternContentsEditor = ({
     );
 };
 
-const swapType = (nextType: PatternContents['type']): PatternContents => {
+const swapType = (
+    nextType: PatternContents['type'],
+    id: string,
+    order: number,
+): PatternContents => {
     switch (nextType) {
         case 'shapes':
             return {
                 type: 'shapes',
+                id,
+                order,
                 styles: {
                     style1: {
                         id: 'style1',
@@ -159,6 +165,8 @@ const swapType = (nextType: PatternContents['type']): PatternContents => {
         case 'weave':
             return {
                 type: 'weave',
+                id,
+                order,
                 orderings: {},
                 shared: {},
                 styles: {
@@ -190,6 +198,8 @@ const swapType = (nextType: PatternContents['type']): PatternContents => {
         case 'lines':
             return {
                 type: 'lines',
+                id,
+                order,
                 sort: '',
                 styles: {
                     style1: {
@@ -214,6 +224,8 @@ const swapType = (nextType: PatternContents['type']): PatternContents => {
         case 'layers':
             return {
                 type: 'layers',
+                id,
+                order,
                 origin: '0,0',
                 reverse: false,
                 shared: {},
