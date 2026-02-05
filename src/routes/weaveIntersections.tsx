@@ -273,7 +273,40 @@ export const weaveIntersections2 = (segs: [Coord, Coord][], segLinks: SegLink[])
         }));
 
     type Woven = {line: Coord[]; pathId?: number; masks: {line: Coord[]; pathId?: number}[]};
+
+    // take a path and follow it
+    const used = new Set<string>();
+
+    const follow = (key: string, next: string) => {
+        const points: Coord[] = [];
+        const masks: Woven['masks'] = [];
+        while (true) {
+            const int = intersections[next];
+            const other = int.other;
+            points.push(int.pos);
+            if (other && intersections[other].elevation! > int.elevation!) {
+                masks.push(...intMasks(other));
+                used.add(next);
+                break;
+            } else if (!used.has(next) && int.exits.length === 2) {
+                used.add(next);
+                const [a, b] = int.exits.map((seg) =>
+                    segInts[seg][0] === int.key ? segInts[seg][1] : segInts[seg][0],
+                );
+                const nnext = a === key ? b : a;
+                key = next;
+                next = nnext;
+            } else {
+                break;
+            }
+        }
+        return {points, masks};
+    };
+
     return Object.values(intersections).flatMap((int, i): Woven[] => {
+        if (used.has(int.key)) return [];
+
+        used.add(int.key);
         const el = int.elevation!;
 
         const other =
@@ -281,21 +314,32 @@ export const weaveIntersections2 = (segs: [Coord, Coord][], segLinks: SegLink[])
 
         // lines going out of here
         return intLines(int.key).map(({left, right}) => {
-            const lo = intersections[left].other;
-            const ro = intersections[right].other;
-            const ell = lo && intersections[lo].elevation! > intersections[left].elevation!;
-            const elr = ro && intersections[ro].elevation! > intersections[right].elevation!;
+            const ll = follow(int.key, left);
+            const lr = follow(int.key, right);
             return {
-                line: [
-                    midPoint(intersections[left].pos, int.pos),
-                    int.pos,
-                    midPoint(intersections[right].pos, int.pos),
-                ],
+                line: [...ll.points.reverse(), int.pos, ...lr.points],
                 pathId: int.pathId,
                 // Sooooo these masks might need to /follow/ the line until we get to
                 // an int that is at or below the current el. right?
-                masks: [...other, ...(ell ? intMasks(lo) : []), ...(elr ? intMasks(ro) : [])],
+                masks: [...other, ...ll.masks, ...lr.masks],
             };
+
+            // This is the "nofollow" version. Keeping this around just for a minute in case
+            // const lo = intersections[left].other;
+            // const ro = intersections[right].other;
+            // const ell = lo && intersections[lo].elevation! > intersections[left].elevation!;
+            // const elr = ro && intersections[ro].elevation! > intersections[right].elevation!;
+            // return {
+            //     line: [
+            //         midPoint(intersections[left].pos, int.pos),
+            //         int.pos,
+            //         midPoint(intersections[right].pos, int.pos),
+            //     ],
+            //     pathId: int.pathId,
+            //     // Sooooo these masks might need to /follow/ the line until we get to
+            //     // an int that is at or below the current el. right?
+            //     masks: [...other, ...(ell ? intMasks(lo) : []), ...(elr ? intMasks(ro) : [])],
+            // };
         });
     });
 };
