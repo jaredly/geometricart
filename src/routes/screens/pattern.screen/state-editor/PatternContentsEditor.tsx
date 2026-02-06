@@ -8,16 +8,17 @@ import {Updater} from '../../../../json-diff/Updater';
 import {BaseKindEditor, ShapeKindEditor} from './BaseKindEditor';
 import {AnimInput, AnimValueInput} from './AnimInput';
 import {SharedEditor} from './SharedEditor';
+import {useExportState} from '../ExportHistory';
 
 export const PatternContentsEditor = ({
     value,
-    palette,
     update,
 }: {
-    palette: Color[];
     value: PatternContents;
     update: Updater<PatternContents>;
 }) => {
+    const state = useExportState();
+    const palette = state.use((s) => s.styleConfig.palette);
     // const [type, setType] = useState<PatternContents['type']>(value.type);
     // useEffect(() => {
     //     setType(value.type);

@@ -51,9 +51,7 @@ export const PatternEditor = ({
             <OrderableEditor
                 value={value.contents}
                 update={update.contents}
-                Inner={({value, update}) => (
-                    <PatternContentsEditor palette={palette} value={value} update={update} />
-                )}
+                Inner={PatternContentsEditor}
             />
             <SharedEditor shared={value.shared} onChange={update.shared} />
         </div>
