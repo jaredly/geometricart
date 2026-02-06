@@ -8,7 +8,7 @@ import {useExportState} from './ExportHistory';
 import {WorkerSend} from './render/render-client';
 import {runPNGExport, runSVGExport} from './render/runPNGExport';
 import {saveAnnotation, SnapshotUrl} from './state-editor/saveAnnotation';
-import {State} from './types/state-type';
+import {ExportConfig2d, State} from './types/state-type';
 
 /*
 ExportSettings:
@@ -124,7 +124,12 @@ const ExportSettingsForm = ({
             <button
                 className="btn btn-accent ml-4"
                 onClick={() => {
-                    worker({type: 'frame', state, t}, (res) => {
+                    const config: ExportConfig2d = {
+                        box,
+                        scale: settings.size / box.width,
+                        type: '2d',
+                    };
+                    worker({type: 'frame', state, t, config}, (res) => {
                         if (res.type !== 'frame') {
                             return;
                         }

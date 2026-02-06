@@ -5,7 +5,7 @@ import {shapeD} from '../../shapeD';
 import {colorToString} from './utils/colors';
 import {RenderItem, RenderShadow} from './eval/evaluate';
 import {Box, Color} from './export-types';
-import {State} from './types/state-type';
+import {ExportConfig2d, State} from './types/state-type';
 import {renderItems} from './render/renderItems';
 import {percentToWorld, worldToPercent, svgCoord, ZoomProps} from './hooks/useSVGZoom';
 import {coordKey} from '../../../rendering/coordKey';
@@ -26,7 +26,7 @@ import {getConstrainedSurface} from './render/recordVideo';
 
 export const Canvas = ({
     items,
-    size,
+    config,
     setMouse,
     zoomProps: {innerRef, box},
     bg,
@@ -36,7 +36,7 @@ export const Canvas = ({
     bg: Color | null;
     state: State;
     mouse: Coord | null;
-    size: number;
+    config: ExportConfig2d;
     zoomProps: ZoomProps;
     setMouse: (m: Coord | null) => void;
     byKey: Record<string, string[]>;
@@ -67,9 +67,13 @@ export const Canvas = ({
                     innerRef.current.tick();
                 }
             }}
-            style={{background: 'black', width: size, height: size}}
-            width={size * 2}
-            height={size * 2}
+            style={{
+                background: 'black',
+                width: config.box.width * config.scale,
+                height: config.box.height * config.scale,
+            }}
+            width={config.box.width * config.scale * 2}
+            height={config.box.width * config.scale * 2}
             onMouseLeave={() => setMouse(null)}
             onMouseMove={(evt) => {
                 const cbox = evt.currentTarget.getBoundingClientRect();
@@ -83,7 +87,7 @@ export const Canvas = ({
 
 export const SVGCanvas = ({
     items,
-    size,
+    config,
     zoomProps: {box, innerRef},
     state,
     setMouse,
@@ -97,7 +101,7 @@ export const SVGCanvas = ({
     keyPoints: ([Coord, Coord] | Coord)[];
     bg: Color | null;
     items: RenderItem[];
-    size: number;
+    config: ExportConfig2d;
     zoomProps: ZoomProps;
     setMouse: (m: Coord | null) => void;
     byKey: Record<string, string[]>;
@@ -153,7 +157,11 @@ export const SVGCanvas = ({
                     innerRef.current.tick();
                 }
             }}
-            style={{background: bg ? colorToString(bg) : undefined, width: size, height: size}}
+            style={{
+                background: bg ? colorToString(bg) : undefined,
+                width: config.box.width * config.scale,
+                height: config.box.height * config.scale,
+            }}
             onMouseLeave={() => setMouse(null)}
             onMouseMove={(evt) => setMouse(svgCoord(evt))}
         >

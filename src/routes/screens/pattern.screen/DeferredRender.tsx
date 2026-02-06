@@ -3,7 +3,7 @@ import {Coord} from '../../../types';
 import {PendingState, PendingStateUpdate, useEditState, usePendingState} from './utils/editState';
 import {RenderItem} from './eval/evaluate';
 import {Color} from './export-types';
-import {State} from './types/state-type';
+import {ExportConfig2d, State} from './types/state-type';
 import {WorkerSend} from './render/render-client';
 import {MessageResponse, MessageToWorker} from './render/render-worker';
 import {renderShape} from './render/renderShape';
@@ -30,11 +30,11 @@ export const DeferredRender = ({
     state,
     t,
     zoomProps,
-    size,
+    config,
     onFPS,
 }: {
     setWarnings(v: string[]): void;
-    size: number;
+    config: ExportConfig2d;
     t: number;
     state: State;
     worker: WorkerSend;
@@ -57,7 +57,7 @@ export const DeferredRender = ({
     const bouncy = useRef<boolean | MessageToWorker>(false);
 
     useEffect(() => {
-        const msg: MessageToWorker = {type: 'frame', state, t};
+        const msg: MessageToWorker = {type: 'frame', state, t, config};
         if (bouncy.current) {
             bouncy.current = msg;
             return;
@@ -81,7 +81,7 @@ export const DeferredRender = ({
 
         bouncy.current = true;
         worker(msg, got);
-    }, [state, t, worker, setWarnings, onFPS]);
+    }, [state, t, worker, setWarnings, onFPS, config]);
 
     const pendingState = usePendingState();
     const pending = pendingState.use((v) => v.pending);
@@ -129,7 +129,7 @@ export const DeferredRender = ({
                 keyPoints={remoteData.keyPoints}
                 setMouse={setMouse}
                 items={both}
-                size={size}
+                config={config}
                 byKey={remoteData.byKey}
                 bg={remoteData.bg}
             />
@@ -143,7 +143,7 @@ export const DeferredRender = ({
             mouse={mouse}
             setMouse={setMouse}
             items={both}
-            size={size}
+            config={config}
             byKey={remoteData.byKey}
             bg={remoteData.bg}
             t={t}

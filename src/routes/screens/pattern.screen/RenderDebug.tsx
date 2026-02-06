@@ -251,7 +251,7 @@ export const RenderDebug = ({state, update}: {state: State; update: Updater<Stat
                         <button
                             className="btn btn-square px-2 py-1 bg-base-100"
                             onClick={() => {
-                                update.view.box(box);
+                                // update.view.box(box);
                             }}
                         >
                             <AddIcon />

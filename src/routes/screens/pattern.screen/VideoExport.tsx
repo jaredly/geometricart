@@ -1,7 +1,7 @@
 import {useState} from 'react';
 import {Ctx} from './eval/evaluate';
 import {Box} from './export-types';
-import {State} from './types/state-type';
+import {ExportConfig2d, State} from './types/state-type';
 import {recordVideo} from './render/recordVideo';
 import {WorkerSend} from './render/render-client';
 import {SpinnerEarring} from '../../../icons/Icon';
@@ -36,7 +36,12 @@ export function VideoExport({
                     onClick={() => {
                         setStatus(0);
                         const start = Date.now();
-                        worker({type: 'video', state, size, box, duration}, (res) => {
+                        const config: ExportConfig2d = {
+                            box,
+                            scale: size / box.width,
+                            type: '2d',
+                        };
+                        worker({type: 'video', state, config, duration}, (res) => {
                             if (res.type === 'status') {
                                 setStatus(res.progress);
                             } else if (res.type === 'video') {

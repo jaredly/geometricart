@@ -34,14 +34,16 @@ export const getConstrainedSurface = (node: HTMLCanvasElement | OffscreenCanvas)
 
 export const recordVideo = async (
     state: State,
-    size: number,
+    scale: number,
     box: Box,
     duration: number,
     onStatus: (progress: number) => void,
     cropCache: Ctx['cropCache'],
     frameRate = 24,
 ) => {
-    const canvas = new OffscreenCanvas(size * 2, size * 2);
+    const width = box.width * scale;
+    const height = box.height * scale;
+    const canvas = new OffscreenCanvas(width * 2, height * 2);
     const totalFrames = frameRate * duration;
 
     const animCache = new Map();

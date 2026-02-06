@@ -3,7 +3,7 @@ import {PKPath} from '../../../pk';
 import {cacheCrops} from '../utils/cacheCrops';
 import {RenderItem} from '../eval/evaluate';
 import {Box, Color, Crop} from '../export-types';
-import {State} from '../types/state-type';
+import {ExportConfig, State} from '../types/state-type';
 import {recordVideo} from './recordVideo';
 import {svgItems} from './svgItems';
 import {runPNGExport} from './runPNGExport';
@@ -12,18 +12,19 @@ export type MessageToWorker =
     | {
           type: 'frame';
           state: State;
+          config: ExportConfig;
           t: number;
       }
-    | {type: 'snapshot'; state: State}
+    | {type: 'snapshot'; state: State; config: ExportConfig}
     | {
           type: 'video';
-          size: number;
+          config: ExportConfig;
           duration: number;
-          box: Box;
           state: State;
       }
     | {
           type: 'animate';
+          config: ExportConfig;
           canvas: OffscreenCanvas;
           state: State;
       };
@@ -58,7 +59,8 @@ self.onmessage = (evt: MessageEvent<MessageToWorker & {id: string}>) => {
     try {
         switch (evt.data.type) {
             case 'frame': {
-                const {state, t} = evt.data;
+                const {state, t, config} = evt.data;
+                if (config.type === '3d') throw new Error('no 3d yet');
                 cacheCrops(state.crops, state.shapes, cropCache, t, animCache);
 
                 const {items, bg, byKey, warnings, keyPoints} = svgItems(
@@ -79,10 +81,12 @@ self.onmessage = (evt: MessageEvent<MessageToWorker & {id: string}>) => {
                 });
             }
             case 'video': {
+                const {config} = evt.data;
+                if (config.type === '3d') throw new Error('no 3d yet');
                 recordVideo(
                     evt.data.state,
-                    evt.data.size,
-                    evt.data.box,
+                    config.scale,
+                    config.box,
                     evt.data.duration,
                     (progress) => post({type: 'status', progress, id: evt.data.id}),
                     cropCache,
@@ -106,7 +110,8 @@ self.onmessage = (evt: MessageEvent<MessageToWorker & {id: string}>) => {
                 return;
             }
             case 'snapshot': {
-                const {state} = evt.data;
+                const {state, config} = evt.data;
+                if (config.type === '3d') throw new Error('no 3d yet');
                 const allAccessed = cacheCrops(state.crops, state.shapes, cropCache, 0, animCache);
 
                 const {items, bg, byKey, warnings, keyPoints} = svgItems(
@@ -121,9 +126,9 @@ self.onmessage = (evt: MessageEvent<MessageToWorker & {id: string}>) => {
                 console.log('all items accessed', [...allAccessed.keys()]);
 
                 const blob = video
-                    ? recordVideo(state, 200, state.view.box, 1, () => {}, cropCache, 6)
+                    ? recordVideo(state, config.scale, config.box, 1, () => {}, cropCache, 6)
                     : new Promise<Blob>((res) => {
-                          res(runPNGExport(200, state.view.box, items, bg));
+                          res(runPNGExport(config.scale, config.box, items, bg));
                       });
 
                 blob.then(

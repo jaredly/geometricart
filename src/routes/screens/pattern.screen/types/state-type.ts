@@ -1,9 +1,27 @@
 import {History} from '../../../../json-diff/history';
-import {BarePath} from '../../../../types';
+import {BarePath, Coord} from '../../../../types';
 import {Layer, Crop, AnimatableColor, Box, AnimatableNumber, Color} from '../export-types';
 import {ExportAnnotation} from '../ExportHistory';
 
 export type ExportHistory = History<State, ExportAnnotation>;
+
+type Coord3 = {x: number; y: number; z: number};
+
+export type ExportConfig2d = {
+    type: '2d';
+    box: Box;
+    scale: number;
+};
+
+export type ExportConfig =
+    | ExportConfig2d
+    | {
+          type: '3d';
+          location: Coord3;
+          lookingAt: Coord3;
+          size: Coord;
+          scale: number;
+      };
 
 export type State = {
     version: 1;
@@ -13,10 +31,11 @@ export type State = {
     layers: Record<string, Layer>;
     crops: Record<string, Crop>;
     view: {
-        ppi: number;
+        ppu: number;
         background?: AnimatableColor;
-        box: Box;
+        center: Coord;
     };
+    exports: Record<string, {id: string; name?: string; config: ExportConfig}>;
     styleConfig: {
         seed: AnimatableNumber;
         palette: Color[];

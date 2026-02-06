@@ -76,7 +76,7 @@ export const RenderExport = ({
                         <button
                             className="btn btn-square px-2 py-1 bg-base-100"
                             onClick={() => {
-                                onChange.view.box(box);
+                                // onChange.view.box(box);
                             }}
                         >
                             <AddIcon />

@@ -243,8 +243,8 @@ export const StateEditor = ({value, worker, update, snapshotUrl}: StateEditorPro
                     <div className="flex gap-4">
                         <NumberField
                             label="PPI"
-                            value={value.view.ppi}
-                            onChange={update.view.ppi}
+                            value={value.view.ppu}
+                            onChange={update.view.ppu}
                         />
                         <AnimColor
                             label="Background"
@@ -253,7 +253,7 @@ export const StateEditor = ({value, worker, update, snapshotUrl}: StateEditorPro
                             onChange={update.view.background}
                         />
                     </div>
-                    <BoxField label="View Box" value={value.view.box} update={update.view.box} />
+                    {/*<BoxField label="View Box" value={value.view.box} update={update.view.box} />*/}
                 </div>
             </Section>
 

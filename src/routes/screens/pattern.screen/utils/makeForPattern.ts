@@ -70,6 +70,6 @@ export const makeForPattern = (tiling: ThinTiling, hash: string): State => {
             palette: colors.map((color) => parseColor(color)!),
             timeline: {ts: [], lanes: []},
         },
-        view: {box: sizeBox(3), ppi: 1},
+        view: {center: {x: 0, y: 0}, ppu: 100},
     };
 };
