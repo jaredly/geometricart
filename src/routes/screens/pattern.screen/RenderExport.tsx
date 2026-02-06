@@ -40,8 +40,8 @@ export const RenderExport = ({
     // well this is exciting
     const cropCache = useCropCache(state, t, animCache);
 
-    const {zoomProps, box, reset: resetZoom} = useElementZoom(state.view.box);
     const size = 500;
+    const {zoomProps, box, reset: resetZoom} = useElementZoom(state.view.box);
 
     const statusRef = useRef<HTMLDivElement>(null);
 

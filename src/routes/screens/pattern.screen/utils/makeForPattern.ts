@@ -64,6 +64,16 @@ export const makeForPattern = (tiling: ThinTiling, hash: string): State => {
                 shared: {},
             },
         },
+        exports: {
+            one: {
+                id: 'one',
+                config: {
+                    type: '2d',
+                    box: {x: -1, y: -1, width: 2, height: 2},
+                    scale: 200,
+                },
+            },
+        },
         crops: {},
         styleConfig: {
             seed: 0,
