@@ -237,25 +237,6 @@ export const StateEditor = ({value, update}: StateEditorProps) => {
                 </div>
             </Section>
 
-            <Section title="View">
-                <div className="flex flex-col gap-4">
-                    <div className="flex gap-4">
-                        <NumberField
-                            label="PPI"
-                            value={value.view.ppu}
-                            onChange={update.view.ppu.$replace}
-                        />
-                        <AnimColor
-                            label="Background"
-                            value={value.view.background}
-                            palette={value.styleConfig.palette}
-                            onChange={update.view.background.$replace}
-                        />
-                    </div>
-                    {/*<BoxField label="View Box" value={value.view.box} update={update.view.box} />*/}
-                </div>
-            </Section>
-
             <Section
                 title="Crops"
                 // actions={
@@ -313,16 +294,6 @@ export const StateEditor = ({value, update}: StateEditorProps) => {
                         </div>
                     ))}
                 </div>
-            </Section>
-            <Section title="Timelines">
-                <TimelineEditor
-                    timeline={value.styleConfig.timeline}
-                    onChange={update.styleConfig.timeline.$replace}
-                />
-            </Section>
-            <Section title="History & Snapshots">
-                <SnapshotAnnotations />
-                <HistoryView />
             </Section>
         </div>
     );

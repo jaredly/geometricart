@@ -9,6 +9,8 @@ import {AccordionSidebar} from './AccordionSidebar';
 import {MoveBar} from './MoveBar';
 import {StyleConfig} from './StyleConfig';
 import {HistoryAndSnapshots} from './HistoryAndSnapshots';
+import {LayerEditor} from './LayerEditor';
+import {RoundPlus} from '../../../../icons/Icon';
 
 export const Sidebar = () => {
     const sctx = useExportState();
@@ -27,6 +29,23 @@ export const Sidebar = () => {
                 title: 'State',
                 body: <StateEditor value={state} update={sctx.$} />,
                 key: 'state',
+            },
+            {
+                title: (
+                    <div className="flex justify-between items-center">
+                        Layers
+                        <div
+                            onClick={(evt) => {
+                                evt.stopPropagation();
+                            }}
+                            className="p-2 hover:bg-amber-400 hover:text-amber-950 rounded-4xl transition-colors"
+                        >
+                            <RoundPlus />
+                        </div>
+                    </div>
+                ),
+                body: <LayerEditor />,
+                key: 'layer',
             },
             {
                 title: 'Style Config',

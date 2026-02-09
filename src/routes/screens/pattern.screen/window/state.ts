@@ -1,5 +1,5 @@
-import React, {useEffect, useRef, useState} from 'react';
-import {makeContext} from '../../../../json-diff/react';
+import React, {useCallback, useEffect, useRef, useState} from 'react';
+import {makeContext, useValue} from '../../../../json-diff/react';
 import typia from 'typia';
 import {useLocalStorage} from '../../../../vest/useLocalStorage';
 
@@ -42,6 +42,16 @@ export const useSafeLocalStorage = <T>(key: string, initial: T, is: (v: unknown)
 };
 
 export const [ProvideWindowState, useWindowState] = makeContext<WindowState>('type');
+
+export const useExpanded = (id: string) => {
+    const v = useWindowState();
+    const expanded = useValue(v.$.sectionsExpanded[id]);
+    const setExpanded = useCallback(
+        (expanded: boolean) => v.$.sectionsExpanded[id].$replace(expanded),
+        [id, v],
+    );
+    return [expanded, setExpanded] as const;
+};
 
 export const useResettingState = <T>(initial: T) => {
     const [value, setValue] = useState(initial);

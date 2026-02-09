@@ -1,6 +1,14 @@
 import {History} from '../../../../json-diff/history';
 import {BarePath, Coord} from '../../../../types';
-import {Layer, Crop, AnimatableColor, Box, AnimatableNumber, Color} from '../export-types';
+import {
+    Layer,
+    Crop,
+    AnimatableColor,
+    Box,
+    AnimatableNumber,
+    Color,
+    Orderable,
+} from '../export-types';
 import {ExportAnnotation} from '../ExportHistory';
 
 export type ExportHistory = History<State, ExportAnnotation>;
@@ -28,7 +36,7 @@ export type State = {
     // multiply = a pattern id in a layer.
     // that's used to determine the dooblydoo.
     shapes: Record<string, BarePath & {multiply?: string}>;
-    layers: Record<string, Layer>;
+    layers: Orderable<Layer>;
     crops: Record<string, Crop>;
     view: {
         ppu: number;

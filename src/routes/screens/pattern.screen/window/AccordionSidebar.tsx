@@ -14,16 +14,14 @@ export const AccordionSidebar = ({
         if (expanded[k]) everExpanded[k] = true;
     });
     return (
-        <div className="flex flex-col items-stretch flex-1 min-w-0 min-h-0 overflow-auto">
+        <div className="flex flex-col items-stretch flex-1 min-w-0 min-h-0 overflow-auto border-t border-amber-600 ">
             {items.map((item) => (
                 <div key={item.key} className="contents">
                     <div
                         onClick={() => setExpanded(item.key, !expanded[item.key])}
                         className={
-                            'border-b border-amber-600 transition-colors px-4 py-2 cursor-pointer' +
-                            (expanded[item.key]
-                                ? ' bg-amber-950 hover:bg-amber-900'
-                                : ' hover:bg-slate-700')
+                            'border-b border-l border-r border-amber-600 transition-colors px-4 py-2 cursor-pointer' +
+                            ' bg-amber-950 hover:bg-amber-900'
                         }
                     >
                         {item.title}

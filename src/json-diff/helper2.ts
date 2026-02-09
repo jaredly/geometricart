@@ -7,6 +7,19 @@ export type PathSegment =
     | {type: 'tag'; key: string; value: string}
     | {type: 'single'; isSingle: boolean};
 
+export const pathToString = (path: PathSegment[]) =>
+    path
+        .map((p) =>
+            p.type === 'key'
+                ? p.key
+                : p.type === 'tag'
+                  ? `[${p.key}=${p.value}]`
+                  : p.isSingle
+                    ? '[]'
+                    : '[..]',
+        )
+        .join('/');
+
 type ReplaceAndTestMethodsA<Value, Tag extends PropertyKey, R, Extra> = {
     $replace(value: Value, when?: ApplyTiming): R;
     $update(opMaker: OpMaker<Value, Tag, Extra>, when?: ApplyTiming): R;
@@ -184,7 +197,11 @@ export function diffBuilderApply<T, Extra, Tag extends string = 'type', R = void
                     };
                 }
 
-                if (prop === 'valueOf' || prop === 'toString') {
+                if (prop === 'toString') {
+                    return () => pathToString(path);
+                }
+
+                if (prop === 'valueOf') {
                     // weird react thing
                     return null;
                 }

@@ -79,6 +79,7 @@ export type Orderable<T extends OrderItem> = Record<string, T>;
 export type Layer = {
     id: string;
     order: number;
+    name?: string;
 
     opacity: AnimatableNumber;
     rootGroup: string;

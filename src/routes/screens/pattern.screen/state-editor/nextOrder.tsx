@@ -14,6 +14,11 @@ export const nextOrder = (prev: number, next: number, entries: {order: number}[]
 export const maxOrder = <T extends OrderItem>(t: Orderable<T>) =>
     Object.values(t).reduce((a, b) => Math.max(a, b.order), 0);
 
+export const orderedIds = (items: Record<string, number>) =>
+    Object.entries(items)
+        .sort(([, a], [, b]) => a - b)
+        .map((a) => a[0]);
+
 export const orderedItems = <T extends OrderItem>(t: Orderable<T>) =>
     Object.entries(t)
         .sort(([, a], [, b]) => a.order - b.order)
