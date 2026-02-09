@@ -34,11 +34,13 @@ type HistoryNode<T, An> = {
     children: string[];
 };
 
+export type Annotations<An> = Record<string, Record<string, An>>;
+
 export type History<T, An> = {
     version: 2;
     initial: T;
     nodes: Record<string, HistoryNode<T, An>>;
-    annotations: Record<string, Record<string, An>>;
+    annotations: Annotations<An>;
     root: string;
     tip: string;
     current: T;

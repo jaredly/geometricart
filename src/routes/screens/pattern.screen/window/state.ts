@@ -1,5 +1,5 @@
 import {useEffect, useRef, useState} from 'react';
-import {makeContext} from '../../../../json-diff/react';
+import {makeContext} from '../../../../json-diff/react2';
 
 export type WindowState = {
     rightBarSize: number;
