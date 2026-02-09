@@ -1,7 +1,15 @@
 # View n stuff
 
 - ~bbox~ -> center & ppu
+  - .... so it's done now I guess?
+  - some things are still disabled
 - annnnnd export
+  -> what elseeeee
+  -> ok but I need the zoomiese to be in terms of center/ppu
+
+Make a `persistedUIState` thing that saves to localstorage and
+doesn't do any history. it saves the width of the sidebar,
+and expanded-status of the accordian items
 
 #
 

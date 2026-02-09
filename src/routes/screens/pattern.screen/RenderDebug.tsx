@@ -5,7 +5,7 @@ import {push} from '../../../rendering/getMirrorTransforms';
 import {BarePath, Coord} from '../../../types';
 import {AnimCtx, RenderItem} from './eval/evaluate';
 import {colorToRgb} from './export-types';
-import {State} from './types/state-type';
+import {ExportConfig2d, State} from './types/state-type';
 import {LogItem, LogItems, RenderLog} from './utils/resolveMods';
 import {svgItems} from './render/svgItems';
 import {SVGCanvas} from './SVGCanvas';
@@ -17,6 +17,7 @@ import {Updater} from '../../../json-diff/Updater';
 import {ShowRenderLog} from './ShowRenderLog';
 import {useLocalStorage} from '../../../vest/useLocalStorage';
 import {useLocation} from 'react-router';
+import {makeBox} from './makeBox';
 
 const allItems = (log: RenderLog): LogItem[] => {
     if (log.type === 'items') return log.items.flatMap((l) => l.item);
@@ -191,9 +192,14 @@ export const RenderDebug = ({state, update}: {state: State; update: Updater<Stat
         [state, cropCache, animCache, t],
     );
 
-    const {zoomProps, box, reset: resetZoom} = useElementZoom(state.view.box);
+    const vbox = useMemo(() => makeBox(state.view, 500, 500), [state.view]);
+
+    const {zoomProps, box, reset: resetZoom} = useElementZoom(vbox);
     const [mouse, setMouse] = useState(null as null | Coord);
-    const size = 500;
+    const config = useMemo(
+        () => ({scale: state.view.ppu, box, type: '2d' as const}),
+        [state.view.ppu, box],
+    );
 
     const [detectOverlaps, setDetectOverlaps] = useState(false);
 
@@ -236,7 +242,7 @@ export const RenderDebug = ({state, update}: {state: State; update: Updater<Stat
                     keyPoints={keyPoints}
                     setMouse={setMouse}
                     items={both}
-                    size={size}
+                    size={500}
                     byKey={byKey}
                     bg={bg}
                 />

@@ -32,12 +32,14 @@ export const DeferredRender = ({
     zoomProps,
     config,
     onFPS,
+    size,
 }: {
     setWarnings(v: string[]): void;
     config: ExportConfig2d;
     t: number;
     state: State;
     worker: WorkerSend;
+    size: number;
     zoomProps: ZoomProps;
     onFPS: (v: number) => void;
 }) => {
@@ -129,7 +131,7 @@ export const DeferredRender = ({
                 keyPoints={remoteData.keyPoints}
                 setMouse={setMouse}
                 items={both}
-                config={config}
+                size={size}
                 byKey={remoteData.byKey}
                 bg={remoteData.bg}
             />
@@ -143,7 +145,7 @@ export const DeferredRender = ({
             mouse={mouse}
             setMouse={setMouse}
             items={both}
-            config={config}
+            size={size}
             byKey={remoteData.byKey}
             bg={remoteData.bg}
             t={t}

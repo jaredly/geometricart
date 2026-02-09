@@ -197,7 +197,7 @@ const LoadPattern = ({id, state}: {id: string; state: ExportHistory}) => {
     ];
 
     return (
-        <Page breadcrumbs={bcr}>
+        <Page breadcrumbs={bcr} fullWidth>
             <PatternExport
                 initial={state}
                 onSave={onSave}
@@ -321,7 +321,7 @@ const Inner = ({snapshotUrl, namePrefix}: {snapshotUrl: SnapshotUrl; namePrefix:
                     onChange={sctx.update}
                 />
             )}
-            <div className="max-h-250 overflow-auto flex-1">
+            <div className="max-h-250 overflow-auto">
                 <StateEditor
                     snapshotUrl={snapshotUrl}
                     value={state}

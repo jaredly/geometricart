@@ -1,47 +1,53 @@
-import {useState} from 'react';
+import {useMemo, useState} from 'react';
 import {useExportState} from '../ExportHistory';
 import {WorkerSend} from '../render/render-client';
 import {runPNGExport} from '../render/runPNGExport';
 import {saveAnnotation, deleteAnnotation, SnapshotUrl} from './saveAnnotation';
 import {AnnotationView, anSnapshot} from './AnnotationView';
+import {ExportConfig2d} from '../types/state-type';
 
 export const SnapshotAnnotations = ({
     worker,
     snapshotUrl,
+    // config,
 }: {
     worker: WorkerSend;
     snapshotUrl: SnapshotUrl;
+    // config: ExportConfig2d;
 }) => {
     const ctx = useExportState();
     const history = ctx.useHistory();
     const [loading, setLoading] = useState(false);
+    const view = ctx.use((s) => Object.keys(s.exports)[0]);
+    const config = useMemo(() => {
+        // okkk
+    }, [view]);
 
     return (
         <div>
             <button
                 className="btn"
                 onClick={() => {
-                    setLoading(true);
+                    // setLoading(true);
                     // umm is it a videoable thing/
-                    worker({type: 'snapshot', state: ctx.latest()}, (res) => {
-                        if (res.type !== 'snapshot') return setLoading(false);
-                        saveAnnotation(
-                            snapshotUrl,
-                            res.blob,
-                            history.tip,
-                            ctx.updateAnnotations,
-                            res.ext === 'png',
-                        ).then(
-                            () => {
-                                setLoading(false);
-                            },
-                            (err) => {
-                                console.error('Failed to save');
-                                console.error(err);
-                            },
-                        );
-                    });
-
+                    // worker({type: 'snapshot', state: ctx.latest(), config}, (res) => {
+                    //     if (res.type !== 'snapshot') return setLoading(false);
+                    //     saveAnnotation(
+                    //         snapshotUrl,
+                    //         res.blob,
+                    //         history.tip,
+                    //         ctx.updateAnnotations,
+                    //         res.ext === 'png',
+                    //     ).then(
+                    //         () => {
+                    //             setLoading(false);
+                    //         },
+                    //         (err) => {
+                    //             console.error('Failed to save');
+                    //             console.error(err);
+                    //         },
+                    //     );
+                    // });
                     // worker({type: 'frame', state: ctx.latest(), t: 0}, (res) => {
                     //     if (res.type !== 'frame') return setLoading(false);
                     //     const blob = runPNGExport(100, ctx.latest().view.box, res.items, res.bg);

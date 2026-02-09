@@ -26,17 +26,17 @@ import {getConstrainedSurface} from './render/recordVideo';
 
 export const Canvas = ({
     items,
-    config,
     setMouse,
     zoomProps: {innerRef, box},
+    size,
     bg,
     t,
 }: {
     items: RenderItem[];
     bg: Color | null;
+    size: number;
     state: State;
     mouse: Coord | null;
-    config: ExportConfig2d;
     zoomProps: ZoomProps;
     setMouse: (m: Coord | null) => void;
     byKey: Record<string, string[]>;
@@ -69,11 +69,11 @@ export const Canvas = ({
             }}
             style={{
                 background: 'black',
-                width: config.box.width * config.scale,
-                height: config.box.height * config.scale,
+                width: size,
+                height: size,
             }}
-            width={config.box.width * config.scale * 2}
-            height={config.box.width * config.scale * 2}
+            width={size * 2}
+            height={size * 2}
             onMouseLeave={() => setMouse(null)}
             onMouseMove={(evt) => {
                 const cbox = evt.currentTarget.getBoundingClientRect();
@@ -87,21 +87,21 @@ export const Canvas = ({
 
 export const SVGCanvas = ({
     items,
-    config,
     zoomProps: {box, innerRef},
     state,
+    size,
     setMouse,
     keyPoints,
     // byKey,
     mouse,
     bg,
 }: {
+    size: number;
     state: State;
     mouse: Coord | null;
     keyPoints: ([Coord, Coord] | Coord)[];
     bg: Color | null;
     items: RenderItem[];
-    config: ExportConfig2d;
     zoomProps: ZoomProps;
     setMouse: (m: Coord | null) => void;
     byKey: Record<string, string[]>;
@@ -159,8 +159,8 @@ export const SVGCanvas = ({
             }}
             style={{
                 background: bg ? colorToString(bg) : undefined,
-                width: config.box.width * config.scale,
-                height: config.box.height * config.scale,
+                width: size,
+                height: size,
             }}
             onMouseLeave={() => setMouse(null)}
             onMouseMove={(evt) => setMouse(svgCoord(evt))}

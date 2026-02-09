@@ -8,23 +8,25 @@ import {SpinnerEarring} from '../../../icons/Icon';
 
 export function VideoExport({
     state,
-    box,
-    size,
+    // box,
+    // size,
     duration,
     statusRef,
+    config,
     cropCache,
     worker,
 }: {
     worker: WorkerSend;
     state: State;
-    box: Box;
-    size: number;
+    // box: Box;
+    // size: number;
+    config: ExportConfig2d;
     duration: number;
     statusRef: React.RefObject<HTMLDivElement | null>;
     cropCache: Ctx['cropCache'];
 }) {
     const [video, setVideo] = useState<null | {url: string; time: number}>(null);
-    const [exSize, setExSize] = useState(size);
+    // const [exSize, setExSize] = useState(size);
     const [status, setStatus] = useState<null | number>(null);
 
     return (
@@ -36,11 +38,11 @@ export function VideoExport({
                     onClick={() => {
                         setStatus(0);
                         const start = Date.now();
-                        const config: ExportConfig2d = {
-                            box,
-                            scale: size / box.width,
-                            type: '2d',
-                        };
+                        // const config: ExportConfig2d = {
+                        //     box,
+                        //     scale: size / box.width,
+                        //     type: '2d',
+                        // };
                         worker({type: 'video', state, config, duration}, (res) => {
                             if (res.type === 'status') {
                                 setStatus(res.progress);
@@ -57,22 +59,22 @@ export function VideoExport({
                     {status != null ? <SpinnerEarring className="animate-spin" /> : null}
                 </button>
                 <div ref={statusRef} className="w-20 text-right" />
-                <label>
+                {/*<label>
                     Export size
                     <input
-                        value={exSize}
+                        // value={exSize}
                         onChange={(evt) => setExSize(+evt.target.value)}
                         type="number"
                         className="input w-30"
                     />
-                </label>
+                </label>*/}
                 {/* {typeof video === 'number' ? (
             <input type="range" value={video} onChange={() => {}} min={0} max={1} />
         ) : null} */}
             </div>
             {video ? (
                 <div className="relative">
-                    <video src={video.url} controls loop style={{width: size, height: size}} />
+                    {/*<video src={video.url} controls loop style={{width: size, height: size}} />*/}
                     <button className={'btn absolute top-0 right-0'} onClick={() => setVideo(null)}>
                         &times;
                     </button>
