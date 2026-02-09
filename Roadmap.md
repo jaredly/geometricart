@@ -16,6 +16,7 @@ and expanded-status of the accordian items
 - [x] replace, etc. should be prefixed with $
 - [x] name() should not be a function -> actually it's fine for it to be one
 - [x] useValue()
+- [x] non-history useValue
 
 #
 

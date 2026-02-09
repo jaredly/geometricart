@@ -38,18 +38,16 @@ export const EntityEditor = ({
                     onMouseEnter={() => {
                         if (value.type === 'Object') {
                             if (value.multiply) {
-                                es.update.hover({
+                                es.$.hover({
                                     type: 'shapes',
                                     ids: objectShapes(value.shape, expandedShapes),
                                 });
                             } else {
-                                es.update.hover({type: 'shape', id: value.shape});
+                                es.$.hover({type: 'shape', id: value.shape});
                             }
                         }
                     }}
-                    onMouseLeave={() =>
-                        value.type === 'Object' ? es.update.hover.$remove() : null
-                    }
+                    onMouseLeave={() => (value.type === 'Object' ? es.$.hover.$remove() : null)}
                 >
                     {value.type}
                     {value.type === 'Object' ? <span className="px-4">{value.shape}</span> : null}

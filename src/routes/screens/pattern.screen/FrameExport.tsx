@@ -90,8 +90,8 @@ const ExportSettingsForm = ({
     t: number;
 }) => {
     const ectx = useExportConfig();
-    const settings = useValue(ectx.update);
-    const update = ectx.update;
+    const settings = useValue(ectx.$);
+    const update = ectx.$;
     const [images, setImages] = useState<ExImage[]>([]);
 
     const ctx = useExportState();

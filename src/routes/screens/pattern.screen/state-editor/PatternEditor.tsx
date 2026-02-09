@@ -90,8 +90,8 @@ const AdjustmentEditor = ({
                 <details className="dropdown">
                     <summary
                         className="btn m-1 whitespace-nowrap"
-                        onMouseEnter={() => es.update.hover({type: 'shapes', ids: adj.shapes})}
-                        onMouseLeave={() => es.update.hover(null)}
+                        onMouseEnter={() => es.$.hover({type: 'shapes', ids: adj.shapes})}
+                        onMouseLeave={() => es.$.hover(null)}
                     >
                         {!adj.shapes.length
                             ? `No shapes selected`
@@ -103,8 +103,8 @@ const AdjustmentEditor = ({
                         {adj.shapes.map((id, i) => (
                             <li
                                 key={id}
-                                onMouseEnter={() => es.update.hover({type: 'shape', id})}
-                                onMouseLeave={() => es.update.hover(null)}
+                                onMouseEnter={() => es.$.hover({type: 'shape', id})}
+                                onMouseLeave={() => es.$.hover(null)}
                                 className="flex flex-row"
                             >
                                 <div className="flex-1">{id}</div>

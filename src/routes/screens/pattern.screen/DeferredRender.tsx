@@ -47,8 +47,8 @@ export const DeferredRender = ({
     const [mouse, setMouse] = useState(null as null | Coord);
 
     const editContext = useEditState();
-    const hover = useValue(editContext.update.hover);
-    const eShowShapes = useValue(editContext.update.showShapes);
+    const hover = useValue(editContext.$.hover);
+    const eShowShapes = useValue(editContext.$.showShapes);
 
     const [remoteData, setRemoteData] = useState<null | {
         bg: Color | null;

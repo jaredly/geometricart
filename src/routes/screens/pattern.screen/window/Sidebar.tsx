@@ -4,7 +4,7 @@ import {useValue} from '../../../../json-diff/react';
 
 export const Sidebar = () => {
     const v = useWindowState();
-    const swidth = useValue(v.update.rightBarSize);
+    const swidth = useValue(v.$.rightBarSize);
 
     const [width, setWidth] = useResettingState(swidth);
 

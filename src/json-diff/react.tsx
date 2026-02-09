@@ -476,13 +476,13 @@ export const makeContext = <T, Tag extends string = 'type'>(tag: Tag) => {
             }
 
             return useMemo(() => {
-                const {dispatch, update} = makeDispatch(ctx, tag);
+                const {dispatch, update: $} = makeDispatch(ctx, tag);
 
                 return {
                     latest() {
                         return ctx.state;
                     },
-                    update,
+                    $: $,
                     dispatch,
                 };
             }, [ctx, tag]);

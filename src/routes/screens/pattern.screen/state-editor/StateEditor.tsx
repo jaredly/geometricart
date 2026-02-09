@@ -41,8 +41,8 @@ export const StateEditor = ({value, worker, update, snapshotUrl}: StateEditorPro
     const crops = useMemo(() => Object.entries(value.crops), [value.crops]);
     const pendingState = usePendingState();
     const editState = useEditState();
-    const onHover = editState.update.hover.$replace;
-    const showShapes = useValue(editState.update.showShapes); // editState.use((s) => s.showShapes);
+    const onHover = editState.$.hover.$replace;
+    const showShapes = useValue(editState.$.showShapes); // editState.use((s) => s.showShapes);
 
     const latest = useRef(value);
     latest.current = value;
@@ -85,7 +85,7 @@ export const StateEditor = ({value, worker, update, snapshotUrl}: StateEditorPro
             <Section
                 title="Shapes"
                 open={showShapes}
-                onOpen={(open) => editState.update.showShapes(open)}
+                onOpen={(open) => editState.$.showShapes(open)}
                 actions={
                     <>
                         <button

@@ -182,7 +182,7 @@ export const RenderDebug = ({state, update}: {state: State; update: Updater<Stat
     const t = m ? +m[0].split('=')[1] : 0;
 
     const es = useEditState();
-    const hover = useValue(es.update.hover);
+    const hover = useValue(es.$.hover);
     // const t = 0.763;
     // const t = 0.592;
     // const t = 0.992;
