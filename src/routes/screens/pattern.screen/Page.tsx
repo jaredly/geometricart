@@ -13,7 +13,8 @@ export const Page = ({
 }) => (
     <div
         className={
-            'mx-auto p-4 pt-0 bg-base-200 shadow-base-300 shadow-md' + (fullWidth ? '' : ' w-6xl ')
+            'mx-auto p-4 pt-0 bg-base-200 shadow-base-300 shadow-md' +
+            (fullWidth ? ' absolute inset-0 flex flex-col' : ' w-6xl ')
         }
     >
         <div className="sticky top-0 py-2 mb-2 bg-base-200 shadow-md shadow-base-200 flex justify-between">

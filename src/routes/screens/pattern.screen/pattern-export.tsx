@@ -330,7 +330,7 @@ const Inner = ({snapshotUrl, namePrefix}: {snapshotUrl: SnapshotUrl; namePrefix:
     }, [sctx, pctx]);
 
     return (
-        <div className="flex">
+        <div className="flex flex-1 min-h-0">
             {debug ? (
                 <RenderDebug state={state} update={sctx.$} />
             ) : (
