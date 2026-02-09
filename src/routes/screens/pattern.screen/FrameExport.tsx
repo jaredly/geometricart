@@ -1,7 +1,7 @@
 import {useState} from 'react';
 import {BlurInt} from '../../../editor/Forms';
 import {BaselineDownload} from '../../../icons/Icon';
-import {makeContext} from '../../../json-diff/react';
+import {makeContext, useValue} from '../../../json-diff/react';
 import {Ctx} from './eval/evaluate';
 import {Box} from './export-types';
 import {useExportState} from './ExportHistory';
@@ -90,7 +90,7 @@ const ExportSettingsForm = ({
     t: number;
 }) => {
     const ectx = useExportConfig();
-    const settings = ectx.use((v) => v);
+    const settings = useValue(ectx.update);
     const update = ectx.update;
     const [images, setImages] = useState<ExImage[]>([]);
 

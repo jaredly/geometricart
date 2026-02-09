@@ -24,6 +24,7 @@ import {barePathFromCoords} from '../utils/resolveMods';
 import {HistoryView} from './HistoryView';
 import {SnapshotAnnotations} from './SnapshotAnnotations';
 import {SnapshotUrl} from './saveAnnotation';
+import {useValue} from '../../../../json-diff/react';
 
 type StateEditorProps = {
     value: State;
@@ -41,7 +42,7 @@ export const StateEditor = ({value, worker, update, snapshotUrl}: StateEditorPro
     const pendingState = usePendingState();
     const editState = useEditState();
     const onHover = editState.update.hover.$replace;
-    const showShapes = editState.use((s) => s.showShapes);
+    const showShapes = useValue(editState.update.showShapes); // editState.use((s) => s.showShapes);
 
     const latest = useRef(value);
     latest.current = value;

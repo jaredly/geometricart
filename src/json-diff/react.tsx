@@ -11,7 +11,7 @@ import {
     PendingJsonPatchOp,
     JsonPatchOp,
 } from './helper2';
-import {blankHistory, dispatch, History} from './history';
+import {Annotations, blankHistory, dispatch, History} from './history';
 import {asFlat, MaybeNested, resolveAndApply} from './make2';
 import {useLatest} from '../routes/screens/pattern.screen/utils/useLatest';
 import {_get} from './internal2';
@@ -23,17 +23,24 @@ type C<T> = {
     listeners: (() => void)[];
 };
 
-type CH<T, An, Tag extends string = 'type'> = {
-    state: History<T, An>;
-    save: (v: History<T, An>) => void;
+type ContextBase<T, Change, Tag extends string> = {
+    state: T;
+    save: (v: T) => void;
     listeners: (() => void)[];
-    historyListeners: (() => void)[];
-    historyUp: (() => void)[];
-    previewState: null | History<T, An>;
-    queuedChanges: PendingJsonPatchOp<T, Tag, Extra>[];
+    previewState: null | T;
     raf?: number;
     listenersByPath: PathListenerNode;
+    queuedChanges: QueuedChanges<Change, Tag>;
 };
+
+type ContextHistory = {
+    historyListeners: (() => void)[];
+    historyUp: (() => void)[];
+};
+
+type QueuedChanges<T, Tag extends string = 'type'> = PendingJsonPatchOp<T, Tag, Extra>[];
+
+type CH<T, An, Tag extends string = 'type'> = ContextBase<History<T, An>, T, Tag> & ContextHistory;
 
 export type Extra = {
     getForPath<T>(v: Path): T;
@@ -166,7 +173,9 @@ export const useValue: (<Current, Return, Tag extends PropertyKey>(
     return v;
 };
 
-const makeProvider = <T, An, Tag extends string = 'type'>(Ctx: React.Context<CH<T, An, Tag>>) => {
+const makeHistoryProvider = <T, An, Tag extends string = 'type'>(
+    Ctx: React.Context<CH<T, An, Tag>>,
+) => {
     return function Provide({
         children,
         initial,
@@ -180,12 +189,12 @@ const makeProvider = <T, An, Tag extends string = 'type'>(Ctx: React.Context<CH<
         const value = useRef<CH<T, An, Tag>>({
             state: initial,
             save: (v) => l.current?.(v),
-            historyListeners: [],
             listeners: [],
-            historyUp: [],
             previewState: null,
-            queuedChanges: [],
             listenersByPath: makePathListenerNode(),
+            historyListeners: [],
+            historyUp: [],
+            queuedChanges: [],
         });
         useEffect(() => {
             if (initial !== value.current.state) {
@@ -198,54 +207,43 @@ const makeProvider = <T, An, Tag extends string = 'type'>(Ctx: React.Context<CH<
     };
 };
 
-// const MakeContext = <T, An, Tag extends string = 'type'>(ctx: CH<T, An, Tag>, tag: Tag) => {
-//     const {dispatch, update} = makeDispatch(ctx, tag);
-
-//     return {
-//         onHistoryChange(f: () => void, includeUndo: boolean) {
-//             if (includeUndo) {
-//                 ctx.historyUp.push(f);
-//                 return () => {
-//                     const at = ctx.historyUp.indexOf(f);
-//                     if (at !== -1) ctx.historyUp.splice(at, 1);
-//                 };
-//             }
-//             ctx.historyListeners.push(f);
-//             return () => {
-//                 const at = ctx.historyListeners.indexOf(f);
-//                 if (at !== -1) ctx.historyListeners.splice(at, 1);
-//             };
-//         },
-//         latest() {
-//             return ctx.state.current;
-//         },
-//         clearHistory() {
-//             ctx.state = clearHistory(ctx.state);
-//             ctx.historyListeners.forEach((f) => f());
-//             ctx.historyUp.forEach((f) => f());
-//         },
-//         canRedo() {
-//             return ctx.state.undoTrail.length > 0;
-//         },
-//         canUndo() {
-//             return ctx.state.tip !== ctx.state.root;
-//         },
-//         undo() {
-//             dispatch({op: 'undo'});
-//         },
-//         redo() {
-//             dispatch({op: 'redo'});
-//         },
-//         update,
-//         dispatch,
-//     };
-// };
+const makeProvider = <T, Tag extends string = 'type'>(
+    Ctx: React.Context<ContextBase<T, T, Tag>>,
+) => {
+    return function Provide({
+        children,
+        initial,
+        save,
+    }: {
+        children: React.ReactElement;
+        initial: T;
+        save?(v: T): void;
+    }) {
+        const l = useLatest(save);
+        const value = useRef<ContextBase<T, T, Tag>>({
+            state: initial,
+            save: (v) => l.current?.(v),
+            listeners: [],
+            previewState: null,
+            listenersByPath: makePathListenerNode(),
+            queuedChanges: [],
+        });
+        useEffect(() => {
+            if (initial !== value.current.state) {
+                value.current.state = initial;
+                value.current.listeners.forEach((f) => f());
+                notifyAllPaths(value.current.listenersByPath);
+            }
+        }, [initial]);
+        return <Ctx.Provider value={value.current} children={children} />;
+    };
+};
 
 export const makeHistoryContext = <T, An, Tag extends string = 'type'>(tag: Tag) => {
     const Ctx = createContext<CH<T, An, Tag>>(null as any);
 
     return [
-        makeProvider(Ctx),
+        makeHistoryProvider(Ctx),
 
         function useStateContext() {
             const ctx = useContext(Ctx);
@@ -255,7 +253,7 @@ export const makeHistoryContext = <T, An, Tag extends string = 'type'>(tag: Tag)
             }
 
             return useMemo(() => {
-                const {dispatch, update, updateAnnotations} = makeDispatch(ctx, tag);
+                const {dispatch, update, updateAnnotations} = makeHistoryDispatch(ctx, tag);
 
                 return {
                     onHistoryChange(f: () => void) {
@@ -307,7 +305,71 @@ export const makeHistoryContext = <T, An, Tag extends string = 'type'>(tag: Tag)
     ] as const;
 };
 
-const makeDispatch = <T, An, Tag extends string = 'type'>(ctx: CH<T, An, Tag>, tag: Tag) => {
+const makeDispatch = <T, Tag extends string = 'type'>(ctx: ContextBase<T, T, Tag>, tag: Tag) => {
+    // const inner = ctx;
+    const extra: Extra = {
+        getForPath(path) {
+            return _get(ctx.previewState ?? ctx.state, path);
+        },
+        listenToPath(v, f) {
+            addPathListener(ctx.listenersByPath, v, f);
+            return () => removePathListener(ctx.listenersByPath, v, f);
+        },
+    };
+    const go = (v: MaybeNested<PendingJsonPatchOp<T, Tag, Extra>>, when?: ApplyTiming) => {
+        if (when === 'preview') {
+            ctx.queuedChanges.push(...(asFlat(v) as PendingJsonPatchOp<T, Tag, Extra>[]));
+            if (ctx.raf == null) {
+                ctx.raf = requestAnimationFrame(() => {
+                    ctx.raf = undefined;
+                    // const base = inner.previewState ?? inner.state.current;
+                    const queue = ctx.queuedChanges;
+                    ctx.queuedChanges = [];
+
+                    const {current: next, changes} = resolveAndApply(
+                        ctx.previewState ?? ctx.state,
+                        queue,
+                        extra,
+                        tag,
+                    );
+
+                    if (next === (ctx.previewState ?? ctx.state)) return;
+                    const paths = changedPaths(changes);
+                    ctx.previewState = next;
+                    ctx.listeners.forEach((f) => f());
+                    notifyPaths(ctx.listenersByPath, paths);
+                });
+            }
+            return;
+        }
+
+        ctx.previewState = null;
+        if (ctx.raf != null) {
+            cancelAnimationFrame(ctx.raf);
+            ctx.raf = undefined;
+        }
+
+        const {current: next, changes} = resolveAndApply(ctx.state, v, extra, tag);
+        if (next === ctx.state) return;
+        const pathTargets = changedPaths(changes);
+        ctx.state = next;
+        ctx.save(ctx.state);
+
+        ctx.listeners.forEach((f) => f());
+        notifyPaths(ctx.listenersByPath, pathTargets);
+    };
+
+    return {
+        dispatch: go,
+        update: diffBuilderApply<T, Extra, Tag>(go, extra, tag),
+    };
+};
+
+const makeHistoryDispatch = <T, An, Tag extends string = 'type'>(
+    ctx: ContextBase<History<T, An>, T, Tag> & ContextHistory,
+    tag: Tag,
+) => {
+    // const inner = ctx;
     const extra: Extra = {
         getForPath(path) {
             return _get(ctx.previewState?.current ?? ctx.state.current, path);
@@ -333,7 +395,7 @@ const makeDispatch = <T, An, Tag extends string = 'type'>(ctx: CH<T, An, Tag>, t
             if (ctx.raf == null) {
                 ctx.raf = requestAnimationFrame(() => {
                     ctx.raf = undefined;
-                    // const base = ctx.previewState?.current ?? ctx.state.current;
+                    // const base = inner.previewState?.current ?? inner.state.current;
                     const queue = ctx.queuedChanges;
                     ctx.queuedChanges = [];
                     const next = dispatch(ctx.previewState ?? ctx.state, queue, extra, tag);
@@ -369,9 +431,9 @@ const makeDispatch = <T, An, Tag extends string = 'type'>(ctx: CH<T, An, Tag>, t
         ctx.historyUp.forEach((f) => f());
     };
 
-    const updateAnnotations = diffBuilderApply<History<T, An>['annotations'], null, Tag>(
-        (v: MaybeNested<PendingJsonPatchOp<History<T, An>['annotations'], Tag, null>>) => {
-            const {current: next} = resolveAndApply<History<T, An>['annotations'], null, Tag>(
+    const updateAnnotations = diffBuilderApply<Annotations<An>, null, Tag>(
+        (v: MaybeNested<PendingJsonPatchOp<Annotations<An>, Tag, null>>) => {
+            const {current: next} = resolveAndApply<Annotations<An>, null, Tag>(
                 ctx.state.annotations,
                 v,
                 null,
@@ -401,83 +463,27 @@ const clearHistory = <T, An>(h: History<T, An>): History<T, An> => ({
 });
 
 export const makeContext = <T, Tag extends string = 'type'>(tag: Tag) => {
-    // biome-ignore lint: this one is fine
-    const Ctx = createContext<C<T>>(null as any);
-
-    type Extra = null;
-    let extra = null;
+    const Ctx = createContext<ContextBase<T, T, Tag>>(null as any);
 
     return [
-        function Provide({
-            children,
-            initial,
-            save,
-        }: {
-            children: React.ReactElement;
-            initial: T;
-            save?(v: T): void;
-        }) {
-            const l = useLatest(save);
-            const value = useRef<C<T>>({
-                state: initial,
-                save: (v) => l.current?.(v),
-                listeners: [],
-            });
-            useEffect(() => {
-                if (initial !== value.current.state) {
-                    value.current.state = initial;
-                    value.current.listeners.forEach((f) => f());
-                }
-            }, [initial]);
-            return <Ctx.Provider value={value.current} children={children} />;
-        },
+        makeProvider(Ctx),
 
         function useStateContext() {
             const ctx = useContext(Ctx);
+            if (ctx === null) {
+                console.log('got a got');
+                throw new Error(`Used a context but its not there`);
+            }
 
             return useMemo(() => {
-                const go = (v: MaybeNested<PendingJsonPatchOp<T, Tag, Extra>>) => {
-                    const {current: next} = resolveAndApply<T, Extra, Tag>(
-                        ctx.state,
-                        v,
-                        extra,
-                        tag,
-                    );
-                    if (next === ctx.state) return;
-                    ctx.state = next;
-                    ctx.save(next);
-                    ctx.listeners.forEach((f) => f());
-                };
+                const {dispatch, update} = makeDispatch(ctx, tag);
+
                 return {
-                    use<B>(sel: (t: T) => B, exact = true): B {
-                        const lsel = useRef(sel);
-                        lsel.current = sel;
-
-                        const [value, setValue] = useState(() => sel(ctx.state));
-                        const lvalue = useRef(value);
-                        lvalue.current = value;
-
-                        useEffect(() => {
-                            const fn = () => {
-                                const nv = lsel.current(ctx.state);
-                                if (exact ? nv !== lvalue.current : !equal(nv, lvalue.current)) {
-                                    setValue(nv);
-                                }
-                            };
-                            ctx.listeners.push(fn);
-                            return () => {
-                                const idx = ctx.listeners.indexOf(fn);
-                                ctx.listeners.splice(idx, 1);
-                            };
-                        }, [exact]);
-
-                        return value;
-                    },
                     latest() {
                         return ctx.state;
                     },
-                    update: diffBuilderApply<T, Extra, Tag>(go, extra, tag),
-                    dispatch: go,
+                    update,
+                    dispatch,
                 };
             }, [ctx, tag]);
         },

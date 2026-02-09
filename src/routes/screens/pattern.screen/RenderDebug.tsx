@@ -18,6 +18,7 @@ import {ShowRenderLog} from './ShowRenderLog';
 import {useLocalStorage} from '../../../vest/useLocalStorage';
 import {useLocation} from 'react-router';
 import {makeBox} from './makeBox';
+import {useValue} from '../../../json-diff/react';
 
 const allItems = (log: RenderLog): LogItem[] => {
     if (log.type === 'items') return log.items.flatMap((l) => l.item);
@@ -181,7 +182,7 @@ export const RenderDebug = ({state, update}: {state: State; update: Updater<Stat
     const t = m ? +m[0].split('=')[1] : 0;
 
     const es = useEditState();
-    const hover = es.use((es) => es.hover);
+    const hover = useValue(es.update.hover);
     // const t = 0.763;
     // const t = 0.592;
     // const t = 0.992;

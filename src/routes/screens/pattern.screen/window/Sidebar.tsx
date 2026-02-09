@@ -1,6 +1,6 @@
 import {useState} from 'react';
 import {useResettingState, useWindowState} from './state';
-import {useValue} from '../../../../json-diff/react2';
+import {useValue} from '../../../../json-diff/react';
 
 export const Sidebar = () => {
     const v = useWindowState();
