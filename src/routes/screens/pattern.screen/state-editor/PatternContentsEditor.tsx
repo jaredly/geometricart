@@ -19,7 +19,7 @@ export const PatternContentsEditor = ({
     update: Updater<PatternContents>;
 }) => {
     const state = useExportState();
-    const palette = useValue(state.update.styleConfig.palette);
+    const palette = useValue(state.$.styleConfig.palette);
     // const [type, setType] = useState<PatternContents['type']>(value.type);
     // useEffect(() => {
     //     setType(value.type);

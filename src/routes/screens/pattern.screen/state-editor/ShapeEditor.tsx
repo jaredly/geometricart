@@ -25,7 +25,7 @@ export const ShapeEditor = ({
     const es = usePendingState();
     const st = useExportState();
     const tilingIds = useValue(
-        st.update,
+        st.$,
         (state) => {
             if (!state) throw new Error('cant happen');
             const ids = Object.values(state.layers)
@@ -50,7 +50,7 @@ export const ShapeEditor = ({
             <button
                 className="btn btn-sm"
                 onClick={() =>
-                    es.update.pending({
+                    es.$.pending({
                         type: 'dup-shape',
                         id,
                         onDone(point) {

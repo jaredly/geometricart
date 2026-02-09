@@ -27,8 +27,8 @@ export const LayerEditor = ({
     const pend = usePendingState();
 
     const st = useExportState();
-    const shapes = useValue(st.update.shapes);
-    const layers = useValue(st.update.layers);
+    const shapes = useValue(st.$.shapes);
+    const layers = useValue(st.$.layers);
     const expandedShapes = useMemo(
         () => Object.keys(expandShapes(shapes, layers)),
         [shapes, layers],
@@ -73,7 +73,7 @@ export const LayerEditor = ({
                                 <button
                                     className="btn btn-outline btn-xs"
                                     onClick={() => {
-                                        pend.update.pending({
+                                        pend.$.pending({
                                             type: 'select-shape',
                                             onDone(shape) {
                                                 const id = genid();

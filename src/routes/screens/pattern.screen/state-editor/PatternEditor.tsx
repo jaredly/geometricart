@@ -81,7 +81,7 @@ const AdjustmentEditor = ({
 }) => {
     const edit = usePendingState();
     const es = useEditState();
-    const pending = useValue(edit.update.pending);
+    const pending = useValue(edit.$.pending);
     const isAdding = pending?.type === 'select-shapes' && pending.key === `adj-${adj.id}`;
     return (
         <div className="border border-base-300 bg-base-200 rounded-md p-4 space-y-4">
@@ -130,10 +130,10 @@ const AdjustmentEditor = ({
                     className="btn btn-sm mx-4"
                     onClick={() => {
                         if (isAdding) {
-                            edit.update.pending(null);
+                            edit.$.pending(null);
                             update.shapes(pending.shapes);
                         } else {
-                            edit.update.pending({
+                            edit.$.pending({
                                 type: 'select-shapes',
                                 key: `adj-${adj.id}`,
                                 shapes: adj.shapes,

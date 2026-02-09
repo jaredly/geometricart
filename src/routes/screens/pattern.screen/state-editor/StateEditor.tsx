@@ -108,7 +108,7 @@ export const StateEditor = ({value, worker, update, snapshotUrl}: StateEditorPro
                             <li>
                                 <button
                                     onClick={(evt) => {
-                                        pendingState.update.pending({
+                                        pendingState.$.pending({
                                             type: 'shape',
                                             onDone(points, open) {
                                                 const nextId = genid();
@@ -158,7 +158,7 @@ export const StateEditor = ({value, worker, update, snapshotUrl}: StateEditorPro
                                                 ],
                                             };
                                         };
-                                        pendingState.update.pending({
+                                        pendingState.$.pending({
                                             type: 'shape',
                                             onDone(points) {
                                                 const nextId = genid();
@@ -191,7 +191,7 @@ export const StateEditor = ({value, worker, update, snapshotUrl}: StateEditorPro
                                                 {x: c.x - dx, y: c.y - dy},
                                             ]);
                                         };
-                                        pendingState.update.pending({
+                                        pendingState.$.pending({
                                             type: 'shape',
                                             onDone(points) {
                                                 update.shapes[genid()].$add(asRect(points));

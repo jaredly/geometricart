@@ -253,7 +253,7 @@ export const makeHistoryContext = <T, An, Tag extends string = 'type'>(tag: Tag)
             }
 
             return useMemo(() => {
-                const {dispatch, update, updateAnnotations} = makeHistoryDispatch(ctx, tag);
+                const {dispatch, $: $, updateAnnotations} = makeHistoryDispatch(ctx, tag);
 
                 return {
                     onHistoryChange(f: () => void) {
@@ -296,7 +296,7 @@ export const makeHistoryContext = <T, An, Tag extends string = 'type'>(tag: Tag)
                     redo() {
                         dispatch({op: 'redo'});
                     },
-                    update,
+                    $,
                     updateAnnotations,
                     dispatch,
                 };
@@ -361,7 +361,7 @@ const makeDispatch = <T, Tag extends string = 'type'>(ctx: ContextBase<T, T, Tag
 
     return {
         dispatch: go,
-        update: diffBuilderApply<T, Extra, Tag>(go, extra, tag),
+        $: diffBuilderApply<T, Extra, Tag>(go, extra, tag),
     };
 };
 
@@ -449,7 +449,7 @@ const makeHistoryDispatch = <T, An, Tag extends string = 'type'>(
 
     return {
         dispatch: go,
-        update: diffBuilderApply<T, Extra, Tag>(go, extra, tag),
+        $: diffBuilderApply<T, Extra, Tag>(go, extra, tag),
         updateAnnotations,
     };
 };
@@ -476,13 +476,13 @@ export const makeContext = <T, Tag extends string = 'type'>(tag: Tag) => {
             }
 
             return useMemo(() => {
-                const {dispatch, update: $} = makeDispatch(ctx, tag);
+                const {dispatch, $: $} = makeDispatch(ctx, tag);
 
                 return {
                     latest() {
                         return ctx.state;
                     },
-                    $: $,
+                    $,
                     dispatch,
                 };
             }, [ctx, tag]);

@@ -267,7 +267,7 @@ export const PatternExport = ({
 
 const Inner = ({snapshotUrl, namePrefix}: {snapshotUrl: SnapshotUrl; namePrefix: string}) => {
     const sctx = useExportState();
-    const state = useValue(sctx.update);
+    const state = useValue(sctx.$);
     const pctx = usePendingState();
     const {search} = useLocation();
     const debug = search.includes('debug=');
@@ -312,21 +312,21 @@ const Inner = ({snapshotUrl, namePrefix}: {snapshotUrl: SnapshotUrl; namePrefix:
     return (
         <div className="flex">
             {debug ? (
-                <RenderDebug state={state} update={sctx.update} />
+                <RenderDebug state={state} update={sctx.$} />
             ) : (
                 <RenderExport
                     worker={worker}
                     namePrefix={namePrefix}
                     snapshotUrl={snapshotUrl}
                     state={state}
-                    onChange={sctx.update}
+                    onChange={sctx.$}
                 />
             )}
             <div className="max-h-250 overflow-auto">
                 <StateEditor
                     snapshotUrl={snapshotUrl}
                     value={state}
-                    update={sctx.update}
+                    update={sctx.$}
                     worker={worker}
                 />
             </div>

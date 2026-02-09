@@ -19,7 +19,7 @@ export const SnapshotAnnotations = ({
     const ctx = useExportState();
     const history = ctx.useHistory();
     const [loading, setLoading] = useState(false);
-    const exports = useValue(ctx.update.exports);
+    const exports = useValue(ctx.$.exports);
     const view = Object.keys(exports)[0];
     const config = useMemo(() => {
         // okkk

@@ -45,7 +45,7 @@ export const PModEditor = ({
     update: Updater<PMods>;
 }) => {
     const ctx = useExportState();
-    const cropIds = useValue(ctx.update, (v) => Object.keys(v?.crops ?? {}), false);
+    const cropIds = useValue(ctx.$, (v) => Object.keys(v?.crops ?? {}), false);
 
     switch (value.type) {
         case 'inset':

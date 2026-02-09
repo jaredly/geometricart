@@ -87,7 +87,7 @@ export const DeferredRender = ({
     }, [state, t, worker, setWarnings, onFPS, config]);
 
     const pendingState = usePendingState();
-    const pending = useValue(pendingState.update.pending);
+    const pending = useValue(pendingState.$.pending);
     const selectedShapes = pending?.type === 'select-shapes' ? pending.shapes : [];
 
     const showShapes =
@@ -104,18 +104,10 @@ export const DeferredRender = ({
             );
         }
 
-        return renderShapes(expanded, hover, selectedShapes, pendingState.update, pending).sort(
+        return renderShapes(expanded, hover, selectedShapes, pendingState.$, pending).sort(
             (a, b) => (a.zIndex ?? 0) - (b.zIndex ?? 0),
         );
-    }, [
-        showShapes,
-        state.shapes,
-        state.layers,
-        hover,
-        selectedShapes,
-        pendingState.update,
-        pending,
-    ]);
+    }, [showShapes, state.shapes, state.layers, hover, selectedShapes, pendingState.$, pending]);
 
     const both = useMemo(
         () => (remoteData?.items ? [...remoteData.items, ...shapesItems] : []),
