@@ -211,14 +211,14 @@ export type PatternContents =
           type: 'shapes';
           id: string;
           order: number;
-          disabled?: boolean;
+          disabled: string;
           styles: Orderable<ShapeStyle<ShapeKind>>;
       }
     | {
           type: 'weave';
           id: string;
           order: number;
-          disabled?: boolean;
+          disabled: string;
           flip?: number;
           orderings: Record<string, number[]>;
           styles: Orderable<ShapeStyle<BaseKind & {under?: boolean}>>;
@@ -228,7 +228,7 @@ export type PatternContents =
           type: 'lines';
           id: string;
           order: number;
-          disabled?: boolean;
+          disabled: string;
           styles: Orderable<ShapeStyle<BaseKind>>;
           includeBorders?: boolean;
           sort: AnimatableValue;
@@ -237,7 +237,7 @@ export type PatternContents =
           type: 'layers';
           id: string;
           order: number;
-          disabled?: boolean;
+          disabled: string;
           origin: AnimatableCoord;
           reverse: AnimatableBoolean;
           styles: Orderable<ShapeStyle<BaseKind>>;
@@ -259,8 +259,8 @@ export type ShapeStyle<Kind> = {
     // Could also be interesting to have an `animatedKind` where we select
     // the items effected by some script
     kind: Kind[];
-    fills: Record<string, Fill>;
-    lines: Record<string, Line>;
+    fills: Orderable<Fill>;
+    lines: Orderable<Line>;
     t: TChunk | null;
     mods: PMods[];
 };
@@ -301,7 +301,7 @@ export type ConcreteFill = {
 
 export type Fill = {
     id: string;
-    // order: number;
+    order: number;
     enabled?: AnimatableBoolean;
     shadow?: Shadow;
     zIndex?: AnimatableNumber;
@@ -331,7 +331,7 @@ export type ConcreteLine = {
 
 export type Line = {
     id: string;
-    // order: number;
+    order: number;
     enabled?: AnimatableBoolean;
     shadow?: Shadow;
     zIndex?: AnimatableNumber;

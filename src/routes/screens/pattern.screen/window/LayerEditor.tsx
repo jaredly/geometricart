@@ -1,10 +1,4 @@
-import {
-    ChevronUp12,
-    CogIcon,
-    ExternalLinkIcon,
-    EyePencilIcon,
-    ObjectUngroup,
-} from '../../../../icons/Icon';
+import {CogIcon, ExternalLinkIcon, ObjectUngroup} from '../../../../icons/Icon';
 import {useValue} from '../../../../json-diff/react';
 import {Updater} from '../../../../json-diff/Updater';
 import {EObject, Layer, Pattern, PatternContents, ShapeKind, ShapeStyle} from '../export-types';
@@ -13,43 +7,13 @@ import {HandleProps} from '../state-editor/DragToReorderList';
 import {orderedIds} from '../state-editor/nextOrder';
 import {OrderableEditor} from '../state-editor/PatternEditor';
 import {EntityView} from './EntityView';
-import {useExpanded} from './state';
 import {PatternPreview} from './PatternPreview';
-import {EyeIcon, EyeInvisibleIcon} from '../../../../icons/Eyes';
 import {ShapeStylesEditor} from '../state-editor/ShapeStylesEditor';
+import {Expandable} from './Expandable';
+import {DisabledIcon} from './DisabledIcon';
 
 export const ObjectView = ({value, $}: {value: EObject; $: Updater<EObject>}) => {
     return <div>{value.id}</div>;
-};
-
-const Expandable = ({
-    title,
-    children,
-    ex,
-}: {
-    ex: string;
-    title: React.ReactNode;
-    children: React.ReactNode;
-}) => {
-    const [expanded, setExpanded] = useExpanded(ex);
-    return (
-        <div>
-            <div
-                className="flex items-center cursor-pointer group hover:text-amber-300"
-                onClick={(evt) => {
-                    evt.preventDefault();
-                    evt.stopPropagation();
-                    setExpanded(!expanded);
-                }}
-            >
-                <div className="p-2 mr-2 hover:bg-amber-400 hover:text-amber-950 rounded-4xl transition-colors">
-                    <ChevronUp12 className={expanded ? 'rotate-180' : 'rotate-90'} />
-                </div>
-                {title}
-            </div>
-            {expanded ? <div className="p-2 pl-6">{children}</div> : null}
-        </div>
-    );
 };
 
 export const PatternView = ({value, $}: {value: Pattern; $: Updater<Pattern>}) => {
@@ -98,13 +62,12 @@ const PatternContentsView = ({
     update: Updater<PatternContents>;
     handleProps: HandleProps;
 }) => {
-    return (
-        <Expandable ex={update.toString()} title={value.type + ' ' + value.id.slice(0, 4)}>
-            {value.type === 'shapes' ? (
-                <PatternShapesView value={value} update={update.$variant('shapes')} />
-            ) : null}
-        </Expandable>
-    );
+    switch (value.type) {
+        case 'shapes':
+            return <PatternShapesView value={value} update={update.$variant('shapes')} />;
+        default:
+            return <div>Not yet</div>;
+    }
 };
 
 const StyleView = ({
@@ -128,26 +91,6 @@ const PatternShapesView = ({
         <Expandable ex={update.toString()} title={'Shapes I guess'}>
             <OrderableEditor value={value.styles} update={update.styles} Inner={StyleView} />
         </Expandable>
-    );
-};
-
-const DisabledIcon = ({update, value}: {value: string; update: Updater<string>}) => {
-    return (
-        <button
-            className="cursor-pointer p-2"
-            onClick={(evt) => {
-                evt.stopPropagation();
-                update.$replace(value ? '' : 'true');
-            }}
-        >
-            {!value ? (
-                <EyeIcon />
-            ) : value === 'true' ? (
-                <EyeInvisibleIcon className="text-slate-500" />
-            ) : (
-                <EyePencilIcon />
-            )}
-        </button>
     );
 };
 
