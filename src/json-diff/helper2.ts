@@ -274,6 +274,15 @@ export function diffBuilderApply<T, Extra, Tag extends string = 'type', R = void
                     return extra;
                 }
 
+                if (prop === Symbol.toPrimitive) {
+                    return (hint: string) => {
+                        if (hint === 'string' || hint === 'default') {
+                            return '() => {}'; // react does this
+                        }
+                        return 0;
+                    };
+                }
+
                 // ignore symbols
                 if (typeof prop === 'symbol') return undefined;
 
