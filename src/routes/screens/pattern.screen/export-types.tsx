@@ -80,6 +80,7 @@ export type Layer = {
     id: string;
     order: number;
     name?: string;
+    disabled: string;
 
     opacity: AnimatableNumber;
     rootGroup: string;

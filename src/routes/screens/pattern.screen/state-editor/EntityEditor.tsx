@@ -54,7 +54,7 @@ export const EntityEditor = ({
                     <div className="flex-1" />
                     {value.type === 'Pattern' && (
                         <a
-                            className="link text-sm mx-4"
+                            className="link text-sm mx-4 hover:text-amber-400"
                             target="_blank"
                             href={`/gallery/pattern/${typeof value.tiling === 'string' ? value.tiling : value.tiling.id}`}
                         >
