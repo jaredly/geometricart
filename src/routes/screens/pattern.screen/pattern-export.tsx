@@ -1,16 +1,19 @@
 import {useCallback, useEffect, useMemo, useState} from 'react';
 import {useLocation} from 'react-router';
 import {blankHistory} from '../../../json-diff/history';
+import {useValue} from '../../../json-diff/react';
 import {Tiling} from '../../../types';
 import type {Route} from './+types/pattern-export';
 import {ExportHistory, ProvideExportState, useExportState} from './ExportHistory';
 import {usePromise} from './hooks/usePromise';
+import {ListExports} from './ListExports';
 import {Page} from './Page';
 import {useWorker} from './render/render-client';
 import {thinTiling} from './render/renderPattern';
 import {RenderDebug} from './RenderDebug';
 import {RenderExport} from './RenderExport';
-import {StateEditor} from './state-editor/StateEditor';
+import db from './state-editor/kv-idb';
+import {idbprefix, SnapshotUrl} from './state-editor/saveAnnotation';
 import {loadState} from './types/load-state';
 import {
     EditState,
@@ -21,10 +24,14 @@ import {
 } from './utils/editState';
 import {genid} from './utils/genid';
 import {makeForPattern} from './utils/makeForPattern';
-import {ListExports} from './ListExports';
-import {idbprefix, SnapshotUrl} from './state-editor/saveAnnotation';
-import db from './state-editor/kv-idb';
-import {useValue} from '../../../json-diff/react';
+import {Sidebar} from './window/Sidebar';
+import {
+    initialWindowState,
+    isWindowState,
+    ProvideWindowState,
+    useSafeLocalStorage,
+    WindowState,
+} from './window/state';
 
 const CreateAndRedirectLocalStorage = ({id}: {id: string}) => {
     const [error, setError] = useState<null | Error>(null);
@@ -190,6 +197,7 @@ const LoadPattern = ({id, state}: {id: string; state: ExportHistory}) => {
                 : {type: 'localhost', id},
         [id],
     );
+    console.log('toplevel');
 
     const bcr = [
         {title: 'Geometric Art', href: '/', dropdown: [{title: 'Gallery', href: '/gallery/'}]},
@@ -254,11 +262,18 @@ export const PatternExport = ({
     namePrefix: string;
     snapshotUrl: SnapshotUrl;
 }) => {
+    const [window, setWindow] = useSafeLocalStorage<WindowState>(
+        'window-state',
+        initialWindowState,
+        isWindowState,
+    );
     return (
         <ProvideExportState initial={initial} save={onSave}>
             <ProvidePendingState initial={initialPendingStateHistory}>
                 <ProvideEditState initial={initialEditState}>
-                    <Inner snapshotUrl={snapshotUrl} namePrefix={namePrefix} />
+                    <ProvideWindowState initial={window} save={setWindow}>
+                        <Inner snapshotUrl={snapshotUrl} namePrefix={namePrefix} />
+                    </ProvideWindowState>
                 </ProvideEditState>
             </ProvidePendingState>
         </ProvideExportState>
@@ -322,14 +337,15 @@ const Inner = ({snapshotUrl, namePrefix}: {snapshotUrl: SnapshotUrl; namePrefix:
                     onChange={sctx.$}
                 />
             )}
-            <div className="max-h-250 overflow-auto">
+            {/*<div className="max-h-250 overflow-auto">
                 <StateEditor
                     snapshotUrl={snapshotUrl}
                     value={state}
                     update={sctx.$}
                     worker={worker}
                 />
-            </div>
+            </div>*/}
+            <Sidebar worker={worker} snapshotUrl={snapshotUrl} />
         </div>
     );
 };

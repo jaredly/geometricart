@@ -57,6 +57,7 @@ export const HoverDropdown = ({
     button: React.ReactNode;
     hover?: React.ReactNode;
 }) => {
+    console.log('hoverd');
     const id = useId();
     if (!hover) return button;
     return (
