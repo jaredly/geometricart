@@ -14,6 +14,7 @@ import {EyeIcon, EyeInvisibleIcon} from '../../../../icons/Eyes';
 import {DragToReorderList, HandleProps} from './DragToReorderList';
 import {useMemo} from 'react';
 import {nextOrder, orderedItems} from './nextOrder';
+import {useValue} from '../../../../json-diff/react';
 
 export const PatternEditor = ({
     value,
@@ -80,8 +81,7 @@ const AdjustmentEditor = ({
 }) => {
     const edit = usePendingState();
     const es = useEditState();
-    // const hover = es.use(es => es.hover?.type === 'shape' && adj.shapes.includes(es.hover.id))
-    const pending = edit.use((v) => v.pending);
+    const pending = useValue(edit.update.pending);
     const isAdding = pending?.type === 'select-shapes' && pending.key === `adj-${adj.id}`;
     return (
         <div className="border border-base-300 bg-base-200 rounded-md p-4 space-y-4">

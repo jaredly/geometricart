@@ -11,6 +11,7 @@ import {Hover} from './utils/resolveMods';
 import {Canvas, SVGCanvas} from './SVGCanvas';
 import {ZoomProps} from './hooks/useSVGZoom';
 import {expandShapes} from './utils/expandShapes';
+import {useValue} from '../../../json-diff/react';
 
 export const renderShapes = (
     shapes: State['shapes'],
@@ -86,7 +87,7 @@ export const DeferredRender = ({
     }, [state, t, worker, setWarnings, onFPS, config]);
 
     const pendingState = usePendingState();
-    const pending = pendingState.use((v) => v.pending);
+    const pending = useValue(pendingState.update.pending);
     const selectedShapes = pending?.type === 'select-shapes' ? pending.shapes : [];
 
     const showShapes =

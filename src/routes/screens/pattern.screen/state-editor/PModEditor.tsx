@@ -7,6 +7,7 @@ import {useExportState} from '../ExportHistory';
 import {EyeIcon, EyeInvisibleIcon} from '../../../../icons/Eyes';
 import {Updater} from '../../../../json-diff/Updater';
 import {BooleanInput, ExpandableEditor, Labeled, NumberInput} from './ExpandableEditor';
+import {useValue} from '../../../../json-diff/react';
 
 const Disableable = ({
     children,
@@ -44,8 +45,7 @@ export const PModEditor = ({
     update: Updater<PMods>;
 }) => {
     const ctx = useExportState();
-    const cropIds = ctx.use((v) => Object.keys(v?.crops ?? {}), false);
-    // const cropIds = Object.keys(ctx.latest().crops);
+    const cropIds = useValue(ctx.update, (v) => Object.keys(v?.crops ?? {}), false);
 
     switch (value.type) {
         case 'inset':

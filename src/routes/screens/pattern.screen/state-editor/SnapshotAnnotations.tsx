@@ -5,6 +5,7 @@ import {runPNGExport} from '../render/runPNGExport';
 import {saveAnnotation, deleteAnnotation, SnapshotUrl} from './saveAnnotation';
 import {AnnotationView, anSnapshot} from './AnnotationView';
 import {ExportConfig2d} from '../types/state-type';
+import {useValue} from '../../../../json-diff/react';
 
 export const SnapshotAnnotations = ({
     worker,
@@ -18,7 +19,8 @@ export const SnapshotAnnotations = ({
     const ctx = useExportState();
     const history = ctx.useHistory();
     const [loading, setLoading] = useState(false);
-    const view = ctx.use((s) => Object.keys(s.exports)[0]);
+    const exports = useValue(ctx.update.exports);
+    const view = Object.keys(exports)[0];
     const config = useMemo(() => {
         // okkk
     }, [view]);

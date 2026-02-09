@@ -23,6 +23,7 @@ import {barePathFromCoords} from './utils/resolveMods';
 import {generateSvgItems} from './generateSvgItems';
 import {GrDirectContext, Surface} from 'canvaskit-wasm';
 import {getConstrainedSurface} from './render/recordVideo';
+import {useValue} from '../../../json-diff/react';
 
 export const Canvas = ({
     items,
@@ -116,7 +117,7 @@ export const SVGCanvas = ({
 
     const editContext = usePendingState();
 
-    const pending = editContext.use((s) => s.pending);
+    const pending = useValue(editContext.update.pending);
 
     useEffect(() => {
         const fn = (evt: KeyboardEvent) => {

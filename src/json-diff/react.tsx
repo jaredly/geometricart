@@ -103,14 +103,17 @@ const collectAll = (node: PathListenerNode | undefined, out: Set<PathListener>) 
     node.children.forEach((child) => collectAll(child, out));
 };
 
+// ok here we are. we want to ... notify all items and children?
 const notifyPaths = (root: PathListenerNode, paths: Path[]) => {
     if (!paths.length) return;
     const listeners = new Set<PathListener>();
     paths.forEach((p) => {
         let node: PathListenerNode | undefined = root;
+        node.listeners.forEach((l) => listeners.add(l));
         for (const seg of p) {
             node = node?.children.get(segmentKey(seg));
             if (!node) break;
+            node.listeners.forEach((l) => listeners.add(l));
         }
         collectAll(node, listeners);
     });
@@ -132,23 +135,33 @@ const changedPaths = (changes: JsonPatchOp<unknown>[]) => {
     return paths;
 };
 
-export const useValue = <Current,>(
-    node: DiffNodeA<unknown, Current, PropertyKey, unknown, Extra>,
+export const useValue: (<Current, Return, Tag extends PropertyKey>(
+    node: DiffNodeA<unknown, Current, Tag, unknown, Extra>,
+    mod: (v: Current) => Return,
+    exact?: boolean,
+) => Return) &
+    (<Current, Tag extends PropertyKey>(
+        node: DiffNodeA<unknown, Current, Tag, unknown, Extra>,
+    ) => Current) = <Current, Return, Tag extends PropertyKey>(
+    node: DiffNodeA<unknown, Current, Tag, unknown, Extra>,
+    mod: (v: Current) => Return = (v) => v as any,
+    exact = true,
 ) => {
     const path = getPath(node);
     const extra = getExtra(node);
-    const [v, setV] = useState(() => extra.getForPath<Current>(path));
+    const [v, setV] = useState(() => mod(extra.getForPath<Current>(path)));
     const lv = useLatest(v);
+    const lmod = useLatest(mod);
     useEffect(
         () =>
             extra.listenToPath(path, () => {
-                const nw = extra.getForPath<Current>(path);
-                if (lv.current !== nw) {
+                const nw = lmod.current(extra.getForPath<Current>(path));
+                if (exact ? !equal(lv.current, nw) : lv.current !== nw) {
                     lv.current = nw;
                     setV(nw);
                 }
             }),
-        [extra, path, lv],
+        [extra, path, lv, lmod, exact],
     );
     return v;
 };
@@ -245,38 +258,6 @@ export const makeHistoryContext = <T, An, Tag extends string = 'type'>(tag: Tag)
                 const {dispatch, update, updateAnnotations} = makeDispatch(ctx, tag);
 
                 return {
-                    use<B>(sel: (t: T) => B, exact = true): B {
-                        const lsel = useRef(sel);
-                        lsel.current = sel;
-
-                        if ((ctx.previewState?.current ?? ctx.state.current) == null) {
-                            console.log(ctx);
-                            throw new Error('wy is it this way');
-                        }
-                        const [value, setValue] = useState(() =>
-                            sel(ctx.previewState?.current ?? ctx.state.current),
-                        );
-                        const lvalue = useRef(value);
-                        lvalue.current = value;
-
-                        useEffect(() => {
-                            const fn = () => {
-                                const nv = lsel.current(
-                                    ctx.previewState?.current ?? ctx.state.current,
-                                );
-                                if (exact ? nv !== lvalue.current : !equal(nv, lvalue.current)) {
-                                    setValue(nv);
-                                }
-                            };
-                            ctx.listeners.push(fn);
-                            return () => {
-                                const idx = ctx.listeners.indexOf(fn);
-                                ctx.listeners.splice(idx, 1);
-                            };
-                        }, [exact]);
-
-                        return value;
-                    },
                     onHistoryChange(f: () => void) {
                         ctx.historyListeners.push(f);
                         return () => {
@@ -352,7 +333,7 @@ const makeDispatch = <T, An, Tag extends string = 'type'>(ctx: CH<T, An, Tag>, t
             if (ctx.raf == null) {
                 ctx.raf = requestAnimationFrame(() => {
                     ctx.raf = undefined;
-                    const base = ctx.previewState?.current ?? ctx.state.current;
+                    // const base = ctx.previewState?.current ?? ctx.state.current;
                     const queue = ctx.queuedChanges;
                     ctx.queuedChanges = [];
                     const next = dispatch(ctx.previewState ?? ctx.state, queue, extra, tag);

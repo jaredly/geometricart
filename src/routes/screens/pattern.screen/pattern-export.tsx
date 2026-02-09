@@ -24,6 +24,7 @@ import {makeForPattern} from './utils/makeForPattern';
 import {ListExports} from './ListExports';
 import {idbprefix, SnapshotUrl} from './state-editor/saveAnnotation';
 import db from './state-editor/kv-idb';
+import {useValue} from '../../../json-diff/react';
 
 const CreateAndRedirectLocalStorage = ({id}: {id: string}) => {
     const [error, setError] = useState<null | Error>(null);
@@ -266,7 +267,7 @@ export const PatternExport = ({
 
 const Inner = ({snapshotUrl, namePrefix}: {snapshotUrl: SnapshotUrl; namePrefix: string}) => {
     const sctx = useExportState();
-    const state = sctx.use((v) => v);
+    const state = useValue(sctx.update);
     const pctx = usePendingState();
     const {search} = useLocation();
     const debug = search.includes('debug=');

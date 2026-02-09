@@ -5,6 +5,7 @@ import {JsonEditor} from './JsonEditor';
 import {Updater} from '../../../../json-diff/Updater';
 import {useExportState} from '../ExportHistory';
 import {notNull} from '../utils/notNull';
+import {useValue} from '../../../../json-diff/react';
 
 export const ShapeEditor = ({
     shape,
@@ -23,17 +24,21 @@ export const ShapeEditor = ({
 }) => {
     const es = usePendingState();
     const st = useExportState();
-    const tilingIds = st.use((state) => {
-        if (!state) throw new Error('cant happen');
-        const ids = Object.values(state.layers)
-            .flatMap((layer) =>
-                Object.values(layer.entities).map((entity) =>
-                    entity.type === 'Pattern' ? entity.id : null,
-                ),
-            )
-            .filter(notNull);
-        return ids;
-    }, false);
+    const tilingIds = useValue(
+        st.update,
+        (state) => {
+            if (!state) throw new Error('cant happen');
+            const ids = Object.values(state.layers)
+                .flatMap((layer) =>
+                    Object.values(layer.entities).map((entity) =>
+                        entity.type === 'Pattern' ? entity.id : null,
+                    ),
+                )
+                .filter(notNull);
+            return ids;
+        },
+        false,
+    );
 
     return (
         <div

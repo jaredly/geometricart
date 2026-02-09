@@ -12,6 +12,7 @@ import {usePendingState} from '../utils/editState';
 import {useExportState} from '../ExportHistory';
 import {expandShapes} from '../utils/expandShapes';
 import {ExpandableEditor} from './ExpandableEditor';
+import {useValue} from '../../../../json-diff/react';
 
 export const LayerEditor = ({
     layer,
@@ -26,7 +27,8 @@ export const LayerEditor = ({
     const pend = usePendingState();
 
     const st = useExportState();
-    const {shapes, layers} = st.use((state) => ({shapes: state.shapes, layers: state.layers}));
+    const shapes = useValue(st.update.shapes);
+    const layers = useValue(st.update.layers);
     const expandedShapes = useMemo(
         () => Object.keys(expandShapes(shapes, layers)),
         [shapes, layers],
