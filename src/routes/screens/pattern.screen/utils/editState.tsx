@@ -10,7 +10,7 @@ export const [ProvidePendingState, usePendingState] = makeHistoryContext<Pending
 );
 
 export type EditStateUpdate = DiffBuilderA<EditState, 'type'>;
-export type PendingStateUpdate = DiffBuilderA<PendingState, 'type'>;
+export type PendingStateUpdate = DiffBuilderA<PendingState, 'type', unknown, unknown>;
 
 export type PendingState = {
     pending:
