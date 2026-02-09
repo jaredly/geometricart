@@ -1,90 +1,16 @@
-import {useEffect, useMemo, useRef, useState} from 'react';
+import {useMemo, useRef} from 'react';
 import {useValue} from '../../../../json-diff/react';
 import {useExportState} from '../ExportHistory';
 import {WorkerSend} from '../render/render-client';
 import {SnapshotUrl} from '../state-editor/saveAnnotation';
 import {StateEditor} from '../state-editor/StateEditor';
-import {useLatest} from '../utils/useLatest';
 import {useResettingState, useWindowState} from './state';
+import {AccordionSidebar} from './AccordionSidebar';
+import {MoveBar} from './MoveBar';
+import {StyleConfig} from './StyleConfig';
+import {HistoryAndSnapshots} from './HistoryAndSnapshots';
 
-const MoveBar = ({onMove, onCommit}: {onMove(v: number): void; onCommit(): void}) => {
-    const [moving, setMoving] = useState(false);
-    const cb = useLatest({onMove, onCommit});
-    useEffect(() => {
-        if (!moving) return;
-        const fn = (evt: MouseEvent) => {
-            cb.current.onMove(evt.clientX);
-        };
-        const up = () => {
-            setMoving(false);
-            cb.current.onCommit();
-        };
-        document.addEventListener('mousemove', fn);
-        document.addEventListener('mouseup', up);
-        return () => {
-            document.removeEventListener('mousemove', fn);
-            document.removeEventListener('mouseup', up);
-        };
-    }, [moving, cb]);
-
-    return (
-        <div
-            onMouseDown={(evt) => {
-                evt.stopPropagation();
-                evt.preventDefault();
-                setMoving(true);
-            }}
-            style={{
-                width: 5,
-                flexShrink: 0,
-            }}
-            className={
-                'bg-slate-700 hover:bg-amber-200 cursor-pointer' + (moving ? ' bg-amber-200' : '')
-            }
-        ></div>
-    );
-};
-
-const AccordionSidebar = ({
-    items,
-    expanded,
-    setExpanded,
-}: {
-    items: {title: React.ReactNode; body: React.ReactNode; key: string}[];
-    expanded: Record<string, boolean>;
-    setExpanded: (key: string, expanded: boolean) => void;
-}) => {
-    const everExpanded = useMemo<Record<string, boolean>>(() => ({}), []);
-    Object.keys(expanded).forEach((k) => {
-        if (expanded[k]) everExpanded[k] = true;
-    });
-    return (
-        <div className="flex flex-col items-stretch flex-1 min-w-0">
-            {items.map((item) => (
-                <div key={item.key} className="contents">
-                    <div
-                        onClick={() => setExpanded(item.key, !expanded[item.key])}
-                        className={
-                            'border-b border-amber-600 transition-colors px-4 py-2 cursor-pointer' +
-                            (expanded[item.key]
-                                ? ' bg-amber-950 hover:bg-amber-900'
-                                : ' hover:bg-slate-700')
-                        }
-                    >
-                        {item.title}
-                    </div>
-                    {everExpanded ? (
-                        <div className={'overflow-auto ' + (expanded[item.key] ? '' : 'hidden')}>
-                            {item.body}
-                        </div>
-                    ) : null}
-                </div>
-            ))}
-        </div>
-    );
-};
-
-export const Sidebar = ({worker, snapshotUrl}: {worker: WorkerSend; snapshotUrl: SnapshotUrl}) => {
+export const Sidebar = () => {
     const sctx = useExportState();
     const state = useValue(sctx.$);
 
@@ -99,18 +25,21 @@ export const Sidebar = ({worker, snapshotUrl}: {worker: WorkerSend; snapshotUrl:
         return [
             {
                 title: 'State',
-                body: (
-                    <StateEditor
-                        snapshotUrl={snapshotUrl}
-                        value={state}
-                        update={sctx.$}
-                        worker={worker}
-                    />
-                ),
+                body: <StateEditor value={state} update={sctx.$} />,
                 key: 'state',
             },
+            {
+                title: 'Style Config',
+                key: 'styleConfig',
+                body: <StyleConfig />,
+            },
+            {
+                title: 'History & Snapshots',
+                key: 'history & snapshots',
+                body: <HistoryAndSnapshots />,
+            },
         ];
-    }, [snapshotUrl, state, sctx, worker]);
+    }, [state, sctx]);
 
     return (
         <div style={{width}} ref={self} className="flex self-stretch items-stretch">

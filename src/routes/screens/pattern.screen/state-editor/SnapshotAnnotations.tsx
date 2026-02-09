@@ -1,4 +1,4 @@
-import {useMemo, useState} from 'react';
+import {useContext, useMemo, useState} from 'react';
 import {useExportState} from '../ExportHistory';
 import {WorkerSend} from '../render/render-client';
 import {runPNGExport} from '../render/runPNGExport';
@@ -6,21 +6,15 @@ import {saveAnnotation, deleteAnnotation, SnapshotUrl} from './saveAnnotation';
 import {AnnotationView, anSnapshot} from './AnnotationView';
 import {ExportConfig2d} from '../types/state-type';
 import {useValue} from '../../../../json-diff/react';
+import {GlobalDependenciesCtx} from '../window/GlobalDependencies';
 
-export const SnapshotAnnotations = ({
-    worker,
-    snapshotUrl,
-    // config,
-}: {
-    worker: WorkerSend;
-    snapshotUrl: SnapshotUrl;
-    // config: ExportConfig2d;
-}) => {
+export const SnapshotAnnotations = () => {
     const ctx = useExportState();
     const history = ctx.useHistory();
     const [loading, setLoading] = useState(false);
     const exports = useValue(ctx.$.exports);
     const view = Object.keys(exports)[0];
+    const {worker, snapshotUrl} = useContext(GlobalDependenciesCtx);
     const config = useMemo(() => {
         // okkk
     }, [view]);

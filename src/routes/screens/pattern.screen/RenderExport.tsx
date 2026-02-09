@@ -1,4 +1,4 @@
-import {useCallback, useMemo, useRef, useState} from 'react';
+import {useCallback, useContext, useMemo, useRef, useState} from 'react';
 import {AddIcon, BaselineFilterCenterFocus, BaselineZoomInMap} from '../../../icons/Icon';
 import {Updater} from '../../../json-diff/Updater';
 import {closeEnough} from '../../../rendering/epsilonToZero';
@@ -14,23 +14,21 @@ import {VideoExport} from './VideoExport';
 import {SnapshotUrl} from './state-editor/saveAnnotation';
 import {useLocation, useNavigate} from 'react-router';
 import {makeBox} from './makeBox';
+import {GlobalDependenciesCtx} from './window/GlobalDependencies';
 
 export const RenderExport = ({
     namePrefix,
     state,
-    snapshotUrl,
     onChange,
-    worker,
 }: {
-    worker: WorkerSend;
     namePrefix: string;
     state: State;
     onChange: Updater<State>;
-    snapshotUrl: SnapshotUrl;
 }) => {
     const [t, setT] = useState(0); // animateeeee
     const animCache = useMemo<AnimCtx['cache']>(() => new Map(), []);
     const nav = useNavigate();
+    const {snapshotUrl, worker} = useContext(GlobalDependenciesCtx);
 
     const [duration, setDuration] = useState(5);
     const [animate, setAnimate] = useState(false);

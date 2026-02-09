@@ -29,11 +29,9 @@ import {useValue} from '../../../../json-diff/react';
 type StateEditorProps = {
     value: State;
     update: Updater<State>;
-    worker: WorkerSend;
-    snapshotUrl: SnapshotUrl;
 };
 
-export const StateEditor = ({value, worker, update, snapshotUrl}: StateEditorProps) => {
+export const StateEditor = ({value, update}: StateEditorProps) => {
     const layers = useMemo(
         () => Object.entries(value.layers).sort(([, a], [, b]) => a.order - b.order),
         [value.layers],
@@ -258,28 +256,6 @@ export const StateEditor = ({value, worker, update, snapshotUrl}: StateEditorPro
                 </div>
             </Section>
 
-            <Section title="Style Config" alignStart>
-                <div className="flex flex-col">
-                    <div className="space-y-3">
-                        <TextField
-                            label="Seed"
-                            value={String(value.styleConfig.seed)}
-                            onChange={(seed) => update.styleConfig.seed(parseAnimatable(seed))}
-                        />
-                        <PaletteEditor
-                            palette={value.styleConfig.palette}
-                            update={update.styleConfig.palette}
-                        />
-                    </div>
-                    {/* <ClocksEditor
-                        clocks={value.styleConfig.clocks}
-                        onChange={(clocks) =>
-                            onChange({...value, styleConfig: {...value.styleConfig, clocks}})
-                        }
-                    /> */}
-                </div>
-            </Section>
-
             <Section
                 title="Crops"
                 // actions={
@@ -345,8 +321,8 @@ export const StateEditor = ({value, worker, update, snapshotUrl}: StateEditorPro
                 />
             </Section>
             <Section title="History & Snapshots">
-                <SnapshotAnnotations snapshotUrl={snapshotUrl} worker={worker} />
-                <HistoryView snapshotUrl={snapshotUrl} />
+                <SnapshotAnnotations />
+                <HistoryView />
             </Section>
         </div>
     );

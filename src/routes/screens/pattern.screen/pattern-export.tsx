@@ -32,6 +32,7 @@ import {
     useSafeLocalStorage,
     WindowState,
 } from './window/state';
+import {GlobalDependenciesCtx} from './window/GlobalDependencies';
 
 const CreateAndRedirectLocalStorage = ({id}: {id: string}) => {
     const [error, setError] = useState<null | Error>(null);
@@ -267,16 +268,21 @@ export const PatternExport = ({
         initialWindowState,
         isWindowState,
     );
+    const worker = useWorker();
+    const gctx = useMemo(() => ({worker, snapshotUrl}), [worker, snapshotUrl]);
+
     return (
-        <ProvideExportState initial={initial} save={onSave}>
-            <ProvidePendingState initial={initialPendingStateHistory}>
-                <ProvideEditState initial={initialEditState}>
-                    <ProvideWindowState initial={window} save={setWindow}>
-                        <Inner snapshotUrl={snapshotUrl} namePrefix={namePrefix} />
-                    </ProvideWindowState>
-                </ProvideEditState>
-            </ProvidePendingState>
-        </ProvideExportState>
+        <GlobalDependenciesCtx.Provider value={gctx}>
+            <ProvideExportState initial={initial} save={onSave}>
+                <ProvidePendingState initial={initialPendingStateHistory}>
+                    <ProvideEditState initial={initialEditState}>
+                        <ProvideWindowState initial={window} save={setWindow}>
+                            <Inner snapshotUrl={snapshotUrl} namePrefix={namePrefix} />
+                        </ProvideWindowState>
+                    </ProvideEditState>
+                </ProvidePendingState>
+            </ProvideExportState>
+        </GlobalDependenciesCtx.Provider>
     );
 };
 
@@ -322,20 +328,13 @@ const Inner = ({snapshotUrl, namePrefix}: {snapshotUrl: SnapshotUrl; namePrefix:
         document.addEventListener('keydown', fn);
         return () => document.removeEventListener('keydown', fn);
     }, [sctx, pctx]);
-    const worker = useWorker();
 
     return (
         <div className="flex">
             {debug ? (
                 <RenderDebug state={state} update={sctx.$} />
             ) : (
-                <RenderExport
-                    worker={worker}
-                    namePrefix={namePrefix}
-                    snapshotUrl={snapshotUrl}
-                    state={state}
-                    onChange={sctx.$}
-                />
+                <RenderExport namePrefix={namePrefix} state={state} onChange={sctx.$} />
             )}
             {/*<div className="max-h-250 overflow-auto">
                 <StateEditor
@@ -345,7 +344,7 @@ const Inner = ({snapshotUrl, namePrefix}: {snapshotUrl: SnapshotUrl; namePrefix:
                     worker={worker}
                 />
             </div>*/}
-            <Sidebar worker={worker} snapshotUrl={snapshotUrl} />
+            <Sidebar />
         </div>
     );
 };
