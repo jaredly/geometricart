@@ -1,3 +1,5 @@
+# Sidebar! making it happen
+
 # View n stuff
 
 - ~bbox~ -> center & ppu
@@ -17,7 +19,7 @@ and expanded-status of the accordian items
 - [x] name() should not be a function -> actually it's fine for it to be one
 - [x] useValue()
 - [x] non-history useValue
-- [ ] update to $ dolla
+- [x] update to $ dolla
 
 #
 

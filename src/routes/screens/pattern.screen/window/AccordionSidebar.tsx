@@ -29,7 +29,12 @@ export const AccordionSidebar = ({
                         {item.title}
                     </div>
                     {everExpanded ? (
-                        <div className={'overflow-auto ' + (expanded[item.key] ? '' : 'hidden')}>
+                        <div
+                            className={
+                                'overflow-auto border-b border-amber-600  ' +
+                                (expanded[item.key] ? '' : 'hidden')
+                            }
+                        >
                             {item.body}
                         </div>
                     ) : null}
