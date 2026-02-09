@@ -49,7 +49,7 @@ export const DisabledIcon = ({update, value}: {value: string; update: Updater<st
                     } as React.CSSProperties
                 }
             >
-                <ExpandableEditor value={value + ''} onChange={(v) => update.$replace(v)} />
+                <ExpandableEditor value={value ?? ''} onChange={(v) => update.$replace(v)} />
             </div>
         </>
     );

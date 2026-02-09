@@ -88,7 +88,15 @@ const PatternShapesView = ({
     value: PatternContents & {type: 'shapes'};
 }) => {
     return (
-        <Expandable ex={update.toString()} title={'Shapes I guess'}>
+        <Expandable
+            ex={update.toString()}
+            title={
+                <div>
+                    shapes
+                    <DisabledIcon value={value.disabled} update={update.disabled} />
+                </div>
+            }
+        >
             <OrderableEditor value={value.styles} update={update.styles} Inner={StyleView} />
         </Expandable>
     );

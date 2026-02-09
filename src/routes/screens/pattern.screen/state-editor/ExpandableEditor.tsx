@@ -6,6 +6,7 @@ for small text, it's small
 
 import {RefObject, useEffect, useLayoutEffect, useRef, useState} from 'react';
 import {AnimatableBoolean, AnimatableNumber} from '../export-types';
+import {createPortal} from 'react-dom';
 
 type EditProps = {
     sel?: number;
@@ -30,6 +31,18 @@ const OneLineGrowEditor = ({value, onChange, onBlur, onCommit, sel}: EditProps) 
             inp.current.selectionEnd = sel;
         }
     }, [sel]);
+    const hidden = createPortal(
+        <span
+            ref={sizer}
+            className="input font-mono opacity-0 absolute pointer-events-none whitespace-pre"
+            style={{
+                width: 'unset',
+            }}
+        >
+            {value === '' ? ' ' : value}
+        </span>,
+        document.body,
+    );
     return (
         <>
             <input
@@ -53,15 +66,7 @@ const OneLineGrowEditor = ({value, onChange, onBlur, onCommit, sel}: EditProps) 
                 onChange={(evt) => onChange(evt.target.value, evt.target.selectionStart ?? 0)}
                 className="input font-mono"
             />
-            <span
-                ref={sizer}
-                className="input font-mono opacity-0 absolute pointer-events-none whitespace-pre"
-                style={{
-                    width: 'unset',
-                }}
-            >
-                {value === '' ? ' ' : value}
-            </span>
+            {hidden}
         </>
     );
 };
