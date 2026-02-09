@@ -13,6 +13,12 @@ and expanded-status of the accordian items
 
 #
 
+- replace, etc. should be prefixed with $
+- name() should not be a function
+- usePath()
+
+#
+
 Ok we gotta make linestyle editor collapsible. its just ridiculous
 
 -->

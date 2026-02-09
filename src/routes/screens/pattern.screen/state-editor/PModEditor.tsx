@@ -52,15 +52,16 @@ export const PModEditor = ({
             return (
                 <Disableable
                     disabled={value.disabled}
-                    toggle={() => update.variant(value.type).disabled((v, u) => u(!v))}
-                    remove={update.remove}
+                    toggle={() =>
+                        update.$variant(value.type).disabled.$update((v, u) => u.$replace(!v))
+                    }
+                    remove={update.$remove}
                 >
                     <span className="mr-2">{value.type}</span>
                     <Labeled text="v">
                         <NumberInput
                             value={value.v}
-                            // biome-ignore lint: this one is fine
-                            onChange={update.variant(value.type).v as Updater<any>}
+                            onChange={update.$variant(value.type).v.$replace}
                         />
                     </Labeled>
                 </Disableable>
@@ -69,15 +70,16 @@ export const PModEditor = ({
             return (
                 <Disableable
                     disabled={value.disabled}
-                    toggle={() => update.variant(value.type).disabled((v, u) => u(!v))}
-                    remove={update.remove}
+                    toggle={() =>
+                        update.$variant(value.type).disabled.$update((v, u) => u.$replace(!v))
+                    }
+                    remove={update.$remove}
                 >
                     translate
                     <AnimCoordInput
                         label="v"
                         value={value.v}
-                        // biome-ignore lint: this one is fine
-                        onChange={update.variant('translate').v as Updater<any>}
+                        onChange={update.$variant('translate').v.$replace}
                     />
                 </Disableable>
             );
@@ -85,13 +87,15 @@ export const PModEditor = ({
             return (
                 <Disableable
                     disabled={value.disabled}
-                    toggle={() => update.variant(value.type).disabled((v, u) => u(!v))}
-                    remove={update.remove}
+                    toggle={() =>
+                        update.$variant(value.type).disabled.$update((v, u) => u.$replace(!v))
+                    }
+                    remove={update.$remove}
                 >
                     {value.type}
                     <select
                         value={value.id}
-                        onChange={(evt) => update.variant('crop').id(evt.target.value)}
+                        onChange={(evt) => update.$variant('crop').id.$replace(evt.target.value)}
                     >
                         <option disabled value="">
                             Select an id
@@ -109,8 +113,8 @@ export const PModEditor = ({
                         checked={value.mode === 'rough'}
                         onChange={() =>
                             value.mode === undefined
-                                ? update.variant('crop').mode.add('rough')
-                                : update.variant('crop').mode.remove()
+                                ? update.$variant('crop').mode.$add('rough')
+                                : update.$variant('crop').mode.$remove()
                         }
                     />
                     Hole
@@ -118,7 +122,9 @@ export const PModEditor = ({
                         type="checkbox"
                         className="checkbox"
                         checked={value.hole}
-                        onChange={(evt) => update.variant('crop').hole(evt.target.checked)}
+                        onChange={(evt) =>
+                            update.$variant('crop').hole.$replace(evt.target.checked)
+                        }
                     />
                 </Disableable>
             );
@@ -126,20 +132,21 @@ export const PModEditor = ({
             return (
                 <Disableable
                     disabled={value.disabled}
-                    toggle={() => update.variant(value.type).disabled((v, u) => u(!v))}
-                    remove={update.remove}
+                    toggle={() =>
+                        update.$variant(value.type).disabled.$update((v, u) => u.$replace(!v))
+                    }
+                    remove={update.$remove}
                 >
                     {value.type}
                     <AnimCoordOrNumberInput
                         label="v"
                         value={value.v}
-                        // biome-ignore lint: this one is fine
-                        onChange={update.variant('scale').v as Updater<any>}
+                        onChange={update.$variant('scale').v.$replace}
                     />
                     <AnimCoordInput
                         label="origin"
                         value={value.origin}
-                        onChange={update.variant('scale').origin}
+                        onChange={update.$variant('scale').origin.$replace}
                     />
                 </Disableable>
             );
@@ -147,21 +154,22 @@ export const PModEditor = ({
             return (
                 <Disableable
                     disabled={value.disabled}
-                    toggle={() => update.variant(value.type).disabled((v, u) => u(!v))}
-                    remove={update.remove}
+                    toggle={() =>
+                        update.$variant(value.type).disabled.$update((v, u) => u.$replace(!v))
+                    }
+                    remove={update.$remove}
                 >
                     {value.type}
                     <Labeled text="v">
                         <NumberInput
                             value={value.v}
-                            // biome-ignore lint: this one is fine
-                            onChange={update.variant('rotate').v as Updater<any>}
+                            onChange={update.$variant('rotate').v.$replace}
                         />
                     </Labeled>
                     <AnimCoordInput
                         label="origin"
                         value={value.origin}
-                        onChange={update.variant('rotate').origin}
+                        onChange={update.$variant('rotate').origin.$replace}
                     />
                 </Disableable>
             );
@@ -169,21 +177,22 @@ export const PModEditor = ({
             return (
                 <Disableable
                     disabled={value.disabled}
-                    toggle={() => update.variant(value.type).disabled((v, u) => u(!v))}
-                    remove={update.remove}
+                    toggle={() =>
+                        update.$variant(value.type).disabled.$update((v, u) => u.$replace(!v))
+                    }
+                    remove={update.$remove}
                 >
                     {value.type}
                     <Labeled text="width">
                         <NumberInput
                             value={value.width}
-                            // biome-ignore lint: this one is fine
-                            onChange={update.variant(value.type).width as Updater<any>}
+                            onChange={update.$variant(value.type).width.$replace}
                         />
                     </Labeled>
                     <Labeled text="round">
                         <BooleanInput
                             value={value.round + ''}
-                            onChange={(v) => update.variant(value.type).round(v ?? false)}
+                            onChange={(v) => update.$variant(value.type).round.$replace(v ?? false)}
                         />
                     </Labeled>
                 </Disableable>

@@ -40,7 +40,7 @@ export const StateEditor = ({value, worker, update, snapshotUrl}: StateEditorPro
     const crops = useMemo(() => Object.entries(value.crops), [value.crops]);
     const pendingState = usePendingState();
     const editState = useEditState();
-    const onHover = editState.update.hover.replace;
+    const onHover = editState.update.hover.$replace;
     const showShapes = editState.use((s) => s.showShapes);
 
     const latest = useRef(value);
@@ -59,7 +59,7 @@ export const StateEditor = ({value, worker, update, snapshotUrl}: StateEditorPro
                         className="btn btn-outline btn-sm"
                         onClick={() => {
                             const nextId = `layer-${layers.length + 1}`;
-                            update.layers[nextId].add(createLayerTemplate(nextId));
+                            update.layers[nextId].$add(createLayerTemplate(nextId));
                         }}
                     >
                         Add Layer
@@ -84,7 +84,7 @@ export const StateEditor = ({value, worker, update, snapshotUrl}: StateEditorPro
             <Section
                 title="Shapes"
                 open={showShapes}
-                onOpen={(open) => editState.update.showShapes.replace(open)}
+                onOpen={(open) => editState.update.showShapes.$replace(open)}
                 actions={
                     <>
                         <button
@@ -107,11 +107,11 @@ export const StateEditor = ({value, worker, update, snapshotUrl}: StateEditorPro
                             <li>
                                 <button
                                     onClick={(evt) => {
-                                        pendingState.update.pending.replace({
+                                        pendingState.update.pending.$replace({
                                             type: 'shape',
                                             onDone(points, open) {
                                                 const nextId = genid();
-                                                update.shapes[nextId].add({
+                                                update.shapes[nextId].$add({
                                                     origin: points[0],
                                                     segments: points
                                                         .slice(1)
@@ -157,11 +157,11 @@ export const StateEditor = ({value, worker, update, snapshotUrl}: StateEditorPro
                                                 ],
                                             };
                                         };
-                                        pendingState.update.pending.replace({
+                                        pendingState.update.pending.$replace({
                                             type: 'shape',
                                             onDone(points) {
                                                 const nextId = genid();
-                                                update.shapes[nextId].add(asCircle(points));
+                                                update.shapes[nextId].$add(asCircle(points));
                                             },
                                             points: [],
                                             asShape: asCircle,
@@ -190,10 +190,10 @@ export const StateEditor = ({value, worker, update, snapshotUrl}: StateEditorPro
                                                 {x: c.x - dx, y: c.y - dy},
                                             ]);
                                         };
-                                        pendingState.update.pending.replace({
+                                        pendingState.update.pending.$replace({
                                             type: 'shape',
                                             onDone(points) {
-                                                update.shapes[genid()].add(asRect(points));
+                                                update.shapes[genid()].$add(asRect(points));
                                             },
                                             points: [],
                                             asShape: asRect,
@@ -223,7 +223,7 @@ export const StateEditor = ({value, worker, update, snapshotUrl}: StateEditorPro
                             }}
                             onDup={(pt) => {
                                 const id = genid();
-                                update.shapes[id].add(
+                                update.shapes[id].$add(
                                     transformBarePath(shape, [
                                         translationMatrix({
                                             x: pt.x - shape.origin.x,
@@ -244,13 +244,13 @@ export const StateEditor = ({value, worker, update, snapshotUrl}: StateEditorPro
                         <NumberField
                             label="PPI"
                             value={value.view.ppu}
-                            onChange={update.view.ppu}
+                            onChange={update.view.ppu.$replace}
                         />
                         <AnimColor
                             label="Background"
                             value={value.view.background}
                             palette={value.styleConfig.palette}
-                            onChange={update.view.background}
+                            onChange={update.view.background.$replace}
                         />
                     </div>
                     {/*<BoxField label="View Box" value={value.view.box} update={update.view.box} />*/}
@@ -263,7 +263,9 @@ export const StateEditor = ({value, worker, update, snapshotUrl}: StateEditorPro
                         <TextField
                             label="Seed"
                             value={String(value.styleConfig.seed)}
-                            onChange={(seed) => update.styleConfig.seed(parseAnimatable(seed))}
+                            onChange={(seed) =>
+                                update.styleConfig.seed.$replace(parseAnimatable(seed))
+                            }
                         />
                         <PaletteEditor
                             palette={value.styleConfig.palette}
@@ -316,7 +318,7 @@ export const StateEditor = ({value, worker, update, snapshotUrl}: StateEditorPro
                                     <button
                                         className="btn btn-ghost btn-sm text-error"
                                         onClick={() => {
-                                            update.crops[key].remove();
+                                            update.crops[key].$remove();
                                         }}
                                     >
                                         Remove
@@ -340,7 +342,7 @@ export const StateEditor = ({value, worker, update, snapshotUrl}: StateEditorPro
             <Section title="Timelines">
                 <TimelineEditor
                     timeline={value.styleConfig.timeline}
-                    onChange={update.styleConfig.timeline}
+                    onChange={update.styleConfig.timeline.$replace}
                 />
             </Section>
             <Section title="History & Snapshots">

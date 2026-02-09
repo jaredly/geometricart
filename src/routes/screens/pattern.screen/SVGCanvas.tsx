@@ -122,11 +122,11 @@ export const SVGCanvas = ({
         const fn = (evt: KeyboardEvent) => {
             if (evt.key === 'Enter') {
                 if (pending?.type !== 'shape') return;
-                editContext.update.pending.replace(null);
+                editContext.update.pending.$replace(null);
                 pending.onDone(pending.points, true);
             }
             if (evt.key === 'Escape') {
-                editContext.update.pending.replace(null);
+                editContext.update.pending.$replace(null);
             }
         };
         document.addEventListener('keydown', fn);
@@ -197,7 +197,7 @@ export const SVGCanvas = ({
                             }
                             if (pending.type !== 'shape') return;
                             if (pending.points.length && coordsEqual(pending.points[0], pt)) {
-                                editContext.update.pending.replace(null);
+                                editContext.update.pending.$replace(null);
 
                                 if (pending.points.length === 1) {
                                     const byEndPoint = edgesByEndpoint(segs);
@@ -216,7 +216,7 @@ export const SVGCanvas = ({
                                     pending.onDone(pending.points, false);
                                 }
                             } else {
-                                editContext.update.pending.variant('shape').points.push(pt);
+                                editContext.update.pending.$variant('shape').points.$push(pt);
                             }
                         }}
                         cursor={'pointer'}

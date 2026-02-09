@@ -20,7 +20,7 @@ export const ShadowEditor = ({
                 <button
                     className="btn btn-sm"
                     onClick={() =>
-                        update({
+                        update.$replace({
                             blur: '0,0',
                             offset: '3,3',
                             color: '#000',
@@ -38,12 +38,12 @@ export const ShadowEditor = ({
                 <div className="flex flex-col md:flex-row gap-2 md:items-center">
                     <button
                         className="btn btn-ghost btn-xs text-error"
-                        onClick={() => update.remove()}
+                        onClick={() => update.$remove()}
                     >
                         Remove
                     </button>
                 </div>
-                <BlurInput value={value} onChange={(value) => update(value)} />
+                <BlurInput value={value} onChange={(value) => update.$replace(value)} />
             </div>
         );
     }
@@ -52,7 +52,7 @@ export const ShadowEditor = ({
             <div className="flex flex-col md:flex-row gap-2 md:items-center">
                 <button
                     className="btn btn-ghost btn-xs text-error absolute top-2 right-2"
-                    onClick={() => update.remove()}
+                    onClick={() => update.$remove()}
                 >
                     Remove
                 </button>
@@ -61,19 +61,21 @@ export const ShadowEditor = ({
                 <AnimCoordOrNumberInput
                     label="blur"
                     value={value.blur}
-                    onChange={(blur) => update({...value, blur: blur as AnimatableCoord})}
+                    onChange={(blur) => update.$replace({...value, blur: blur as AnimatableCoord})}
                 />
                 <AnimCoordOrNumberInput
                     label="offset"
                     value={value.offset}
-                    onChange={(offset) => update({...value, offset: offset as AnimatableCoord})}
+                    onChange={(offset) =>
+                        update.$replace({...value, offset: offset as AnimatableCoord})
+                    }
                 />
                 <AnimColor
                     palette={palette}
                     label="Color"
                     value={value.color}
                     onChange={(color, when) =>
-                        update({...value, color: color as AnimatableColor}, when)
+                        update.$replace({...value, color: color as AnimatableColor}, when)
                     }
                 />
                 <label>
@@ -82,7 +84,7 @@ export const ShadowEditor = ({
                         type="checkbox"
                         checked={!!value.inner}
                         className="checkbox"
-                        onChange={(evt) => update({...value, inner: evt.target.checked})}
+                        onChange={(evt) => update.$replace({...value, inner: evt.target.checked})}
                     />
                 </label>
             </div>

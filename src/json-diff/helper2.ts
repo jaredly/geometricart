@@ -8,30 +8,29 @@ export type PathSegment =
     | {type: 'single'; isSingle: boolean};
 
 type ReplaceAndTestMethodsA<Value, R> = {
-    replace(value: Value, when?: ApplyTiming): R;
+    $replace(value: Value, when?: ApplyTiming): R;
 };
 
 // Only if P is an AddPath<Root, C>
-type AddMethodsA<Value, R> = {add(value: Value, when?: ApplyTiming): R};
+type AddMethodsA<Value, R> = {$add(value: Value, when?: ApplyTiming): R};
 
 // Only if P is a RemovablePath<Root, C>
-type RemoveMethodsA<R> = {remove(when?: ApplyTiming | React.MouseEvent): R};
+type RemoveMethodsA<R> = {$remove(when?: ApplyTiming | React.MouseEvent): R};
 
 type OpMaker<Value, Tag extends PropertyKey, Extra> = (
     v: Value,
     update: DiffNodeA<Value, Value, Tag, PendingJsonPatchOp<Value, Tag, Extra>, Extra>,
 ) => PendingJsonPatchOp<Value, Tag, Extra> | PendingJsonPatchOp<Value, Tag, Extra>[];
 
-type UpdateFunction<Value, Tag extends PropertyKey, R, Extra> = (
-    opMaker: Value | OpMaker<Value, Tag, Extra>,
-    when?: ApplyTiming,
-) => R;
+type UpdateFunction<Value, Tag extends PropertyKey, R, Extra> = {
+    $update(opMaker: OpMaker<Value, Tag, Extra>, when?: ApplyTiming): R;
+};
 
 const getPathSymbol = Symbol('get path');
 const getExtraSymbol = Symbol('get extra');
 
 export type SingleableNode<Root, Current, Tag extends PropertyKey, R, Extra = unknown> = {
-    single<V extends boolean>(
+    $single<V extends boolean>(
         isSingle: V,
     ): DiffNodeA<Root, V extends true ? Current : Current[], Tag, R, Extra>;
 };
@@ -55,10 +54,10 @@ export type DiffNodeA<Root, Current, Tag extends PropertyKey, R, Extra = unknown
     // 🔹 tagged union → must choose an arm via variant()
     (IsTaggedUnion<Current, Tag> extends true
         ? {
-              variant<V extends VariantTags<NonNullish<Current>, Tag> & (string | number | symbol)>(
-                  tag: V,
-              ): DiffNodeA<Root, VariantOf<NonNullish<Current>, Tag, V>, Tag, R, Extra>;
-              variant<Result>(
+              $variant<
+                  V extends VariantTags<NonNullish<Current>, Tag> & (string | number | symbol),
+              >(tag: V): DiffNodeA<Root, VariantOf<NonNullish<Current>, Tag, V>, Tag, R, Extra>;
+              $variant<Result>(
                   value: Current,
                   kindFns: {
                       [V in VariantTags<NonNullish<Current>, Tag> & (string | number | symbol)]: (
@@ -79,9 +78,9 @@ export type DiffNodeA<Root, Current, Tag extends PropertyKey, R, Extra = unknown
           ? {
                 [K in number]: DiffNodeA<Root, Elem, Tag, R, Extra>;
             } & {
-                push(value: Elem, when?: ApplyTiming): R;
-                move(from: string | number, to: string | number, when?: ApplyTiming): R;
-                reorder(indices: number[]): R;
+                $push(value: Elem, when?: ApplyTiming): R;
+                $move(from: string | number, to: string | number, when?: ApplyTiming): R;
+                $reorder(indices: number[]): R;
             }
           : // 🔹 plain objects (including unions that are NOT tagged on Tag)
             NonNullish<Current> extends object
@@ -94,7 +93,7 @@ export type DiffNodeA<Root, Current, Tag extends PropertyKey, R, Extra = unknown
                       Extra
                   >;
               } & {
-                  move(from: string | number, to: string | number, when?: ApplyTiming): R;
+                  $move(from: string | number, to: string | number, when?: ApplyTiming): R;
               } & (string extends keyof NonNullish<Current> // optional: index signatures (Record<string, V>)
                       ? {
                             [key: string]: DiffNodeA<

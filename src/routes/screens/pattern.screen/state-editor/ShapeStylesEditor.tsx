@@ -31,7 +31,7 @@ export const ShapeStylesEditor = <Kind,>({
                             const id = `style-${i}`;
                             if (!styles[id]) {
                                 const style = createShapeStyle<Kind>(id);
-                                update[id].add(style);
+                                update[id].$add(style);
                                 return;
                             }
                         }
@@ -52,14 +52,14 @@ export const ShapeStylesEditor = <Kind,>({
                                 palette={palette}
                                 value={style}
                                 update={update[style.id]}
-                                onRemove={update[style.id].remove}
+                                onRemove={update[style.id].$remove}
                                 KindEditor={KindEditor}
                             />
                         ),
                     }))}
                     onReorder={(prev, next) => {
                         const id = entries[prev].id;
-                        update[id].order(nextOrder(prev, next, entries));
+                        update[id].order.$replace(nextOrder(prev, next, entries));
                     }}
                 />
             </div>

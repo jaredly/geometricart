@@ -58,7 +58,9 @@ export async function saveAnnotation(
     }
 
     const an: ExportAnnotation = {type: img ? 'img' : 'video', id: aid};
-    updateAnnotations[tip]((v, up) => (v ? up[an.id].add(an) : up({[an.id]: an})));
+    updateAnnotations[tip].$update((v, up) =>
+        v ? up[an.id].$add(an) : up.$replace({[an.id]: an}),
+    );
 }
 
 export async function deleteAnnotation(
@@ -76,13 +78,13 @@ export async function deleteAnnotation(
         await db.del('snapshots', [snapshotUrl.id, aid]);
         await db.del('snapshotMeta', [snapshotUrl.id, aid]);
     }
-    updateAnnotations[tip]((v, up) => {
+    updateAnnotations[tip].$update((v, up) => {
         if (snapshotUrl.type !== 'idb') {
             fetch(makeSnapshotUrl(snapshotUrl, aid, v[aid].type === 'img' ? 'png' : 'mp4'), {
                 method: 'DELETE',
             });
         }
 
-        return up[aid].remove();
+        return up[aid].$remove();
     });
 }

@@ -45,7 +45,7 @@ export const ShapeEditor = ({
             <button
                 className="btn btn-sm"
                 onClick={() =>
-                    es.update.pending.replace({
+                    es.update.pending.$replace({
                         type: 'dup-shape',
                         id,
                         onDone(point) {
@@ -67,9 +67,9 @@ export const ShapeEditor = ({
                         onChange={(evt) => {
                             const id = evt.target.value;
                             if (id !== '') {
-                                update.multiply.replace(id);
+                                update.multiply.$replace(id);
                             } else {
-                                update.multiply.remove();
+                                update.multiply.$remove();
                             }
                         }}
                         value={shape.multiply ?? ''}
@@ -82,7 +82,7 @@ export const ShapeEditor = ({
                         ))}
                     </select>
                 </label>
-                <button className="btn btn-sm" onClick={() => update.remove()}>
+                <button className="btn btn-sm" onClick={() => update.$remove()}>
                     &times;
                 </button>
             </div>
