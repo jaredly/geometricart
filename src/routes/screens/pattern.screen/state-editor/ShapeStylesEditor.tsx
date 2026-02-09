@@ -59,7 +59,7 @@ export const ShapeStylesEditor = <Kind,>({
                     }))}
                     onReorder={(prev, next) => {
                         const id = entries[prev].id;
-                        update[id].order.$replace(nextOrder(prev, next, entries));
+                        update[id].order(nextOrder(prev, next, entries));
                     }}
                 />
             </div>

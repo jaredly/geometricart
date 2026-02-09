@@ -66,7 +66,7 @@ export const ShapeStyleCard = <Kind,>({
                             className="btn btn-square btn-sm"
                             onClick={(evt) => {
                                 evt.stopPropagation();
-                                update.disabled.$replace(!value.disabled);
+                                update.disabled(!value.disabled);
                             }}
                         >
                             {value.disabled ? <EyeInvisibleIcon color="gray" /> : <EyeIcon />}

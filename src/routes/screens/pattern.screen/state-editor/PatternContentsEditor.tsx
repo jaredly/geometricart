@@ -50,7 +50,7 @@ export const PatternContentsEditor = ({
                         label="Origin"
                         value={value.origin}
                         onChange={(origin: AnimatableCoord | undefined | null) =>
-                            origin != null ? update.variant('layers').origin(origin) : undefined
+                            origin != null ? update.$variant('layers').origin(origin) : undefined
                         }
                     />
                     <label className="label cursor-pointer gap-2">
@@ -59,18 +59,20 @@ export const PatternContentsEditor = ({
                             className="checkbox"
                             type="checkbox"
                             checked={!!value.reverse}
-                            onChange={(evt) => update.variant('layers').reverse(evt.target.checked)}
+                            onChange={(evt) =>
+                                update.$variant('layers').reverse(evt.target.checked)
+                            }
                         />
                     </label>
                     <ShapeStylesEditor<BaseKind>
                         palette={palette}
                         styles={value.styles}
-                        update={update.variant('layers').styles}
+                        update={update.$variant('layers').styles}
                         KindEditor={BaseKindEditor}
                     />
                     <SharedEditor
                         shared={value.shared}
-                        onChange={update.variant('layers').shared}
+                        onChange={update.$variant('layers').shared.$replace}
                     />
 
                     {/* <JsonEditor
@@ -90,22 +92,25 @@ export const PatternContentsEditor = ({
                     <NumberField
                         label="Flip"
                         value={value.flip ?? 0}
-                        onChange={update.variant('weave').flip}
+                        onChange={update.$variant('weave').flip.$replace}
                     />
                     <ShapeStylesEditor<BaseKind>
                         palette={palette}
                         styles={value.styles}
-                        update={update.variant('weave').styles}
+                        update={update.$variant('weave').styles}
                         KindEditor={BaseKindEditor}
                     />
-                    <SharedEditor shared={value.shared} onChange={update.variant('weave').shared} />
+                    <SharedEditor
+                        shared={value.shared}
+                        onChange={update.$variant('weave').shared.$replace}
+                    />
                 </div>
             ) : null}
             {value.type === 'shapes' ? (
                 <ShapeStylesEditor<ShapeKind>
                     palette={palette}
                     styles={value.styles}
-                    update={update.variant('shapes').styles}
+                    update={update.$variant('shapes').styles}
                     KindEditor={ShapeKindEditor}
                 />
             ) : null}
@@ -115,15 +120,15 @@ export const PatternContentsEditor = ({
                         label="Sort"
                         onChange={(v) =>
                             v == null
-                                ? update.variant('lines').sort.remove()
-                                : update.variant('lines').sort(v)
+                                ? update.$variant('lines').sort.$remove()
+                                : update.$variant('lines').sort(v)
                         }
                         value={value.sort}
                     />
                     <ShapeStylesEditor<BaseKind>
                         palette={palette}
                         styles={value.styles}
-                        update={update.variant('lines').styles}
+                        update={update.$variant('lines').styles}
                         KindEditor={BaseKindEditor}
                     />
                 </>

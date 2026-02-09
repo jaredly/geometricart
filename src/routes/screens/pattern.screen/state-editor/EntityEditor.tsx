@@ -47,7 +47,9 @@ export const EntityEditor = ({
                             }
                         }
                     }}
-                    onMouseLeave={() => (value.type === 'Object' ? es.update.hover.remove() : null)}
+                    onMouseLeave={() =>
+                        value.type === 'Object' ? es.update.hover.$remove() : null
+                    }
                 >
                     {value.type}
                     {value.type === 'Object' ? <span className="px-4">{value.shape}</span> : null}
@@ -62,24 +64,28 @@ export const EntityEditor = ({
                         </a>
                     )}
 
-                    <button className="btn btn-ghost btn-xs text-error" onClick={update.remove}>
+                    <button className="btn btn-ghost btn-xs text-error" onClick={update.$remove}>
                         Remove
                     </button>
                 </div>
             </summary>
 
             {value.type === 'Group' ? (
-                <GroupEditor value={value} update={update.variant('Group')} />
+                <GroupEditor value={value} update={update.$variant('Group')} />
             ) : null}
             {value.type === 'Pattern' ? (
-                <PatternEditor palette={palette} value={value} update={update.variant('Pattern')} />
+                <PatternEditor
+                    palette={palette}
+                    value={value}
+                    update={update.$variant('Pattern')}
+                />
             ) : null}
             {value.type === 'Object' ? (
                 <ObjectEditor
                     expandedShapes={expandedShapes}
                     palette={palette}
                     value={value}
-                    update={update.variant('Object')}
+                    update={update.$variant('Object')}
                 />
             ) : null}
         </details>
@@ -107,9 +113,9 @@ const ObjectEditor = ({
                         onChange={(evt) => {
                             const id = evt.target.value;
                             if (id !== '') {
-                                update.shape.replace(id);
+                                update.shape(id);
                             } else {
-                                update.shape.remove();
+                                update.shape.$remove();
                             }
                         }}
                         value={value.shape ?? ''}
@@ -131,7 +137,7 @@ const ObjectEditor = ({
                             if (evt.target.checked) {
                                 update.multiply(true);
                             } else {
-                                update.multiply.remove();
+                                update.multiply.$remove();
                             }
                         }}
                         checked={!!value.multiply}

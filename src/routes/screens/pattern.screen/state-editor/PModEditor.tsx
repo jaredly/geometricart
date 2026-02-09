@@ -52,16 +52,14 @@ export const PModEditor = ({
             return (
                 <Disableable
                     disabled={value.disabled}
-                    toggle={() =>
-                        update.$variant(value.type).disabled.$update((v, u) => u.$replace(!v))
-                    }
+                    toggle={() => update.$variant(value.type).disabled.$update((v, u) => u(!v))}
                     remove={update.$remove}
                 >
                     <span className="mr-2">{value.type}</span>
                     <Labeled text="v">
                         <NumberInput
                             value={value.v}
-                            onChange={update.$variant(value.type).v.$replace}
+                            onChange={(v) => (v != null ? update.$variant(value.type).v(v) : null)}
                         />
                     </Labeled>
                 </Disableable>
@@ -70,16 +68,14 @@ export const PModEditor = ({
             return (
                 <Disableable
                     disabled={value.disabled}
-                    toggle={() =>
-                        update.$variant(value.type).disabled.$update((v, u) => u.$replace(!v))
-                    }
+                    toggle={() => update.$variant(value.type).disabled.$update((v, u) => u(!v))}
                     remove={update.$remove}
                 >
                     translate
                     <AnimCoordInput
                         label="v"
                         value={value.v}
-                        onChange={update.$variant('translate').v.$replace}
+                        onChange={(v) => (v != null ? update.$variant('translate').v(v) : null)}
                     />
                 </Disableable>
             );
@@ -87,15 +83,13 @@ export const PModEditor = ({
             return (
                 <Disableable
                     disabled={value.disabled}
-                    toggle={() =>
-                        update.$variant(value.type).disabled.$update((v, u) => u.$replace(!v))
-                    }
+                    toggle={() => update.$variant(value.type).disabled.$update((v, u) => u(!v))}
                     remove={update.$remove}
                 >
                     {value.type}
                     <select
                         value={value.id}
-                        onChange={(evt) => update.$variant('crop').id.$replace(evt.target.value)}
+                        onChange={(evt) => update.$variant('crop').id(evt.target.value)}
                     >
                         <option disabled value="">
                             Select an id
@@ -122,9 +116,7 @@ export const PModEditor = ({
                         type="checkbox"
                         className="checkbox"
                         checked={value.hole}
-                        onChange={(evt) =>
-                            update.$variant('crop').hole.$replace(evt.target.checked)
-                        }
+                        onChange={(evt) => update.$variant('crop').hole(evt.target.checked)}
                     />
                 </Disableable>
             );
@@ -132,16 +124,14 @@ export const PModEditor = ({
             return (
                 <Disableable
                     disabled={value.disabled}
-                    toggle={() =>
-                        update.$variant(value.type).disabled.$update((v, u) => u.$replace(!v))
-                    }
+                    toggle={() => update.$variant(value.type).disabled.$update((v, u) => u(!v))}
                     remove={update.$remove}
                 >
                     {value.type}
                     <AnimCoordOrNumberInput
                         label="v"
                         value={value.v}
-                        onChange={update.$variant('scale').v.$replace}
+                        onChange={(v) => (v != null ? update.$variant('scale').v(v) : null)}
                     />
                     <AnimCoordInput
                         label="origin"
@@ -154,16 +144,14 @@ export const PModEditor = ({
             return (
                 <Disableable
                     disabled={value.disabled}
-                    toggle={() =>
-                        update.$variant(value.type).disabled.$update((v, u) => u.$replace(!v))
-                    }
+                    toggle={() => update.$variant(value.type).disabled.$update((v, u) => u(!v))}
                     remove={update.$remove}
                 >
                     {value.type}
                     <Labeled text="v">
                         <NumberInput
                             value={value.v}
-                            onChange={update.$variant('rotate').v.$replace}
+                            onChange={(v) => (v != null ? update.$variant('rotate').v(v) : null)}
                         />
                     </Labeled>
                     <AnimCoordInput
@@ -177,22 +165,22 @@ export const PModEditor = ({
             return (
                 <Disableable
                     disabled={value.disabled}
-                    toggle={() =>
-                        update.$variant(value.type).disabled.$update((v, u) => u.$replace(!v))
-                    }
+                    toggle={() => update.$variant(value.type).disabled.$update((v, u) => u(!v))}
                     remove={update.$remove}
                 >
                     {value.type}
                     <Labeled text="width">
                         <NumberInput
                             value={value.width}
-                            onChange={update.$variant(value.type).width.$replace}
+                            onChange={(v) =>
+                                v != null ? update.$variant(value.type).width(v) : null
+                            }
                         />
                     </Labeled>
                     <Labeled text="round">
                         <BooleanInput
                             value={value.round + ''}
-                            onChange={(v) => update.$variant(value.type).round.$replace(v ?? false)}
+                            onChange={(v) => update.$variant(value.type).round(v ?? false)}
                         />
                     </Labeled>
                 </Disableable>

@@ -103,7 +103,7 @@ export const ChunkEditor = ({
                                     : {chunk: left, total: right, ease: ''},
                             );
                         } else {
-                            update.remove();
+                            update.$remove();
                         }
                     }}
                 />

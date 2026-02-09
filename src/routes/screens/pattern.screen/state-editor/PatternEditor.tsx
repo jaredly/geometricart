@@ -30,7 +30,7 @@ export const PatternEditor = ({
                 <CoordOrNumberField
                     label="Pattern size"
                     value={value.psize}
-                    onChange={update.psize}
+                    onChange={update.psize.$replace}
                 />
                 <button
                     onClick={() =>
@@ -53,7 +53,7 @@ export const PatternEditor = ({
                 update={update.contents}
                 Inner={PatternContentsEditor}
             />
-            <SharedEditor shared={value.shared} onChange={update.shared} />
+            <SharedEditor shared={value.shared} onChange={update.shared.$replace} />
         </div>
     );
 };
@@ -109,7 +109,7 @@ const AdjustmentEditor = ({
                             >
                                 <div className="flex-1">{id}</div>
                                 <button
-                                    onClick={() => update.shapes[i].remove()}
+                                    onClick={() => update.shapes[i].$remove()}
                                     className="btn btn-square"
                                 >
                                     &times;
@@ -118,7 +118,7 @@ const AdjustmentEditor = ({
                         ))}
                         <li className="flex flex-row">
                             <button
-                                onClick={() => update.shapes.replace([])}
+                                onClick={() => update.shapes([])}
                                 className="btn btn-square flex-1"
                             >
                                 Clear all
@@ -130,10 +130,10 @@ const AdjustmentEditor = ({
                     className="btn btn-sm mx-4"
                     onClick={() => {
                         if (isAdding) {
-                            edit.update.pending.replace(null);
+                            edit.update.pending(null);
                             update.shapes(pending.shapes);
                         } else {
-                            edit.update.pending.replace({
+                            edit.update.pending({
                                 type: 'select-shapes',
                                 key: `adj-${adj.id}`,
                                 shapes: adj.shapes,
@@ -147,11 +147,11 @@ const AdjustmentEditor = ({
                     {isAdding ? 'Finish' : 'Select shapes'}
                 </button>
                 <ChunkEditor chunk={adj.t} update={update.t} />
-                <button onClick={update.remove} className="btn btn-sm btn-square">
+                <button onClick={update.$remove} className="btn btn-sm btn-square">
                     &times;
                 </button>
             </div>
-            <SharedEditor shared={adj.shared} onChange={update.shared} />
+            <SharedEditor shared={adj.shared} onChange={update.shared.$replace} />
             <ModsEditor mods={adj.mods} update={update.mods} palette={palette} />
         </div>
     );
@@ -175,7 +175,7 @@ const AdjustmentsEditor = ({
                     value=""
                     onClick={() => {
                         const id = genid();
-                        update[id].add({
+                        update[id].$add({
                             id,
                             mods: [],
                             shapes: [],
@@ -225,7 +225,10 @@ export const OrderableEditor = <T extends OrderItem>({
             }))}
             onReorder={(prev, next) => {
                 const id = entries[prev].id;
-                (update[id] as Updater<OrderItem>).order(nextOrder(prev, next, entries));
+                const m = update[id];
+                (update[id] as Updater<unknown> as Updater<OrderItem>).order.$replace(
+                    nextOrder(prev, next, entries),
+                );
             }}
         />
     );

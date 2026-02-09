@@ -32,7 +32,7 @@ export const FillEditor = ({
     return (
         <div className="space-y-2 relative">
             <div className="flex flex-wrap gap-2 items-center">
-                <button className="btn btn-ghost btn-xs text-error " onClick={update.remove}>
+                <button className="btn btn-ghost btn-xs text-error " onClick={update.$remove}>
                     &times;
                 </button>
                 <ExpandableEditor value={value.id} onChange={reId} />
@@ -64,7 +64,7 @@ export const FillEditor = ({
                         label="Color"
                         value={value.color}
                         // biome-ignore lint: this one is fine
-                        onChange={update.color as Updater<any>}
+                        onChange={update.color.$replace}
                     />,
                     <AnimColor
                         key="tint"
@@ -120,9 +120,9 @@ export const ModsEditor = ({
                 className="select select-sm w-50"
                 value=""
                 onChange={(evt) => {
-                    (update as Updater<PMods[] | undefined>)((a, u) =>
+                    (update as Updater<PMods[] | undefined>).$update((a, u) =>
                         a
-                            ? u.push(addMod(evt.target.value as PMods['type']))
+                            ? u.$push(addMod(evt.target.value as PMods['type']))
                             : u([addMod(evt.target.value as PMods['type'])]),
                     );
                     // update.push(addMod(evt.target.value));

@@ -12,7 +12,7 @@ export const ShadowEditor = ({
 }: {
     palette: Color[];
     value: Shadow | null;
-    update: Updater<Shadow>;
+    update: Updater<Shadow | undefined>;
 }) => {
     if (!value) {
         return (
@@ -20,7 +20,7 @@ export const ShadowEditor = ({
                 <button
                     className="btn btn-sm"
                     onClick={() =>
-                        update.$replace({
+                        update({
                             blur: '0,0',
                             offset: '3,3',
                             color: '#000',
@@ -43,7 +43,7 @@ export const ShadowEditor = ({
                         Remove
                     </button>
                 </div>
-                <BlurInput value={value} onChange={(value) => update.$replace(value)} />
+                <BlurInput value={value} onChange={(value) => update(value)} />
             </div>
         );
     }
@@ -61,21 +61,19 @@ export const ShadowEditor = ({
                 <AnimCoordOrNumberInput
                     label="blur"
                     value={value.blur}
-                    onChange={(blur) => update.$replace({...value, blur: blur as AnimatableCoord})}
+                    onChange={(blur) => update({...value, blur: blur as AnimatableCoord})}
                 />
                 <AnimCoordOrNumberInput
                     label="offset"
                     value={value.offset}
-                    onChange={(offset) =>
-                        update.$replace({...value, offset: offset as AnimatableCoord})
-                    }
+                    onChange={(offset) => update({...value, offset: offset as AnimatableCoord})}
                 />
                 <AnimColor
                     palette={palette}
                     label="Color"
                     value={value.color}
                     onChange={(color, when) =>
-                        update.$replace({...value, color: color as AnimatableColor}, when)
+                        update({...value, color: color as AnimatableColor}, when)
                     }
                 />
                 <label>
@@ -84,7 +82,7 @@ export const ShadowEditor = ({
                         type="checkbox"
                         checked={!!value.inner}
                         className="checkbox"
-                        onChange={(evt) => update.$replace({...value, inner: evt.target.checked})}
+                        onChange={(evt) => update({...value, inner: evt.target.checked})}
                     />
                 </label>
             </div>

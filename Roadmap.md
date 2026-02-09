@@ -13,9 +13,9 @@ and expanded-status of the accordian items
 
 #
 
-- replace, etc. should be prefixed with $
-- name() should not be a function
-- usePath()
+- [x] replace, etc. should be prefixed with $
+- name() should not be a function -> actually it's fine for it to be one
+- useValue()
 
 #
 

@@ -12,7 +12,7 @@ export const PaletteEditor = ({palette, update}: {palette: Color[]; update: Upda
                 <div className="font-semibold text-sm">Palette</div>
                 <button
                     className="btn btn-sm btn-outline"
-                    onClick={() => update.push({r: 255, g: 255, b: 255})}
+                    onClick={() => update.$push({r: 255, g: 255, b: 255})}
                 >
                     Add color
                 </button>
@@ -22,7 +22,7 @@ export const PaletteEditor = ({palette, update}: {palette: Color[]; update: Upda
                     <div key={i} className="flex items-center gap-3">
                         <ColorInput
                             value={color}
-                            onChange={update[i]}
+                            onChange={update[i].$replace}
                             onPreview={(v) => update[i](v, 'preview')}
                         />
                         <BlurInput
@@ -33,7 +33,7 @@ export const PaletteEditor = ({palette, update}: {palette: Color[]; update: Upda
                                 update[i](c);
                             }}
                         />
-                        <button className="btn btn-ghost btn-xs" onClick={update[i].remove}>
+                        <button className="btn btn-ghost btn-xs" onClick={update[i].$remove}>
                             Remove
                         </button>
                     </div>

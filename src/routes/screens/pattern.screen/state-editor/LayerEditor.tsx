@@ -36,7 +36,11 @@ export const LayerEditor = ({
         <div className="bg-base-200 border border-base-300 shadow-sm">
             <div className="space-y-3 p-4">
                 <div className="flex flex-col md:flex-row gap-2 md:items-center">
-                    <NumberField label="Order" value={layer.order} onChange={update.order} />
+                    <NumberField
+                        label="Order"
+                        value={layer.order}
+                        onChange={update.order.$replace}
+                    />
                     <label className="form-control w-full">
                         <div className="label mr-4">
                             <span className="label-text font-semibold">Opacity</span>
@@ -47,15 +51,19 @@ export const LayerEditor = ({
                         />
                     </label>
                     <div className="flex-1" />
-                    <button className="btn btn-ghost btn-sm text-error" onClick={update.remove}>
+                    <button className="btn btn-ghost btn-sm text-error" onClick={update.$remove}>
                         Remove
                     </button>
                 </div>
 
-                <SharedEditor shared={layer.shared} onChange={update.shared} />
+                <SharedEditor shared={layer.shared} onChange={update.shared.$replace} />
 
                 <div className="flex flex-col gap-4">
-                    <JsonEditor label="Guides" value={layer.guides} onChange={update.guides} />
+                    <JsonEditor
+                        label="Guides"
+                        value={layer.guides}
+                        onChange={update.guides.$replace}
+                    />
                     <div className="space-y-2">
                         <div className="flex items-center justify-between">
                             <div className="font-semibold text-sm">Entities</div>
@@ -63,11 +71,11 @@ export const LayerEditor = ({
                                 <button
                                     className="btn btn-outline btn-xs"
                                     onClick={() => {
-                                        pend.update.pending.replace({
+                                        pend.update.pending({
                                             type: 'select-shape',
                                             onDone(shape) {
                                                 const id = genid();
-                                                update.entities[id].add({
+                                                update.entities[id].$add({
                                                     type: 'Object',
                                                     id,
                                                     shape,
@@ -85,8 +93,8 @@ export const LayerEditor = ({
                                                     },
                                                 });
                                                 update.entities[layer.rootGroup]
-                                                    .variant('Group')
-                                                    .entities[id].add(1);
+                                                    .$variant('Group')
+                                                    .entities[id].$add(1);
                                             },
                                         });
                                     }}
@@ -97,7 +105,7 @@ export const LayerEditor = ({
                                     className="btn btn-outline btn-xs"
                                     onClick={() => {
                                         const id = `entity-${entries.length + 1}`;
-                                        update.entities[id].add(createGroup(id));
+                                        update.entities[id].$add(createGroup(id));
                                     }}
                                 >
                                     Add group

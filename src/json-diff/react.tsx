@@ -15,6 +15,7 @@ import {blankHistory, dispatch, History} from './history';
 import {asFlat, MaybeNested, resolveAndApply} from './make2';
 import {useLatest} from '../routes/screens/pattern.screen/utils/useLatest';
 import {_get} from './internal2';
+import {Updater} from './Updater';
 
 type C<T> = {
     state: T;
@@ -131,8 +132,9 @@ const changedPaths = (changes: JsonPatchOp<unknown>[]) => {
     return paths;
 };
 
-// biome-ignore lint: this one is fine
-export const useValue = <Current,>(node: DiffNodeA<unknown, Current, any, unknown, Extra>) => {
+export const useValue = <Current,>(
+    node: DiffNodeA<unknown, Current, PropertyKey, unknown, Extra>,
+) => {
     const path = getPath(node);
     const extra = getExtra(node);
     const [v, setV] = useState(() => extra.getForPath<Current>(path));

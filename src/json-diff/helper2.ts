@@ -7,8 +7,9 @@ export type PathSegment =
     | {type: 'tag'; key: string; value: string}
     | {type: 'single'; isSingle: boolean};
 
-type ReplaceAndTestMethodsA<Value, R> = {
+type ReplaceAndTestMethodsA<Value, Tag extends PropertyKey, R, Extra> = {
     $replace(value: Value, when?: ApplyTiming): R;
+    $update(opMaker: OpMaker<Value, Tag, Extra>, when?: ApplyTiming): R;
 };
 
 // Only if P is an AddPath<Root, C>
@@ -22,9 +23,10 @@ type OpMaker<Value, Tag extends PropertyKey, Extra> = (
     update: DiffNodeA<Value, Value, Tag, PendingJsonPatchOp<Value, Tag, Extra>, Extra>,
 ) => PendingJsonPatchOp<Value, Tag, Extra> | PendingJsonPatchOp<Value, Tag, Extra>[];
 
-type UpdateFunction<Value, Tag extends PropertyKey, R, Extra> = {
-    $update(opMaker: OpMaker<Value, Tag, Extra>, when?: ApplyTiming): R;
-};
+type UpdateFunction<Value, Tag extends PropertyKey, R, Extra> = (
+    opMaker: Value | OpMaker<Value, Tag, Extra>,
+    when?: ApplyTiming,
+) => R;
 
 const getPathSymbol = Symbol('get path');
 const getExtraSymbol = Symbol('get extra');
@@ -42,7 +44,7 @@ export type DiffNodeA<Root, Current, Tag extends PropertyKey, R, Extra = unknown
     // operations at this path (unchanged)
     [getPathSymbol]: Path;
     [getExtraSymbol]: Extra;
-} & ReplaceAndTestMethodsA<Current, R> &
+} & ReplaceAndTestMethodsA<Current, Tag, R, Extra> &
     RemoveMethodsA<R> &
     UpdateFunction<Current, Tag, R, Extra> &
     // navigation
@@ -140,11 +142,19 @@ export function diffBuilderApply<T, Extra, Tag extends string = 'type', R = void
     function makeProxy(path: Array<PathSegment>): any {
         const pathString = JSON.stringify(path);
 
+        const updateFn = (value: T | OpMaker<T, Tag, Extra>, when?: ApplyTiming) => {
+            if (typeof value !== 'function') {
+                return apply({op: 'replace', path, value, ...ghost}, when);
+            }
+            // biome-ignore lint: this one is fine
+            return apply({op: 'nested', make: value as any, path, ...ghost}, when);
+        };
+
         // biome-ignore lint: this one is fine
         const handler: ProxyHandler<any> = {
             get(_target, prop, _receiver) {
                 // 🔹 variant(): refine the *last* path segment with `[kind=value]`
-                if (prop === 'variant') {
+                if (prop === '$variant') {
                     return (...args: [string] | [any, Record<string, any>]) => {
                         if (!args.length) {
                             throw new Error(`Invalid call`);
@@ -180,7 +190,7 @@ export function diffBuilderApply<T, Extra, Tag extends string = 'type', R = void
                 }
 
                 // 🔹 operations
-                if (prop === 'replace') {
+                if (prop === '$replace') {
                     const k = pathString + '/replace';
                     if (!cache[k])
                         cache[k] = (value, when?: ApplyTiming) =>
@@ -188,7 +198,11 @@ export function diffBuilderApply<T, Extra, Tag extends string = 'type', R = void
                     return cache[k];
                 }
 
-                if (prop === 'single') {
+                if (prop === '$update') {
+                    return updateFn;
+                }
+
+                if (prop === '$single') {
                     return (isSingle: boolean) => {
                         const k = pathString + '/single/' + (isSingle ? '1' : '0');
                         if (!proxyCache[k])
@@ -200,7 +214,7 @@ export function diffBuilderApply<T, Extra, Tag extends string = 'type', R = void
                     };
                 }
 
-                if (prop === 'add') {
+                if (prop === '$add') {
                     const k = pathString + '/add';
                     if (!cache[k])
                         cache[k] = (value, when?: ApplyTiming) =>
@@ -208,7 +222,7 @@ export function diffBuilderApply<T, Extra, Tag extends string = 'type', R = void
                     return cache[k];
                 }
 
-                if (prop === 'move') {
+                if (prop === '$move') {
                     const k = pathString + '/move';
                     if (!cache[k])
                         cache[k] = (
@@ -234,7 +248,7 @@ export function diffBuilderApply<T, Extra, Tag extends string = 'type', R = void
                     return cache[k];
                 }
 
-                if (prop === 'push') {
+                if (prop === '$push') {
                     const k = pathString + '/push';
                     if (!cache[k])
                         cache[k] = (value, when?: ApplyTiming) =>
@@ -242,7 +256,7 @@ export function diffBuilderApply<T, Extra, Tag extends string = 'type', R = void
                     return cache[k];
                 }
 
-                if (prop === 'remove') {
+                if (prop === '$remove') {
                     const k = pathString + '/remove';
                     if (!cache[k])
                         cache[k] = (when?: ApplyTiming | React.MouseEvent) =>
@@ -275,13 +289,7 @@ export function diffBuilderApply<T, Extra, Tag extends string = 'type', R = void
             },
         };
 
-        return new Proxy((value: T | OpMaker<T, Tag, Extra>, when?: ApplyTiming) => {
-            if (typeof value !== 'function') {
-                return apply({op: 'replace', path, value, ...ghost}, when);
-            }
-            // biome-ignore lint: this one is fine
-            return apply({op: 'nested', make: value as any, path, ...ghost}, when);
-        }, handler);
+        return new Proxy(updateFn, handler);
     }
     return makeProxy([]) as DiffBuilderA<T, Tag, R, Extra>;
 }

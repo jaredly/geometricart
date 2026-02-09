@@ -58,9 +58,7 @@ export async function saveAnnotation(
     }
 
     const an: ExportAnnotation = {type: img ? 'img' : 'video', id: aid};
-    updateAnnotations[tip].$update((v, up) =>
-        v ? up[an.id].$add(an) : up.$replace({[an.id]: an}),
-    );
+    updateAnnotations[tip].$update((v, up) => (v ? up[an.id].$add(an) : up({[an.id]: an})));
 }
 
 export async function deleteAnnotation(
