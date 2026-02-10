@@ -91,7 +91,7 @@ const PatternShapesView = ({
         <Expandable
             ex={update.toString()}
             title={
-                <div>
+                <div className="flex flex-row items-center">
                     shapes
                     <DisabledIcon value={value.disabled} update={update.disabled} />
                 </div>
