@@ -1,7 +1,15 @@
 import {CogIcon, ExternalLinkIcon, ObjectUngroup} from '../../../../icons/Icon';
 import {useValue} from '../../../../json-diff/react';
 import {Updater} from '../../../../json-diff/Updater';
-import {EObject, Layer, Pattern, PatternContents, ShapeKind, ShapeStyle} from '../export-types';
+import {
+    describeKind,
+    EObject,
+    Layer,
+    Pattern,
+    PatternContents,
+    ShapeKind,
+    ShapeStyle,
+} from '../export-types';
 import {useExportState} from '../ExportHistory';
 import {HandleProps} from '../state-editor/DragToReorderList';
 import {orderedIds} from '../state-editor/nextOrder';
@@ -77,7 +85,12 @@ const StyleView = ({
     update: Updater<ShapeStyle<ShapeKind>>;
     value: ShapeStyle<ShapeKind>;
 }) => {
-    return <div>Style</div>;
+    const parts = value.kind.map(describeKind);
+    const fks = Object.keys(value.fills);
+    if (fks.length) parts.push(`${fks.length} fill${fks.length === 1 ? '' : 's'}`);
+    const lks = Object.keys(value.lines);
+    if (lks.length) parts.push(`${lks.length} line{lks.length === 1 ? '' : 's'}`);
+    return <div>Style {parts.join(', ')}</div>;
 };
 
 const PatternShapesView = ({

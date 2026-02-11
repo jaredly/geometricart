@@ -251,6 +251,19 @@ export type BaseKind =
 
 export type ShapeKind = BaseKind | {type: 'shape'; key: string; rotInvariant: boolean};
 
+export const describeKind = (kind: ShapeKind) => {
+    switch (kind.type) {
+        case 'alternating':
+            return `alternative ${kind.index}`;
+        case 'explicit':
+            return `${Object.keys(kind.ids).length} ids`;
+        case 'distance':
+            return `rings around corner ${kind.corner}`;
+        case 'shape':
+            return `matching shape ${kind.key}`;
+    }
+};
+
 export type ShapeStyle<Kind> = {
     id: string;
     disabled: boolean;
@@ -306,10 +319,29 @@ export type Fill = {
     shadow?: Shadow;
     zIndex?: AnimatableNumber;
     color?: AnimatableColor;
+    // skcornerpatheffect
     rounded?: AnimatableNumber;
     opacity?: AnimatableNumber;
     tint?: AnimatableColor;
     thickness?: AnimatableNumber;
+
+    mods: PMods[];
+};
+
+export type Line = {
+    id: string;
+    order: number;
+    enabled?: AnimatableBoolean;
+    shadow?: Shadow;
+    zIndex?: AnimatableNumber;
+    color?: AnimatableColor;
+    width?: AnimatableNumber;
+    sharp?: AnimatableBoolean;
+    rounded?: AnimatableNumber;
+    opacity?: AnimatableNumber;
+    tint?: AnimatableColor;
+    thickness?: AnimatableNumber;
+    dashes?: AnimatableValue; // intervals[], count, phase
 
     mods: PMods[];
 };
@@ -327,22 +359,6 @@ export type ConcreteLine = {
     thickness?: number;
 
     mods: CropsAndMatrices;
-};
-
-export type Line = {
-    id: string;
-    order: number;
-    enabled?: AnimatableBoolean;
-    shadow?: Shadow;
-    zIndex?: AnimatableNumber;
-    color?: AnimatableColor;
-    width?: AnimatableNumber;
-    sharp?: AnimatableBoolean;
-    opacity?: AnimatableNumber;
-    tint?: AnimatableColor;
-    thickness?: AnimatableNumber;
-
-    mods: PMods[];
 };
 
 export type LineStyle<Kind> = {
