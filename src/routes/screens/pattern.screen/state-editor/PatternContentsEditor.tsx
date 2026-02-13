@@ -149,6 +149,7 @@ const swapType = (
                 type: 'shapes',
                 id,
                 order,
+                disabled: '',
                 styles: {
                     style1: {
                         id: 'style1',
@@ -161,6 +162,7 @@ const swapType = (
                                 mods: [],
                                 color: '#f00',
                                 width: 1,
+                                order: 0,
                             },
                         },
                         fills: {},
@@ -176,6 +178,7 @@ const swapType = (
                 order,
                 orderings: {},
                 shared: {},
+                disabled: '',
                 styles: {
                     line1: {
                         id: 'line1',
@@ -190,12 +193,14 @@ const swapType = (
                                 mods: [],
                                 color: 'black',
                                 width: 10,
+                                order: 0,
                             },
                             line2: {
                                 id: 'line2',
                                 mods: [],
                                 color: 0,
                                 width: 5,
+                                order: 1,
                             },
                         },
                         fills: {},
@@ -208,6 +213,7 @@ const swapType = (
                 id,
                 order,
                 sort: '',
+                disabled: '',
                 styles: {
                     style1: {
                         id: 'style1',
@@ -220,6 +226,7 @@ const swapType = (
                                 mods: [],
                                 color: 'groupId',
                                 width: 1,
+                                order: 0,
                             },
                         },
                         fills: {},
@@ -236,6 +243,7 @@ const swapType = (
                 origin: '0,0',
                 reverse: false,
                 shared: {},
+                disabled: '',
                 styles: {
                     style1: {
                         id: 'style1',
@@ -244,6 +252,7 @@ const swapType = (
                         t: null,
                         fills: {
                             fill1: {
+                                order: 0,
                                 id: 'fill1',
                                 mods: [],
                                 color: 0,

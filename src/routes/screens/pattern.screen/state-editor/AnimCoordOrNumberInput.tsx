@@ -1,8 +1,5 @@
-import React, {useState, useEffect} from 'react';
-import {Coord} from '../../../../types';
 import {AnimatableCoord, AnimatableNumber} from '../export-types';
 import {BlurInput} from './BlurInput';
-import {CoordField} from './CoordField';
 import {parseAnimatable} from './createLayerTemplate';
 
 export const AnimCoordOrNumberInput = ({

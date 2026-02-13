@@ -39,6 +39,7 @@ export const createLayerTemplate = (id: string): Layer => ({
     entities: {},
     guides: [],
     shared: {},
+    disabled: '',
 });
 
 export const createGroup = (id: string): Group => ({
@@ -55,7 +56,7 @@ export const createPattern = (id: string, hash: string, tiling: ThinTiling): Pat
     tiling: {id: hash, tiling},
     adjustments: {},
     psize: {type: 'uniform', size: 1},
-    contents: {cid: {id: 'cid', order: 0, type: 'shapes', styles: {}}},
+    contents: {cid: {id: 'cid', order: 0, type: 'shapes', styles: {}, disabled: ''}},
     mods: [],
     disabled: false,
     shared: {},
@@ -89,6 +90,7 @@ export const createFill = (id: string): Fill => ({
     id,
     color: 0,
     mods: [],
+    order: 0,
 });
 
 export const createLine = (id: string): Line => ({
@@ -96,4 +98,5 @@ export const createLine = (id: string): Line => ({
     color: 0,
     width: 1,
     mods: [],
+    order: 0,
 });

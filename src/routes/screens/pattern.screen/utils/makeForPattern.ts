@@ -24,6 +24,7 @@ export const makeForPattern = (tiling: ThinTiling, hash: string): State => {
                     id: `fill-${i}`,
                     mods: [],
                     color: i,
+                    order: 0,
                 },
             },
             lines: {},
@@ -37,6 +38,7 @@ export const makeForPattern = (tiling: ThinTiling, hash: string): State => {
         shapes: {},
         layers: {
             root: {
+                disabled: '',
                 id: 'root',
                 rootGroup: 'root-group',
                 entities: {
@@ -54,7 +56,9 @@ export const makeForPattern = (tiling: ThinTiling, hash: string): State => {
                         shared: {},
                         mods: [],
                         psize: {type: 'uniform', size: 3},
-                        contents: {cid: {type: 'shapes', styles, id: 'cid', order: 0}},
+                        contents: {
+                            cid: {type: 'shapes', styles, id: 'cid', order: 0, disabled: ''},
+                        },
                         tiling: {id: hash, tiling},
                     },
                 },

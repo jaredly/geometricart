@@ -89,6 +89,7 @@ export const LayerEditor = ({
                                                                 mods: [],
                                                                 color: 'red',
                                                                 width: 2,
+                                                                order: 0,
                                                             },
                                                         },
                                                         mods: [],
