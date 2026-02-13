@@ -6,6 +6,7 @@ import {useExportState} from '../ExportHistory';
 import {State} from '../types/state-type';
 import {usePendingState} from '../utils/editState';
 import {useGlobalDependencies} from './GlobalDependencies';
+import {SpinnerEarring} from '../../../../icons/Icon';
 
 export const ExportView = ({path}: {path: Updater<State['exports']['']>}) => {
     const value = useValue(path);
@@ -13,9 +14,11 @@ export const ExportView = ({path}: {path: Updater<State['exports']['']>}) => {
     const ctx = useExportState();
     const state = useValue(ctx.$);
     const [snapshot, setSnapshot] = useState<null | string>(null);
+    const [loading, setLoading] = useState(false);
     const pendingContext = usePendingState();
 
     useEffect(() => {
+        setLoading(true);
         worker(
             {
                 type: 'snapshot',
@@ -26,6 +29,7 @@ export const ExportView = ({path}: {path: Updater<State['exports']['']>}) => {
                 if (result.type !== 'snapshot') {
                     return;
                 }
+                setLoading(false);
                 setSnapshot(URL.createObjectURL(result.blob));
             },
         );
@@ -62,7 +66,14 @@ export const ExportView = ({path}: {path: Updater<State['exports']['']>}) => {
                     Change shape
                 </button>
             </div>
-            {snapshot ? <img src={snapshot} width={300} /> : null}
+            <div className="relative self-center">
+                {snapshot ? <img src={snapshot} width={300} /> : null}
+                {loading && (
+                    <div className="absolute inset-0 opacity-10 bg-black flex items-center justify-center">
+                        <SpinnerEarring className="animate-spin text-9xl" />
+                    </div>
+                )}
+            </div>
         </div>
     );
 };
