@@ -243,7 +243,7 @@ export const RenderDebug = ({state, update}: {state: State; update: Updater<Stat
                     keyPoints={keyPoints}
                     setMouse={setMouse}
                     items={both}
-                    size={500}
+                    size={{x: 500, y: 500}}
                     byKey={byKey}
                     bg={bg}
                 />

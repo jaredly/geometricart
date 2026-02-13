@@ -5,7 +5,7 @@ export const AccordionSidebar = ({
     expanded,
     setExpanded,
 }: {
-    items: {title: React.ReactNode; body: React.ReactNode; key: string}[];
+    items: {title: React.ReactNode; body: React.ReactNode; key: string; noCache?: boolean}[];
     expanded: Record<string, boolean>;
     setExpanded: (key: string, expanded: boolean) => void;
 }) => {
@@ -26,7 +26,7 @@ export const AccordionSidebar = ({
                     >
                         {item.title}
                     </div>
-                    {everExpanded ? (
+                    {(item.noCache ? expanded[item.key] : everExpanded[item.key]) ? (
                         <div
                             className={
                                 'overflow-auto border-b border-amber-600 flex-1  ' +

@@ -8,7 +8,8 @@ import {WorkerSend} from './render/render-client';
 import {MessageResponse, MessageToWorker} from './render/render-worker';
 import {renderShape} from './render/renderShape';
 import {Hover} from './utils/resolveMods';
-import {Canvas, SVGCanvas} from './SVGCanvas';
+import {SVGCanvas} from './SVGCanvas';
+import {Canvas} from './Canvas';
 import {ZoomProps} from './hooks/useSVGZoom';
 import {expandShapes} from './utils/expandShapes';
 import {useValue} from '../../../json-diff/react';
@@ -34,13 +35,15 @@ export const DeferredRender = ({
     config,
     onFPS,
     size,
+    setSize,
 }: {
     setWarnings(v: string[]): void;
     config: ExportConfig2d;
     t: number;
     state: State;
     worker: WorkerSend;
-    size: number;
+    size: Coord;
+    setSize: (size: Coord) => void;
     zoomProps: ZoomProps;
     onFPS: (v: number) => void;
 }) => {
@@ -138,6 +141,7 @@ export const DeferredRender = ({
             mouse={mouse}
             setMouse={setMouse}
             items={both}
+            setSize={setSize}
             size={size}
             byKey={remoteData.byKey}
             bg={remoteData.bg}

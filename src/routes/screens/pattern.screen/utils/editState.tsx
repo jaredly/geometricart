@@ -3,6 +3,7 @@ import {BarePath, Coord} from '../../../../types';
 import {Hover} from './resolveMods';
 import {DiffBuilderA} from '../../../../json-diff/helper2';
 import {makeContext, makeHistoryContext} from '../../../../json-diff/react';
+import {Box} from '../export-types';
 
 export const [ProvideEditState, useEditState] = makeContext<EditState>('type');
 export const [ProvidePendingState, usePendingState] = makeHistoryContext<PendingState, unknown>(
@@ -20,6 +21,7 @@ export type PendingState = {
               onDone(points: Coord[], open: boolean): void;
               asShape?: (pts: Coord[]) => BarePath;
           }
+        | {type: 'rect'; points: Coord[]; onDone(box: Box): void; startCenter: boolean}
         | {type: 'dup-shape'; id: string; onDone(point: Coord): void}
         | {type: 'select-shapes'; key: string; shapes: string[]; onDone(shapes: string[]): void}
         | {type: 'select-shape'; onDone(shape: string): void}

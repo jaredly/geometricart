@@ -39,11 +39,17 @@ export const RenderExport = ({
     // well this is exciting
     const cropCache = useCropCache(state, t, animCache);
 
-    const vbox = useMemo(() => makeBox(state.view, 500, 500), [state.view]);
+    const [size, setSize] = useState({x: 1000, y: 500});
+
+    const vbox = useMemo(() => makeBox(state.view, size.x, size.y), [state.view, size]);
     const {zoomProps, box, reset: resetZoom} = useElementZoom(vbox);
     const config = useMemo(
-        () => ({scale: Math.max(500 / box.width, 500 / box.height), box, type: '2d' as const}),
-        [box],
+        () => ({
+            scale: Math.max(size.x / box.width, size.y / box.height),
+            box,
+            type: '2d' as const,
+        }),
+        [box, size],
     );
 
     const statusRef = useRef<HTMLDivElement>(null);
@@ -55,7 +61,6 @@ export const RenderExport = ({
         [fpsref],
     );
 
-    const size = 500;
     return (
         <div className="flex flex-1">
             <div className="relative overflow-hidden">
@@ -66,6 +71,7 @@ export const RenderExport = ({
                     t={t}
                     state={state}
                     config={config}
+                    setSize={setSize}
                     size={size}
                     zoomProps={zoomProps}
                 />
@@ -81,7 +87,7 @@ export const RenderExport = ({
                         <button
                             className="btn btn-square px-2 py-1 bg-base-100"
                             onClick={() => {
-                                const ppu = size / box.width;
+                                const ppu = size.x / box.width;
                                 const center = {
                                     x: box.x + box.width / 2,
                                     y: box.y + box.height / 2,

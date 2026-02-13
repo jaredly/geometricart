@@ -18,7 +18,7 @@ type Coord3 = {x: number; y: number; z: number};
 export type ExportConfig2d = {
     type: '2d';
     box: Box;
-    scale: number;
+    scale: number; // pixels per unit; box.width * scale = pixels
 };
 
 export type ExportConfig =
