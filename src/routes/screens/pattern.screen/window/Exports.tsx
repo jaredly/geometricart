@@ -9,7 +9,7 @@ export const Exports = () => {
     const exports = useValue(ctx.$.exports);
 
     return (
-        <div className="p-4">
+        <div className="p-4 flex flex-col gap-8">
             {Object.entries(exports).map(([key, value]) => (
                 <div key={key} className="flex flex-col gap-4">
                     <div className="flex items-center">
@@ -24,7 +24,7 @@ export const Exports = () => {
                             />
                         </label>
                         <button
-                            className="btn"
+                            className="btn ml-4 text-error"
                             onClick={() => {
                                 ctx.$.exports[key].$remove();
                             }}

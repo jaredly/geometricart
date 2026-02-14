@@ -1,5 +1,7 @@
 # Sidebar! making it happen
 
+- when you hover an export, highlight the rect
+
 # View n stuff
 
 - ~bbox~ -> center & ppu

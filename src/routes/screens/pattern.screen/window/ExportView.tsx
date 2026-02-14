@@ -66,7 +66,7 @@ export const ExportView = ({path}: {path: Updater<State['exports']['']>}) => {
                     Change shape
                 </button>
             </div>
-            <div className="relative self-center">
+            <div className="relative self-start">
                 {snapshot ? <img src={snapshot} width={300} /> : null}
                 {loading && (
                     <div className="absolute inset-0 opacity-10 bg-black flex items-center justify-center">
