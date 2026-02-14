@@ -1,5 +1,7 @@
 # Sidebar! making it happen
 
+I've got my little ... tree view thing, and actually what I want is a component that's a little more normalized about it
+
 - when you hover an export, highlight the rect
 
 # View n stuff
