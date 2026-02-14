@@ -1,7 +1,8 @@
 import {useValue} from '../../../../json-diff/react';
 import {Updater} from '../../../../json-diff/Updater';
 import {Entity, Layer} from '../export-types';
-import {PatternView, ObjectView} from './LayerEditor';
+import {ObjectView} from './LayerEditor';
+import {PatternView} from './PatternView';
 import {GroupView} from './GroupView';
 
 export const EntityView = ({id, $, $$}: {id: string; $: Updater<Entity>; $$: Updater<Layer>}) => {

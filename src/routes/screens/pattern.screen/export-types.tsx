@@ -266,7 +266,7 @@ export const describeKind = (kind: ShapeKind) => {
 
 export type ShapeStyle<Kind> = {
     id: string;
-    disabled: boolean;
+    disabled: string;
     order: number;
     // TODO: maybe have a kind that's like "anything intersecting with this shape"?
     // Could also be interesting to have an `animatedKind` where we select
