@@ -6,7 +6,8 @@ import {useExportState} from '../ExportHistory';
 import {State} from '../types/state-type';
 import {usePendingState} from '../utils/editState';
 import {useGlobalDependencies} from './GlobalDependencies';
-import {SpinnerEarring} from '../../../../icons/Icon';
+import {IconDelete, SpinnerEarring} from '../../../../icons/Icon';
+import {BlurInput} from '../state-editor/BlurInput';
 
 export const ExportView = ({path}: {path: Updater<State['exports']['']>}) => {
     const value = useValue(path);
@@ -40,6 +41,22 @@ export const ExportView = ({path}: {path: Updater<State['exports']['']>}) => {
     return (
         <div className="flex flex-col gap-4">
             <div>
+                <label>
+                    Name
+                    <BlurInput
+                        className="w-20 ml-4"
+                        value={value.name ?? ''}
+                        onChange={(name) => path.name(name === '' ? undefined : name)}
+                    />
+                </label>
+                <button
+                    className="btn ml-4 text-error"
+                    onClick={() => {
+                        path.$remove();
+                    }}
+                >
+                    <IconDelete />
+                </button>
                 <label className="mr-4">
                     Scale:
                     <BlurInt
