@@ -54,19 +54,6 @@ export const SnapshotAnnotations = () => {
                             );
                         },
                     );
-                    // worker({type: 'frame', state: ctx.latest(), t: 0}, (res) => {
-                    //     if (res.type !== 'frame') return setLoading(false);
-                    //     const blob = runPNGExport(100, ctx.latest().view.box, res.items, res.bg);
-                    //     saveAnnotation(snapshotUrl, blob, history.tip, ctx.updateAnnotations).then(
-                    //         () => {
-                    //             setLoading(false);
-                    //         },
-                    //         (err) => {
-                    //             console.error('Failed to save');
-                    //             console.error(err);
-                    //         },
-                    //     );
-                    // });
                 }}
             >
                 {loading ? 'Loading...' : 'Take Snapshot'}
