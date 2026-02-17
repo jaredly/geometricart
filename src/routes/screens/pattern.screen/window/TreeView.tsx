@@ -42,6 +42,7 @@ type CTX = {
 };
 
 export const TreeView = ({actions, nodes, root}: Props) => {
+    // biome-ignore lint/correctness/useExhaustiveDependencies: I update it too
     const ctx = useMemo((): CTX => ({refs: {}, nodes, actions}), []);
     ctx.nodes = nodes;
     ctx.actions = actions;
@@ -97,7 +98,6 @@ const TreeNodeView = ({ctx, id}: {ctx: CTX; id: string}) => {
                     {node.children.map((id) => (
                         <TreeNodeView key={id} id={id} ctx={ctx} />
                     ))}
-                    {/* this should like do a dropdown maybe? */}
                     {node.childKinds.length === 1 ? (
                         <button onClick={() => ctx.actions.add(node.childKinds[0], node.id)}>
                             Add
@@ -106,7 +106,9 @@ const TreeNodeView = ({ctx, id}: {ctx: CTX; id: string}) => {
                         <select
                             value=""
                             onChange={(evt) => {
-                                ctx.actions.add(evt.target.value, node.id);
+                                if (node.childKinds.includes(evt.target.value)) {
+                                    ctx.actions.add(evt.target.value, node.id);
+                                }
                             }}
                         >
                             <option value="">Add child</option>
