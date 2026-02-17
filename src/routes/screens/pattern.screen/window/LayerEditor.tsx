@@ -16,7 +16,6 @@ import {HandleProps} from '../state-editor/DragToReorderList';
 import {orderedIds} from '../state-editor/nextOrder';
 import {OrderableEditor} from '../state-editor/PatternEditor';
 import {EntityView} from './EntityView';
-import {ShapeStylesEditor} from '../state-editor/ShapeStylesEditor';
 import {Expandable} from './Expandable';
 import {DisabledIcon} from './DisabledIcon';
 
