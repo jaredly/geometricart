@@ -39,27 +39,41 @@ type CTX = {
     refs: Record<string, HTMLDivElement>;
     nodes: Record<string, TreeNode>;
     actions: TreeActions;
+    selection: string[] | null;
+    setSelection: (sel: string[] | null) => void;
 };
+
+const nullPath: string[] = [];
 
 export const TreeView = ({actions, nodes, root}: Props) => {
-    // biome-ignore lint/correctness/useExhaustiveDependencies: I update it too
-    const ctx = useMemo((): CTX => ({refs: {}, nodes, actions}), []);
-    ctx.nodes = nodes;
-    ctx.actions = actions;
-    return <TreeNodeView ctx={ctx} id={root} />;
+    const refs: CTX['refs'] = useMemo(() => ({}), []);
+    const [selection, setSelection] = useState<null | string[]>(null);
+    const ctx = useMemo(
+        (): CTX => ({refs, nodes, actions, selection, setSelection}),
+        [refs, nodes, actions, selection, setSelection],
+    );
+
+    return <TreeNodeView ctx={ctx} id={root} path={nullPath} />;
 };
 
-const TreeNodeView = ({ctx, id}: {ctx: CTX; id: string}) => {
+const TreeNodeView = ({ctx, id, path}: {ctx: CTX; id: string; path: string[]}) => {
     const node = ctx.nodes[id];
+    const childPath = useMemo(() => [...path, id], [path, id]);
     const [expanded, setExpanded] = useExpanded(`tree-node-${id}`);
     const [editing, setEditing] = useState<null | string>(null);
+    const selected =
+        ctx.selection?.[ctx.selection.length - 1] === id ? 2 : ctx.selection?.includes(id) ? 1 : 0;
     if (!node) {
         return <div>{id} no node</div>;
     }
     return (
         <div>
             <div
-                className="flex"
+                className={
+                    'flex' +
+                    (selected === 2 ? ' bg-amber-500' : selected === 1 ? ' bg-amber-800' : '')
+                }
+                onClick={() => ctx.setSelection(childPath)}
                 ref={(div) => {
                     if (div) ctx.refs[node.id] = div;
                 }}
@@ -99,14 +113,18 @@ const TreeNodeView = ({ctx, id}: {ctx: CTX; id: string}) => {
             {expanded && (
                 <div className="pl-10">
                     {node.children.map((id) => (
-                        <TreeNodeView key={id} id={id} ctx={ctx} />
+                        <TreeNodeView key={id} id={id} ctx={ctx} path={childPath} />
                     ))}
                     {node.childKinds.length === 1 ? (
-                        <button onClick={() => ctx.actions.add(node.childKinds[0], node.id)}>
+                        <button
+                            className="btn"
+                            onClick={() => ctx.actions.add(node.childKinds[0], node.id)}
+                        >
                             Add
                         </button>
                     ) : (
                         <select
+                            className="select cursor-pointer"
                             value=""
                             onChange={(evt) => {
                                 if (node.childKinds.includes(evt.target.value)) {
