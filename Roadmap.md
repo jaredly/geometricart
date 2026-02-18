@@ -1,3 +1,8 @@
+-> fill & line be unified
+-> at least in the same listy list
+
+#
+
 Going full tree view
 
 -> I think we'll want to collapse Fill and Line. So a ShapeStyle just has an ordered list of Styles which can be a Fill or a Line. maybe. it would be ... weird ... to have an overwrite that switches the kind. but maybe its fine

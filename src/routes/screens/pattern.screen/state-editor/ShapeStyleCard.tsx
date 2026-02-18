@@ -1,7 +1,7 @@
 import React, {useState} from 'react';
 import {EyeInvisibleIcon, EyeIcon} from '../../../../icons/Eyes';
 import {Color, ShapeKind, ShapeStyle} from '../export-types';
-import {createFill, createLine} from './createLayerTemplate';
+import {createFill} from './createLayerTemplate';
 import {NumberField} from './NumberField';
 import {LineEditor} from './LineEditor';
 import {FillEditor, ModsEditor} from './FillEditor';
@@ -85,7 +85,7 @@ export const ShapeStyleCard = <Kind,>({
                         <SubStyleList
                             label="Fills"
                             emptyLabel="No fills"
-                            items={value.fills}
+                            items={value.items}
                             createItem={createFill}
                             render={(key, fill, update, reId) => (
                                 <FillEditor
@@ -96,23 +96,7 @@ export const ShapeStyleCard = <Kind,>({
                                     palette={palette}
                                 />
                             )}
-                            update={update.fills}
-                        />
-                        <SubStyleList
-                            label="Lines"
-                            emptyLabel="No lines"
-                            items={value.lines}
-                            createItem={createLine}
-                            render={(key, line, update, reId) => (
-                                <LineEditor
-                                    key={key}
-                                    reId={reId}
-                                    palette={palette}
-                                    value={line}
-                                    update={update}
-                                />
-                            )}
-                            update={update.lines}
+                            update={update.items}
                         />
                         <ModsEditor palette={palette} mods={value.mods} update={update.mods} />
                     </div>

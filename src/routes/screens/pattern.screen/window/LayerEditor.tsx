@@ -6,7 +6,7 @@ import {
     describeKind,
     Entity,
     EObject,
-    Fill,
+    FillOrLine,
     Group,
     Pattern,
     PatternContents,
@@ -73,10 +73,8 @@ const StyleView = <Kind,>({
     describeKind: (kind: Kind) => string;
 }) => {
     const parts = value.kind.map(describeKind);
-    const fks = Object.keys(value.fills);
-    if (fks.length) parts.push(`${fks.length} fill${fks.length === 1 ? '' : 's'}`);
-    const lks = Object.keys(value.lines);
-    if (lks.length) parts.push(`${lks.length} line{lks.length === 1 ? '' : 's'}`);
+    const fks = Object.keys(value.items);
+    if (fks.length) parts.push(`${fks.length} item${fks.length === 1 ? '' : 's'}`);
     return (
         <div>
             <Expandable
@@ -89,14 +87,13 @@ const StyleView = <Kind,>({
                     </div>
                 }
             >
-                <OrderableEditor value={value.fills} update={update.fills} Inner={FillView} />
-                <OrderableEditor value={value.lines} update={update.lines} Inner={FillView} />
+                <OrderableEditor value={value.items} update={update.items} Inner={FillView} />
             </Expandable>
         </div>
     );
 };
 
-const FillView = ({update, value}: {update: Updater<Fill>; value: Fill}) => {
+const FillView = ({update, value}: {update: Updater<FillOrLine>; value: FillOrLine}) => {
     return <div>Helo fill</div>;
 };
 

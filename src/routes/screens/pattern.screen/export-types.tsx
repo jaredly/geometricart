@@ -265,8 +265,7 @@ export type ShapeStyle<Kind> = {
     // Could also be interesting to have an `animatedKind` where we select
     // the items effected by some script
     kind: Kind[];
-    fills: Orderable<Fill>;
-    lines: Orderable<Line>;
+    items: Orderable<FillOrLine>;
     t: TChunk | null;
     mods: PMods[];
 };
@@ -291,7 +290,7 @@ export type Shadow =
 export const shadowKey = (sh: ConcreteShadow) =>
     `${coordKey(sh.blur ?? {x: 0, y: 0})}-${coordKey(sh.offset ?? {x: 0, y: 0})}-${colorToString(sh.color ?? [0, 0, 0]).replace('#', '')}`;
 
-export type ConcreteFill = {
+export type ConcreteFillOrLine = {
     id: string;
     enabled?: boolean;
     shadow?: RenderShadow;
@@ -303,9 +302,15 @@ export type ConcreteFill = {
     thickness?: number;
 
     mods: CropsAndMatrices;
+
+    line?: {
+        width?: number;
+        sharp?: boolean;
+        dashes?: {intervals: number[]; count: number; phase: number};
+    };
 };
 
-export type Fill = {
+export type FillOrLine = {
     id: string;
     order: number;
     enabled?: AnimatableBoolean;
@@ -317,48 +322,22 @@ export type Fill = {
     opacity?: AnimatableNumber;
     tint?: AnimatableColor;
     thickness?: AnimatableNumber;
+    line?: LineItems;
 
     mods: PMods[];
 };
 
-export type Line = {
-    id: string;
-    order: number;
-    enabled?: AnimatableBoolean;
-    shadow?: Shadow;
-    zIndex?: AnimatableNumber;
-    color?: AnimatableColor;
+export type LineItems = {
     width?: AnimatableNumber;
     sharp?: AnimatableBoolean;
-    rounded?: AnimatableNumber;
-    opacity?: AnimatableNumber;
-    tint?: AnimatableColor;
-    thickness?: AnimatableNumber;
     dashes?: AnimatableValue; // intervals[], count, phase
-
-    mods: PMods[];
-};
-
-export type ConcreteLine = {
-    id: string;
-    enabled?: boolean;
-    shadow?: ConcreteShadow;
-    zIndex?: number;
-    color?: Color;
-    width?: number;
-    sharp?: boolean;
-    opacity?: number;
-    tint?: Color;
-    thickness?: number;
-
-    mods: CropsAndMatrices;
 };
 
 export type LineStyle<Kind> = {
     id: string;
     order: number;
     kind: Kind;
-    style: Line;
+    style: FillOrLine;
     mods: PMods[];
 };
 
@@ -369,8 +348,7 @@ export type EObject = {
     multiply?: boolean;
     style: {
         disabled?: boolean;
-        fills: Record<string, Fill>;
-        lines: Record<string, Line>;
+        items: Record<string, FillOrLine>;
         t?: TChunk;
         mods: PMods[];
     };

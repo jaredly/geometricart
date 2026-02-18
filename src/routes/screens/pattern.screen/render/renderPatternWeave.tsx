@@ -7,10 +7,10 @@ import {pathsFromSegments} from '../../../pathsFromSegments';
 import {unique, joinAdjacentShapeSegments, edgesByEndpoint} from '../../../shapesFromSegments';
 import {weaveIntersections2} from '../../../weaveIntersections';
 import {Ctx, AnimCtx} from '../eval/evaluate';
-import {Pattern, PatternContents, ConcreteLine, colorToRgb} from '../export-types';
+import {ConcreteFillOrLine, Pattern, PatternContents, colorToRgb} from '../export-types';
 import {sortCoordPair, coordPairKey} from '../utils/adjustShapes';
 import {withShared, withLocals, barePathFromCoords} from '../utils/resolveMods';
-import {resolveLine} from './renderPattern';
+import {resolveFill} from './renderPattern';
 
 export const renderPatternWeave = (
     baseShapes: Coord[][],
@@ -33,7 +33,7 @@ export const renderPatternWeave = (
     const outer = outerBoundary(allSegments, byEndPoint, pointNames);
     const paths = pathsFromSegments(allSegments, byEndPoint, outer);
     const fronts = Object.values(contents.styles).flatMap((m) =>
-        m.disabled ? [] : Object.values(m.lines),
+        m.disabled ? [] : Object.values(m.items),
     );
 
     const woven = weaveIntersections2(allSegments, paths);
@@ -54,9 +54,9 @@ export const renderPatternWeave = (
     );
 
     const animNone = withLocals(pwanim, {pathId: undefined, pathCenter: pathCenters.null});
-    const stylesForPathId: Record<string, ConcreteLine[]> = {};
+    const stylesForPathId: Record<string, ConcreteFillOrLine[]> = {};
     stylesForPathId.null = fronts.map((style) => {
-        return resolveLine(animNone, style);
+        return resolveFill(animNone, style);
     });
 
     for (let i = minPathId; i <= maxPathId; i++) {
@@ -64,16 +64,18 @@ export const renderPatternWeave = (
             pathId: i,
             pathCenter: pathCenters[i],
         });
-        stylesForPathId[i] = fronts.map((style) => resolveLine(anim, style));
+        stylesForPathId[i] = fronts.map((style) => resolveFill(anim, style));
     }
     const maxLineWidthForPathId = Object.fromEntries(
         Object.entries(stylesForPathId).map(([key, lines]) => [
             key,
             lines.reduce(
                 (max, line) =>
-                    line.color == null || !line.width || (line.enabled != null && !line.enabled)
+                    line.color == null ||
+                    !line.line?.width ||
+                    (line.enabled != null && !line.enabled)
                         ? max
-                        : Math.max(max, line.width),
+                        : Math.max(max, line.line.width),
                 0,
             ),
         ]),
@@ -84,7 +86,7 @@ export const renderPatternWeave = (
             throw new Error(`not prepared for ${pathId}`);
         }
         stylesForPathId[pathId ?? 'null'].forEach((line, k) => {
-            if (line.color == null || !line.width || (line.enabled != null && !line.enabled))
+            if (line.color == null || !line.line?.width || (line.enabled != null && !line.enabled))
                 return;
 
             ctx.items.push({
@@ -99,7 +101,7 @@ export const renderPatternWeave = (
                 // opacity: i % 10 === 0 ? 1 : 0.1,
                 zIndex: line.zIndex,
                 color: colorToRgb(line.color!),
-                strokeWidth: line.width! * 0.01,
+                strokeWidth: line.line.width! * 0.01,
             });
         });
     });

@@ -13,26 +13,41 @@ for (let i = 0; i < colorsRaw.length; i += 6) {
 
 export const makeForPattern = (tiling: ThinTiling, hash: string): State => {
     const pd = getNewPatternData(tiling);
-    const styles: Record<string, ShapeStyle<ShapeKind>> = {};
-    for (let i = 0; i <= pd.colorInfo.maxColor; i++) {
-        styles[`alt-${i}`] = {
-            id: `alt-${i}`,
+    const styles: Record<string, ShapeStyle<ShapeKind>> = {
+        s1: {
+            kind: [{type: 'alternating', index: 0}],
             disabled: '',
-            t: null,
-            fills: {
-                [`fill-${i}`]: {
-                    id: `fill-${i}`,
+            id: 's1',
+            mods: [],
+            order: 0,
+            items: {
+                i1: {
+                    id: 'i1',
                     mods: [],
-                    color: i,
                     order: 0,
+                    color: 0,
                 },
             },
-            lines: {},
-            kind: [{type: 'alternating', index: i}],
+            t: null,
+        },
+        s2: {
+            kind: [{type: 'alternating', index: 1}],
+            disabled: '',
+            id: 's2',
             mods: [],
-            order: i,
-        };
-    }
+            order: 0,
+            items: {
+                i1: {
+                    id: 'i1',
+                    mods: [],
+                    order: 0,
+                    color: 1,
+                },
+            },
+            t: null,
+        },
+    };
+
     return {
         version: 1,
         shapes: {},

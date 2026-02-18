@@ -5,7 +5,7 @@ import {Color, Entity, EObject} from '../export-types';
 import {useExportState} from '../ExportHistory';
 import {useEditState} from '../utils/editState';
 import {objectShapes} from '../utils/resolveMods';
-import {createFill, createLine} from './createLayerTemplate';
+import {createFill} from './createLayerTemplate';
 import {FillEditor, ModsEditor} from './FillEditor';
 import {GroupEditor} from './GroupEditor';
 import {LineEditor} from './LineEditor';
@@ -145,7 +145,7 @@ const ObjectEditor = ({
             <SubStyleList
                 label="Fills"
                 emptyLabel="No fills"
-                items={value.style.fills}
+                items={value.style.items}
                 createItem={createFill}
                 render={(key, fill, update, reId) => (
                     <FillEditor
@@ -156,9 +156,9 @@ const ObjectEditor = ({
                         palette={palette}
                     />
                 )}
-                update={update.style.fills}
+                update={update.style.items}
             />
-            <SubStyleList
+            {/*<SubStyleList
                 label="Lines"
                 emptyLabel="No lines"
                 items={value.style.lines}
@@ -173,7 +173,7 @@ const ObjectEditor = ({
                     />
                 )}
                 update={update.style.lines}
-            />
+            />*/}
             <ModsEditor palette={palette} mods={value.style.mods} update={update.style.mods} />
         </div>
     );

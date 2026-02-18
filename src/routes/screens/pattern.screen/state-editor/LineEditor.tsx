@@ -1,11 +1,11 @@
 import React, {useState} from 'react';
 import {
     Color,
-    Line,
     AnimatableNumber,
     AnimatableColor,
     AnimatableBoolean,
     AnimatableValue,
+    FillOrLine,
 } from '../export-types';
 import {ShadowEditor} from './ShadowEditor';
 import {AnimColor} from './AnimColor';
@@ -23,8 +23,8 @@ export const LineEditor = ({
     reId,
 }: {
     palette: Color[];
-    value: Line;
-    update: Updater<Line>;
+    value: FillOrLine;
+    update: Updater<FillOrLine>;
     reId(newKey: string): void;
 }) => {
     const [showAll, setShowAll] = useState(false);
@@ -63,15 +63,15 @@ export const LineEditor = ({
                         placeholder="rgb or hsl"
                         onChange={(tint, when) => update.tint(tint as AnimatableColor, when)}
                     />,
-                    <Labeled text="Width" key="width">
-                        <NumberInput
-                            value={value.width}
-                            onChange={(width) => update.width(width)}
-                        />
-                    </Labeled>,
-                    <Labeled text="Sharp" key="sharp">
-                        <BooleanInput value={value.sharp} onChange={update.sharp.$replace} />
-                    </Labeled>,
+                    // <Labeled text="Width" key="width">
+                    //     <NumberInput
+                    //         value={value.width}
+                    //         onChange={(width) => update.width(width)}
+                    //     />
+                    // </Labeled>,
+                    // <Labeled text="Sharp" key="sharp">
+                    //     <BooleanInput value={value.sharp} onChange={update.sharp.$replace} />
+                    // </Labeled>,
                     <Labeled text="shadow" key="shadow" className="bg-base-100 p-2 relative">
                         <ShadowEditor
                             value={value.shadow ?? null}

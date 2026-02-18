@@ -25,14 +25,7 @@ import {
     OValue,
     PMods,
 } from '../export-types';
-import {
-    dropNully,
-    renderLine,
-    renderPattern,
-    resolveFill,
-    resolveLine,
-    resolveShadow,
-} from '../render/renderPattern';
+import {dropNully, renderPattern, resolveFill, resolveShadow} from '../render/renderPattern';
 import {multiplyShape} from './expandShapes';
 import {orderedItems} from '../state-editor/nextOrder';
 
@@ -472,7 +465,7 @@ const renderObject = (ctx: Ctx, crops: CropsAndMatrices, object: EObject) => {
 
     const localAnim = {...anim, values: {...anim.values, ...local}};
 
-    Object.values(object.style.fills).map((fr) => {
+    Object.values(object.style.items).map((fr, fi) => {
         const f = dropNully(resolveFill(localAnim, fr));
         if (f.color == null) return;
 
@@ -483,48 +476,64 @@ const renderObject = (ctx: Ctx, crops: CropsAndMatrices, object: EObject) => {
         });
         if (remove) return;
 
-        ctx.items.push({
-            type: 'path',
-            // pk: thisPath,
-            key: '',
-            color: colorToRgb(f.color),
-            opacity: f.opacity,
-            shadow: f.shadow,
-            shapes: thisPaths.flatMap((path) => cmdsToSegments([...path.toCmds()])),
-            zIndex: f.zIndex,
-        });
+        if (f.line) {
+            ctx.items.push({
+                type: 'path',
+                // pk: thisPath,
+                key: fi + '',
+                color: colorToRgb(f.color),
+                strokeWidth: a.number(anim, f.line.width ?? 0) / 100,
+                opacity: f.opacity,
+                shadow: concreteToRenderShadow(f.shadow),
+                // shapes: cmdsToSegments([...thisPath.toCmds()]),
+                shapes: thisPaths.flatMap((path) => cmdsToSegments([...path.toCmds()])),
+                sharp: f.line.sharp,
+                zIndex: f.zIndex,
+            });
+        } else {
+            ctx.items.push({
+                type: 'path',
+                // pk: thisPath,
+                key: fi + '',
+                color: colorToRgb(f.color),
+                opacity: f.opacity,
+                shadow: f.shadow,
+                shapes: thisPaths.flatMap((path) => cmdsToSegments([...path.toCmds()])),
+                zIndex: f.zIndex,
+            });
+        }
         thisPaths.forEach((p) => p.delete());
     });
 
-    Object.values(object.style.lines).map((fr, fi) => {
-        const f = dropNully(resolveLine(localAnim, fr));
-        if (f.color == null) return;
+    // Object.values(object.style.lines).map((fr, fi) => {
+    //     const f = dropNully(resolveLine(localAnim, fr));
+    //     if (f.color == null) return;
 
-        // const thisPath = path.copy();
-        const thisPaths = paths.map((path) => path.copy());
-        let remove = false;
-        f.mods.forEach((mod) => {
-            // remove = remove || pathMod(ctx.cropCache, mod, thisPath);
-            remove = remove || thisPaths.every((path) => pathMod(ctx.cropCache, mod, path));
-        });
-        if (remove) return;
+    //     // const thisPath = path.copy();
+    //     const thisPaths = paths.map((path) => path.copy());
+    //     let remove = false;
+    //     f.mods.forEach((mod) => {
+    //         // remove = remove || pathMod(ctx.cropCache, mod, thisPath);
+    //         remove = remove || thisPaths.every((path) => pathMod(ctx.cropCache, mod, path));
+    //     });
+    //     if (remove) return;
 
-        ctx.items.push({
-            type: 'path',
-            // pk: thisPath,
-            key: fi + '',
-            color: colorToRgb(f.color),
-            strokeWidth: a.number(anim, f.width ?? 0) / 100,
-            opacity: f.opacity,
-            shadow: concreteToRenderShadow(f.shadow),
-            // shapes: cmdsToSegments([...thisPath.toCmds()]),
-            shapes: thisPaths.flatMap((path) => cmdsToSegments([...path.toCmds()])),
-            sharp: f.sharp,
-            zIndex: f.zIndex,
-        });
-        // thisPath.delete();
-        thisPaths.forEach((p) => p.delete());
-    });
+    //     ctx.items.push({
+    //         type: 'path',
+    //         // pk: thisPath,
+    //         key: fi + '',
+    //         color: colorToRgb(f.color),
+    //         strokeWidth: a.number(anim, f.width ?? 0) / 100,
+    //         opacity: f.opacity,
+    //         shadow: concreteToRenderShadow(f.shadow),
+    //         // shapes: cmdsToSegments([...thisPath.toCmds()]),
+    //         shapes: thisPaths.flatMap((path) => cmdsToSegments([...path.toCmds()])),
+    //         sharp: f.sharp,
+    //         zIndex: f.zIndex,
+    //     });
+    //     // thisPath.delete();
+    //     thisPaths.forEach((p) => p.delete());
+    // });
 
     paths.forEach((p) => p.delete());
     // path.delete();

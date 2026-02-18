@@ -156,16 +156,15 @@ const swapType = (
                         kind: [],
                         t: null,
                         disabled: '',
-                        lines: {
+                        items: {
                             line1: {
                                 id: 'line1',
                                 mods: [],
                                 color: '#f00',
-                                width: 1,
+                                line: {width: 1},
                                 order: 0,
                             },
                         },
-                        fills: {},
                         mods: [],
                         order: 0,
                     },
@@ -187,23 +186,22 @@ const swapType = (
                         order: 0,
                         disabled: '',
                         t: null,
-                        lines: {
+                        items: {
                             line1: {
                                 id: 'line1',
                                 mods: [],
                                 color: 'black',
-                                width: 10,
+                                line: {width: 10},
                                 order: 0,
                             },
                             line2: {
                                 id: 'line2',
                                 mods: [],
                                 color: 0,
-                                width: 5,
+                                line: {width: 5},
                                 order: 1,
                             },
                         },
-                        fills: {},
                     },
                 },
             };
@@ -220,16 +218,15 @@ const swapType = (
                         disabled: '',
                         t: null,
                         kind: [],
-                        lines: {
+                        items: {
                             line1: {
                                 id: 'line1',
                                 mods: [],
                                 color: 'groupId',
-                                width: 1,
+                                line: {width: 1},
                                 order: 0,
                             },
                         },
-                        fills: {},
                         mods: [],
                         order: 0,
                     },
@@ -250,7 +247,7 @@ const swapType = (
                         kind: [],
                         disabled: '',
                         t: null,
-                        fills: {
+                        items: {
                             fill1: {
                                 order: 0,
                                 id: 'fill1',
@@ -259,7 +256,6 @@ const swapType = (
                                 opacity: 0.1,
                             },
                         },
-                        lines: {},
                         mods: [],
                         order: 0,
                     },

@@ -26,11 +26,9 @@ import {a, AnimCtx, Ctx, isColor, isCoord, RenderItem, RenderShadow} from '../ev
 import {
     Color,
     colorToRgb,
-    ConcreteFill,
-    ConcreteLine,
-    Fill,
+    ConcreteFillOrLine,
+    FillOrLine,
     Hsl,
-    Line,
     Pattern,
     Shadow,
     ShapeKind,
@@ -247,13 +245,39 @@ export const tintColor = (base: Rgb, tint: Color) => {
 };
 
 export const renderFill = (
-    f: ConcreteFill,
+    f: ConcreteFillOrLine,
     anim: AnimCtx,
     ctx: Ctx,
     shape: Coord[],
     key: string,
+    open: boolean,
 ): undefined | RenderItem => {
     if (f.color == null) return;
+    if (f.line) {
+        if (!f.line.width) return;
+        let rgb = colorToRgb(f.color);
+        if (f.tint) {
+            rgb = tintColor(rgb, f.tint);
+        }
+        const width = f.line.width / 100;
+        const shadow = concreteToRenderShadow(f.shadow);
+
+        return {
+            type: 'path',
+            key,
+            color: rgb,
+            strokeWidth: width,
+            shapes: f.mods.length
+                ? modsToShapes(ctx.cropCache, f.mods, [{shape: {points: shape, open}, i: 0}]).map(
+                      (s) => barePathFromCoords(s.shape.points, s.shape.open),
+                  )
+                : [barePathFromCoords(shape, open)],
+            shadow,
+            sharp: f.line.sharp,
+            opacity: f.opacity,
+            zIndex: f.zIndex,
+        };
+    }
     let rgb = colorToRgb(f.color);
     if (f.tint) {
         rgb = tintColor(rgb, f.tint);
@@ -276,41 +300,7 @@ export const renderFill = (
     };
 };
 
-export const renderLine = (
-    f: ConcreteLine,
-    anim: AnimCtx,
-    ctx: Ctx,
-    shape: Coord[],
-    key: string,
-    open: boolean,
-): undefined | RenderItem => {
-    if (f.color == null) return;
-    if (!f.width) return;
-    let rgb = colorToRgb(f.color);
-    if (f.tint) {
-        rgb = tintColor(rgb, f.tint);
-    }
-    const width = f.width / 100;
-    const shadow = concreteToRenderShadow(f.shadow);
-
-    return {
-        type: 'path',
-        key,
-        color: rgb,
-        strokeWidth: width,
-        shapes: f.mods.length
-            ? modsToShapes(ctx.cropCache, f.mods, [{shape: {points: shape, open}, i: 0}]).map((s) =>
-                  barePathFromCoords(s.shape.points, s.shape.open),
-              )
-            : [barePathFromCoords(shape, open)],
-        shadow,
-        sharp: f.sharp,
-        opacity: f.opacity,
-        zIndex: f.zIndex,
-    };
-};
-
-export const resolveFill = (anim: Ctx['anim'], f: Fill): ConcreteFill => {
+export const resolveFill = (anim: Ctx['anim'], f: FillOrLine): ConcreteFillOrLine => {
     return {
         id: f.id,
         mods: resolveEnabledPMods(anim, f.mods),
@@ -322,24 +312,28 @@ export const resolveFill = (anim: Ctx['anim'], f: Fill): ConcreteFill => {
         tint: f.tint != null ? (a.color(anim, f.tint) ?? undefined) : undefined,
         zIndex: f.zIndex != null ? a.number(anim, f.zIndex) : undefined,
         enabled: f.enabled != null ? a.boolean(anim, f.enabled) : undefined,
+        line: f.line
+            ? {
+                  width: f.line.width != null ? a.number(anim, f.line.width) : undefined,
+                  sharp: f.line.sharp != null ? a.boolean(anim, f.line.sharp) : undefined,
+              }
+            : undefined,
     };
 };
 
-export const resolveLine = (anim: Ctx['anim'], f: Line): ConcreteLine => {
-    return {
-        id: f.id,
-        mods: resolveEnabledPMods(anim, f.mods),
-        color: f.color != null ? (a.color(anim, f.color) ?? undefined) : undefined,
-        opacity: f.opacity != null ? a.number(anim, f.opacity) : undefined,
-        shadow: resolveShadow(anim, f.shadow),
-        thickness: f.thickness != null ? a.number(anim, f.thickness) : undefined,
-        tint: f.tint != null ? (a.color(anim, f.tint) ?? undefined) : undefined,
-        zIndex: f.zIndex != null ? a.number(anim, f.zIndex) : undefined,
-        width: f.width != null ? a.number(anim, f.width) : undefined,
-        sharp: f.sharp != null ? a.boolean(anim, f.sharp) : undefined,
-        enabled: f.enabled != null ? a.boolean(anim, f.enabled) : undefined,
-    };
-};
+// export const resolveLine = (anim: Ctx['anim'], f: Line): ConcreteLine => {
+//     return {
+//         id: f.id,
+//         mods: resolveEnabledPMods(anim, f.mods),
+//         color: f.color != null ? (a.color(anim, f.color) ?? undefined) : undefined,
+//         opacity: f.opacity != null ? a.number(anim, f.opacity) : undefined,
+//         shadow: resolveShadow(anim, f.shadow),
+//         thickness: f.thickness != null ? a.number(anim, f.thickness) : undefined,
+//         tint: f.tint != null ? (a.color(anim, f.tint) ?? undefined) : undefined,
+//         zIndex: f.zIndex != null ? a.number(anim, f.zIndex) : undefined,
+//         enabled: f.enabled != null ? a.boolean(anim, f.enabled) : undefined,
+//     };
+// };
 
 export const dropNully = <T extends {}>(v: T): T => {
     (Object.keys(v) as (keyof T)[]).forEach((k) => {

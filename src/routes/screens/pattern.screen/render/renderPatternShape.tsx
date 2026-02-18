@@ -1,9 +1,9 @@
 import {Coord} from '../../../../types';
 import {Ctx, AnimCtx, RenderItem} from '../eval/evaluate';
-import {ShapeStyle, ConcreteFill, ConcreteLine} from '../export-types';
+import {ConcreteFillOrLine, ShapeStyle} from '../export-types';
 import {notNull} from '../utils/notNull';
 import {resolveT, resolveEnabledPMods} from '../utils/resolveMods';
-import {dropNully, resolveFill, resolveLine, renderFill, renderLine} from './renderPattern';
+import {dropNully, resolveFill, renderFill} from './renderPattern';
 
 export const renderPatternShape = <Kind,>(
     shape: Coord[],
@@ -14,8 +14,7 @@ export const renderPatternShape = <Kind,>(
     orderedStyles: {style: ShapeStyle<Kind>; match: boolean | Coord}[],
     open = false,
 ) => {
-    const fills: Record<string, ConcreteFill> = {};
-    const lines: Record<string, ConcreteLine> = {};
+    const fills: Record<string, ConcreteFillOrLine> = {};
 
     const anim: Ctx['anim'] = {
         ...panim,
@@ -47,7 +46,7 @@ export const renderPatternShape = <Kind,>(
 
         // hmmm need to align the ... style that it came from ... with animvalues
         // like `styleCenter`
-        Object.values(s.fills).forEach((fill) => {
+        Object.values(s.items).forEach((fill) => {
             const cfill = dropNully(resolveFill(localAnim, fill));
             if (cfill.enabled === false) {
                 // stuff.push(`disabled fill: ${fill.id}`);
@@ -64,31 +63,27 @@ export const renderPatternShape = <Kind,>(
             cfill.mods.unshift(...now.mods);
             Object.assign(now, cfill);
         });
-        Object.values(s.lines).forEach((line) => {
-            try {
-                const cline = dropNully(resolveLine(localAnim, line));
-                if (cline.enabled === false) return;
-                cline.mods.push(...smod);
-                if (!lines[line.id]) {
-                    lines[line.id] = cline;
-                    return;
-                }
-                const now = lines[line.id];
-                cline.mods.unshift(...now.mods);
-                Object.assign(now, cline);
-            } catch (err) {
-                localAnim.warn((err as Error).message);
-            }
-        });
+        // Object.values(s.lines).forEach((line) => {
+        //     try {
+        //         const cline = dropNully(resolveLine(localAnim, line));
+        //         if (cline.enabled === false) return;
+        //         cline.mods.push(...smod);
+        //         if (!lines[line.id]) {
+        //             lines[line.id] = cline;
+        //             return;
+        //         }
+        //         const now = lines[line.id];
+        //         cline.mods.unshift(...now.mods);
+        //         Object.assign(now, cline);
+        //     } catch (err) {
+        //         localAnim.warn((err as Error).message);
+        //     }
+        // });
     });
 
     const res: (RenderItem | undefined)[] = [
         ...Object.values(fills).flatMap((f, fi): RenderItem[] | RenderItem | undefined => {
-            return renderFill(f, anim, ctx, shape, `fill-${i}-${fi}`);
-        }),
-
-        ...Object.values(lines).flatMap((f, fi): RenderItem[] | RenderItem | undefined => {
-            return renderLine(f, anim, ctx, shape, `stroke-${i}-${fi}`, open);
+            return renderFill(f, anim, ctx, shape, `fill-${i}-${fi}`, open);
         }),
     ];
 

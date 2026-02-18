@@ -72,13 +72,12 @@ export const LayerEditor = ({
                                                     id,
                                                     shape,
                                                     style: {
-                                                        fills: {},
-                                                        lines: {
+                                                        items: {
                                                             l1: {
                                                                 id: 'l1',
                                                                 mods: [],
                                                                 color: 'red',
-                                                                width: 2,
+                                                                line: {width: 2},
                                                                 order: 0,
                                                             },
                                                         },

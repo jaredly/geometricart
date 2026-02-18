@@ -1,21 +1,12 @@
-import React, {useState} from 'react';
-import {
-    Color,
-    Fill,
-    AnimatableBoolean,
-    AnimatableNumber,
-    AnimatableColor,
-    PMods,
-} from '../export-types';
-import {addMod} from './createLayerTemplate';
-import {AnimColor} from './AnimColor';
-import {AnimInput} from './AnimInput';
-import {PModEditor} from './PModEditor';
-import {BlurInput} from './BlurInput';
-import {ShadowEditor} from './ShadowEditor';
-import {Updater} from '../../../../json-diff/Updater';
-import {BooleanInput, ExpandableEditor, Labeled, NumberInput} from './ExpandableEditor';
+import {useState} from 'react';
 import {CogIcon} from '../../../../icons/Icon';
+import {Updater} from '../../../../json-diff/Updater';
+import {AnimatableColor, Color, FillOrLine, PMods} from '../export-types';
+import {AnimColor} from './AnimColor';
+import {addMod} from './createLayerTemplate';
+import {BooleanInput, ExpandableEditor, Labeled, NumberInput} from './ExpandableEditor';
+import {PModEditor} from './PModEditor';
+import {ShadowEditor} from './ShadowEditor';
 
 export const FillEditor = ({
     value,
@@ -24,8 +15,8 @@ export const FillEditor = ({
     reId,
 }: {
     palette: Color[];
-    value: Fill;
-    update: Updater<Fill>;
+    value: FillOrLine;
+    update: Updater<FillOrLine>;
     reId(newKey: string): void;
 }) => {
     const [showAll, setShowAll] = useState(false);
@@ -95,6 +86,33 @@ export const FillEditor = ({
                     />,
                 ].map((node) =>
                     showAll || nonNullArray(value[node.key as keyof typeof value]) ? node : null,
+                )}
+                {value.line ? (
+                    <>
+                        <Labeled text="Width" key="width">
+                            <NumberInput
+                                value={value.line.width}
+                                onChange={(width) => update.line.width(width)}
+                            />
+                        </Labeled>
+                        <Labeled text="Sharp" key="sharp">
+                            <BooleanInput
+                                value={value.line.sharp}
+                                onChange={update.line.sharp.$replace}
+                            />
+                        </Labeled>
+                        <button className="btn btn-disabled">line</button>
+                        <button onClick={() => update.line.$remove()} className="btn">
+                            fill
+                        </button>
+                    </>
+                ) : (
+                    <>
+                        <button onClick={() => update.line({width: 1})} className="btn">
+                            line
+                        </button>
+                        <button className="btn btn-disabled">fill</button>
+                    </>
                 )}
             </div>
         </div>

@@ -6,9 +6,8 @@ import {
     Pattern,
     AnimatableNumber,
     ShapeStyle,
-    Fill,
-    Line,
     ShapeKind,
+    FillOrLine,
 } from '../export-types';
 
 export const addMod = (type: PMods['type']): PMods => {
@@ -75,24 +74,15 @@ export const createShapeStyle = <Kind,>(id: string): ShapeStyle<Kind> => ({
     id,
     order: 0,
     kind: [],
-    fills: {},
-    lines: {},
+    items: {},
     mods: [],
     disabled: '',
     t: null,
 });
 
-export const createFill = (id: string): Fill => ({
+export const createFill = (id: string): FillOrLine => ({
     id,
     color: 0,
-    mods: [],
-    order: 0,
-});
-
-export const createLine = (id: string): Line => ({
-    id,
-    color: 0,
-    width: 1,
     mods: [],
     order: 0,
 });
