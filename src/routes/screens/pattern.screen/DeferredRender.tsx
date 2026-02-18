@@ -98,7 +98,7 @@ export const DeferredRender = ({
 
     const shapesItems = useMemo((): RenderItem[] => {
         if (!showShapes && !hover) return [];
-        let expanded = expandShapes(state.shapes, state.layers);
+        let expanded = expandShapes(state.shapes, state.entities);
         if (!showShapes && hover) {
             expanded = Object.fromEntries(
                 Object.entries(expanded).filter(([k, v]) =>
@@ -110,7 +110,7 @@ export const DeferredRender = ({
         return renderShapes(expanded, hover, selectedShapes, pendingState.$, pending).sort(
             (a, b) => (a.zIndex ?? 0) - (b.zIndex ?? 0),
         );
-    }, [showShapes, state.shapes, state.layers, hover, selectedShapes, pendingState.$, pending]);
+    }, [showShapes, state.shapes, state.entities, hover, selectedShapes, pendingState.$, pending]);
 
     const both = useMemo(
         () => (remoteData?.items ? [...remoteData.items, ...shapesItems] : []),

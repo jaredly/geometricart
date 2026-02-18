@@ -35,38 +35,33 @@ export const svgItems = (
     values.rand = mulberry32(seed);
     const log: RenderLog[] | undefined = debug ? [] : undefined;
 
-    for (let layer of Object.values(state.layers)) {
-        const group = layer.entities[layer.rootGroup];
-        if (group.type !== 'Group') {
-            throw new Error(`root not a group`);
-        }
-        const anim: AnimCtx = {
-            accessedValues: trackValues,
-            cache: animCache,
-            values,
-            palette: state.styleConfig.palette,
-            warn,
-        };
-        Object.entries(layer.shared).forEach(([name, {value}]) => {
-            values[name] = a.value(anim, value);
-        });
-
-        renderGroup(
-            {
-                state,
-                anim,
-                layer,
-                items,
-                keyPoints,
-                cropCache,
-                byKey,
-                log,
-                shapes: expandShapes(state.shapes, state.layers),
-            },
-            [],
-            group,
-        );
+    const group = state.entities[state.rootGroup];
+    if (group.type !== 'Group') {
+        throw new Error(`root not a group`);
     }
+    const anim: AnimCtx = {
+        accessedValues: trackValues,
+        cache: animCache,
+        values,
+        palette: state.styleConfig.palette,
+        warn,
+    };
+
+    renderGroup(
+        {
+            state,
+            anim,
+            entities: state.entities,
+            items,
+            keyPoints,
+            cropCache,
+            byKey,
+            log,
+            shapes: expandShapes(state.shapes, state.entities),
+        },
+        [],
+        group,
+    );
 
     handleShadowAndZSorting(items);
 

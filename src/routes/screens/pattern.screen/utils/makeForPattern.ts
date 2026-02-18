@@ -36,37 +36,28 @@ export const makeForPattern = (tiling: ThinTiling, hash: string): State => {
     return {
         version: 1,
         shapes: {},
-        layers: {
-            root: {
+        rootGroup: 'root-group',
+        entities: {
+            'root-group': {
+                type: 'Group',
+                id: 'root-group',
                 disabled: '',
-                id: 'root',
-                rootGroup: 'root-group',
-                entities: {
-                    'root-group': {
-                        type: 'Group',
-                        id: 'root-group',
-                        disabled: '',
-                        shared: {},
-                        entities: {'one-pattern': 0},
-                    },
-                    'one-pattern': {
-                        type: 'Pattern',
-                        adjustments: {},
-                        id: 'one-pattern',
-                        disabled: false,
-                        shared: {},
-                        mods: [],
-                        psize: {type: 'uniform', size: 3},
-                        contents: {
-                            cid: {type: 'shapes', styles, id: 'cid', order: 0, disabled: ''},
-                        },
-                        tiling: {id: hash, tiling},
-                    },
-                },
-                guides: [],
-                opacity: 1,
-                order: 0,
                 shared: {},
+                opacity: 1,
+                entities: {'one-pattern': 0},
+            },
+            'one-pattern': {
+                type: 'Pattern',
+                adjustments: {},
+                id: 'one-pattern',
+                disabled: false,
+                shared: {},
+                mods: [],
+                psize: {type: 'uniform', size: 3},
+                contents: {
+                    cid: {type: 'shapes', styles, id: 'cid', order: 0, disabled: ''},
+                },
+                tiling: {id: hash, tiling},
             },
         },
         exports: {

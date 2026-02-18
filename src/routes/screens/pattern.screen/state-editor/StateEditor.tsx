@@ -11,7 +11,6 @@ import {genid} from '../utils/genid';
 import {WorkerSend} from '../render/render-client';
 import {AnimColor} from './AnimColor';
 import {BoxField} from './BoxField';
-import {createLayerTemplate, parseAnimatable} from './createLayerTemplate';
 import {ModsEditor} from './FillEditor';
 import {LayerEditor} from './LayerEditor';
 import {NumberField} from './NumberField';
@@ -32,10 +31,6 @@ type StateEditorProps = {
 };
 
 export const StateEditor = ({value, update}: StateEditorProps) => {
-    const layers = useMemo(
-        () => Object.entries(value.layers).sort(([, a], [, b]) => a.order - b.order),
-        [value.layers],
-    );
     const crops = useMemo(() => Object.entries(value.crops), [value.crops]);
     const pendingState = usePendingState();
     const editState = useEditState();
@@ -51,32 +46,13 @@ export const StateEditor = ({value, update}: StateEditorProps) => {
 
     return (
         <div className="flex flex-col gap-6 items-stretch p-4">
-            <Section
-                title="Layers"
-                actions={
-                    <button
-                        className="btn btn-outline btn-sm"
-                        onClick={() => {
-                            const nextId = `layer-${layers.length + 1}`;
-                            update.layers[nextId].$add(createLayerTemplate(nextId));
-                        }}
-                    >
-                        Add Layer
-                    </button>
-                }
-            >
+            <Section title="Entities">
                 <div className="space-y-4">
-                    {layers.length === 0 ? (
-                        <div className="text-sm opacity-70">No layers defined.</div>
-                    ) : null}
-                    {layers.map(([key, layer]) => (
-                        <LayerEditor
-                            palette={value.styleConfig.palette}
-                            key={key}
-                            layer={layer}
-                            update={update.layers[key]}
-                        />
-                    ))}
+                    <LayerEditor
+                        palette={value.styleConfig.palette}
+                        value={value}
+                        update={update}
+                    />
                 </div>
             </Section>
 

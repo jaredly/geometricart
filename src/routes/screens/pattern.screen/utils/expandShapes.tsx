@@ -9,12 +9,10 @@ import {centroid} from '../../../findReflectionAxes';
 import {coordsFromBarePath, simpleSize} from '../../../getPatternData';
 import {State} from '../types/state-type';
 
-const findPattern = (layers: State['layers'], id: string) => {
-    for (let layer of Object.values(layers)) {
-        for (let entity of Object.values(layer.entities)) {
-            if (entity.type === 'Pattern' && entity.id === id) {
-                return entity;
-            }
+const findPattern = (entities: State['entities'], id: string) => {
+    for (let entity of Object.values(entities)) {
+        if (entity.type === 'Pattern' && entity.id === id) {
+            return entity;
         }
     }
 };
@@ -35,9 +33,9 @@ const barePathKey = (path: BarePath) => {
     return keys[0];
 };
 
-export const multiplyShape = (value: State['shapes'][''], layers: State['layers']) => {
+export const multiplyShape = (value: State['shapes'][''], entities: State['entities']) => {
     if (value.multiply == null) return;
-    const pattern = findPattern(layers, value.multiply);
+    const pattern = findPattern(entities, value.multiply);
     if (!pattern) return;
 
     const shape = pattern.tiling.tiling.shape;
@@ -67,11 +65,11 @@ export const multiplyShape = (value: State['shapes'][''], layers: State['layers'
     return shapes;
 };
 
-export const expandShapes = (shapes: State['shapes'], layers: State['layers']) => {
+export const expandShapes = (shapes: State['shapes'], entities: State['entities']) => {
     let changed = false;
 
     Object.entries(shapes).forEach(([key, value]) => {
-        const expanded = multiplyShape(value, layers);
+        const expanded = multiplyShape(value, entities);
         if (!expanded) return;
         if (!changed) {
             changed = true;

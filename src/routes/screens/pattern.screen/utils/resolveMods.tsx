@@ -584,7 +584,7 @@ export const pathMod = (cropCache: Ctx['cropCache'], mod: CropsAndMatrices[0], p
 export const renderGroup = (ctx: Ctx, crops: CropsAndMatrices, group: Group) => {
     if (group.type !== 'Group') throw new Error('not a group');
     for (let [id] of Object.entries(group.entities).sort((a, b) => a[1] - b[1])) {
-        const entity = ctx.layer.entities[id];
+        const entity = ctx.entities[id];
         if (!entity) continue;
         switch (entity.type) {
             case 'Group':

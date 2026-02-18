@@ -76,18 +76,9 @@ export type ShapeNode =
 export type OrderItem = {id: string; order: number};
 export type Orderable<T extends OrderItem> = Record<string, T>;
 
-export type Layer = {
-    id: string;
-    order: number;
-    name?: string;
-    disabled: string;
-
-    opacity: AnimatableNumber;
+export type EntityRoot = {
     rootGroup: string;
     entities: Record<string, Entity>;
-    shared: Orderable<OValue<AnimatableValue>>;
-
-    guides: GuideGeom[];
 };
 
 export type Group = {
@@ -97,6 +88,7 @@ export type Group = {
     entities: Record<string, number>; // id -> order
     disabled: string;
     shared: Orderable<OValue<AnimatableValue>>;
+    opacity: AnimatableNumber;
 };
 
 export type CropMode = 'rough' | 'half';

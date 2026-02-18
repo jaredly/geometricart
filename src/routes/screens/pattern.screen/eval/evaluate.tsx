@@ -3,7 +3,6 @@ import {BarePath, Coord, Tiling} from '../../../../types';
 import {PKPath} from '../../../pk';
 import {parseColor, Rgb} from '../utils/colors';
 import {
-    Layer,
     AnimatableNumber,
     AnimatableBoolean,
     AnimatableCoord,
@@ -58,7 +57,7 @@ export type Ctx = {
     state: State;
     anim: AnimCtx;
     cropCache: Map<string, {path: PKPath; crop: Crop}>;
-    layer: Layer;
+    entities: State['entities'];
     items: RenderItem[];
     keyPoints: ([Coord, Coord] | Coord)[];
     byKey: Record<string, string[]>;

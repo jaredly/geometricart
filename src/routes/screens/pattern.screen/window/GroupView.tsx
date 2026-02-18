@@ -1,9 +1,10 @@
 import {ChevronUp12, ObjectUngroup} from '../../../../icons/Icon';
 import {Updater} from '../../../../json-diff/Updater';
-import {Group, Layer} from '../export-types';
+import {Group} from '../export-types';
 import {orderedIds} from '../state-editor/nextOrder';
 import {EntityView} from './EntityView';
 import {useExpanded} from './state';
+import {State} from '../types/state-type';
 
 export const GroupView = ({
     value,
@@ -12,7 +13,7 @@ export const GroupView = ({
 }: {
     value: Group;
     $: Updater<Group>;
-    $$: Updater<Layer>;
+    $$: Updater<State>;
 }) => {
     const [expanded, setExpanded] = useExpanded($.toString());
     return (

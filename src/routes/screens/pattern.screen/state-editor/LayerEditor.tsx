@@ -1,10 +1,8 @@
 import React, {useMemo} from 'react';
-import {Color, Layer} from '../export-types';
+import {Color} from '../export-types';
 import {JsonEditor} from './JsonEditor';
-import {NumberField} from './NumberField';
-import {parseAnimatable, createGroup, createPattern} from './createLayerTemplate';
+import {parseAnimatable, createGroup} from './createLayerTemplate';
 import {EntityEditor} from './EntityEditor';
-import {TextField} from './TextField';
 import {SharedEditor} from './SharedEditor';
 import {Updater} from '../../../../json-diff/Updater';
 import {genid} from '../utils/genid';
@@ -13,59 +11,51 @@ import {useExportState} from '../ExportHistory';
 import {expandShapes} from '../utils/expandShapes';
 import {ExpandableEditor} from './ExpandableEditor';
 import {useValue} from '../../../../json-diff/react';
+import {State} from '../types/state-type';
 
 export const LayerEditor = ({
-    layer,
+    value,
     update,
     palette,
 }: {
     palette: Color[];
-    layer: Layer;
-    update: Updater<Layer>;
+    value: State;
+    update: Updater<State>;
 }) => {
-    const entries = useMemo(() => Object.entries(layer.entities), [layer.entities]);
+    const entries = useMemo(() => Object.entries(value.entities), [value.entities]);
     const pend = usePendingState();
 
     const st = useExportState();
     const shapes = useValue(st.$.shapes);
-    const layers = useValue(st.$.layers);
+    const entities = useValue(st.$.entities);
     const expandedShapes = useMemo(
-        () => Object.keys(expandShapes(shapes, layers)),
-        [shapes, layers],
+        () => Object.keys(expandShapes(shapes, entities)),
+        [shapes, entities],
     );
 
     return (
         <div className="bg-base-200 border border-base-300 shadow-sm">
             <div className="space-y-3 p-4">
                 <div className="flex flex-col md:flex-row gap-2 md:items-center">
-                    <NumberField
-                        label="Order"
-                        value={layer.order}
-                        onChange={update.order.$replace}
-                    />
                     <label className="form-control w-full">
                         <div className="label mr-4">
                             <span className="label-text font-semibold">Opacity</span>
                         </div>
-                        <ExpandableEditor
-                            value={String(layer.opacity)}
+                        {/*<ExpandableEditor
+                            value={String(value.opacity)}
                             onChange={(opacity) => update.opacity(parseAnimatable(opacity))}
-                        />
+                        />*/}
                     </label>
-                    <div className="flex-1" />
-                    <button className="btn btn-ghost btn-sm text-error" onClick={update.$remove}>
-                        Remove
-                    </button>
                 </div>
 
-                <SharedEditor shared={layer.shared} onChange={update.shared.$replace} />
+                {/*<SharedEditor shared={value.shared} onChange={update.shared.$replace} />*/}
 
                 <div className="flex flex-col gap-4">
-                    <JsonEditor
+                    {/*<JsonEditor
                         label="Guides"
-                        value={layer.guides}
+                        value={value.guides}
                         onChange={update.guides.$replace}
-                    />
+                    />*/}
                     <div className="space-y-2">
                         <div className="flex items-center justify-between">
                             <div className="font-semibold text-sm">Entities</div>
@@ -95,7 +85,7 @@ export const LayerEditor = ({
                                                         mods: [],
                                                     },
                                                 });
-                                                update.entities[layer.rootGroup]
+                                                update.entities[value.rootGroup]
                                                     .$variant('Group')
                                                     .entities[id].$add(1);
                                             },

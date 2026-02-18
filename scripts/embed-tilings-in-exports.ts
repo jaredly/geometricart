@@ -10,19 +10,17 @@ const byHash = Object.fromEntries(patterns.map((p) => [p.hash, p.tiling]));
 
 const fixState = (state: State) => {
     let up = false;
-    Object.values(state.layers).forEach((layer) => {
-        Object.values(layer.entities).forEach((entity) => {
-            if (entity.type === 'Pattern') {
-                if (typeof entity.tiling === 'string') {
-                    if (!byHash[entity.tiling]) {
-                        throw new Error('cant find tiling ' + entity.tiling);
-                    }
-                    console.log(` -> referenced ${entity.tiling}`);
-                    entity.tiling = {id: entity.tiling, tiling: thinTiling(byHash[entity.tiling])};
-                    up = true;
+    Object.values(state.entities).forEach((entity) => {
+        if (entity.type === 'Pattern') {
+            if (typeof entity.tiling === 'string') {
+                if (!byHash[entity.tiling]) {
+                    throw new Error('cant find tiling ' + entity.tiling);
                 }
+                console.log(` -> referenced ${entity.tiling}`);
+                entity.tiling = {id: entity.tiling, tiling: thinTiling(byHash[entity.tiling])};
+                up = true;
             }
-        });
+        }
     });
     return up;
 };

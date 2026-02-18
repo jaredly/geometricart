@@ -28,12 +28,8 @@ export const ShapeEditor = ({
         st.$,
         (state) => {
             if (!state) throw new Error('cant happen');
-            const ids = Object.values(state.layers)
-                .flatMap((layer) =>
-                    Object.values(layer.entities).map((entity) =>
-                        entity.type === 'Pattern' ? entity.id : null,
-                    ),
-                )
+            const ids = Object.values(state.entities)
+                .map((entity) => (entity.type === 'Pattern' ? entity.id : null))
                 .filter(notNull);
             return ids;
         },

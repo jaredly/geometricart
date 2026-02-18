@@ -1,7 +1,7 @@
 import {Coord, Segment, ThinTiling} from '../../../../types';
 import {
     PMods,
-    Layer,
+    EntityRoot,
     Group,
     Pattern,
     AnimatableNumber,
@@ -31,15 +31,9 @@ export const addMod = (type: PMods['type']): PMods => {
             throw new Error(`bad mod type: ${type}`);
     }
 };
-export const createLayerTemplate = (id: string): Layer => ({
-    id,
-    order: 0,
-    opacity: 1,
+export const createLayerTemplate = (_id: string): EntityRoot => ({
     rootGroup: 'root',
     entities: {},
-    guides: [],
-    shared: {},
-    disabled: '',
 });
 
 export const createGroup = (id: string): Group => ({
@@ -49,6 +43,7 @@ export const createGroup = (id: string): Group => ({
     entities: {},
     disabled: '',
     shared: {},
+    opacity: 1,
 });
 
 export const createPattern = (id: string, hash: string, tiling: ThinTiling): Pattern => ({
