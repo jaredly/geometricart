@@ -26,7 +26,8 @@ export type TreeActions = {
     insert(id: string, parent: string, order: number): void;
     delete(id: string, parent: string): void;
     rename(id: string, name: string): void;
-    add(kind: string, parent: string): void;
+    add(kind: string, parent: string, subKind?: string): void;
+    subKinds: Record<string, string[]>;
 };
 
 type Props = {
@@ -73,12 +74,33 @@ const TreeNodeView = ({ctx, id, path}: {ctx: CTX; id: string; path: string[]}) =
                 <TreeNodeView key={id} id={id} ctx={ctx} path={childPath} />
             ))}
             {node.childKinds.length === 1 ? (
-                <button
-                    className="btn"
-                    onClick={() => ctx.actions.add(node.childKinds[0], node.id)}
-                >
-                    Add {node.childKinds[0]}
-                </button>
+                ctx.actions.subKinds[node.childKinds[0]] ? (
+                    <select
+                        className="select cursor-pointer"
+                        value=""
+                        onChange={(evt) => {
+                            if (
+                                ctx.actions.subKinds[node.childKinds[0]].includes(evt.target.value)
+                            ) {
+                                ctx.actions.add(node.childKinds[0], node.id, evt.target.value);
+                            }
+                        }}
+                    >
+                        <option value="">Add {node.childKinds[0]}</option>
+                        {ctx.actions.subKinds[node.childKinds[0]].map((kind) => (
+                            <option key={kind} value={kind}>
+                                {kind}
+                            </option>
+                        ))}
+                    </select>
+                ) : (
+                    <button
+                        className="btn"
+                        onClick={() => ctx.actions.add(node.childKinds[0], node.id)}
+                    >
+                        Add {node.childKinds[0]}
+                    </button>
+                )
             ) : (
                 <select
                     className="select cursor-pointer"
@@ -110,7 +132,9 @@ const TreeNodeView = ({ctx, id, path}: {ctx: CTX; id: string; path: string[]}) =
                     'flex' +
                     (selected === 2 ? ' bg-amber-500' : selected === 1 ? ' bg-amber-800' : '')
                 }
-                onClick={() => ctx.setSelection(childPath)}
+                onClick={() =>
+                    selected === 2 ? ctx.setSelection(null) : ctx.setSelection(childPath)
+                }
                 ref={(div) => {
                     if (div) ctx.refs[node.id] = div;
                 }}

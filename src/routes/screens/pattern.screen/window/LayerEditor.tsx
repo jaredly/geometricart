@@ -252,7 +252,10 @@ export const LayerEditor = () => {
             insert(id, parent, order) {},
             delete(id, parent) {},
             rename(id, name) {},
-            add(kind, parent) {},
+            add(kind, parent, subKind) {},
+            subKinds: {
+                PatternContents: ['shapes', 'weave', 'lines', 'layers'],
+            },
         };
     }, []);
 
