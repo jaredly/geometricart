@@ -18,6 +18,7 @@ import {
 import {HandleProps} from './DragToReorderList';
 import {SingleUpdater, Updater} from '../../../../json-diff/Updater';
 import {ChunkEditor} from './ChunkEditor';
+import {DisabledIcon} from '../window/DisabledIcon';
 
 export const ShapeStyleCard = <Kind,>({
     value,
@@ -62,15 +63,7 @@ export const ShapeStyleCard = <Kind,>({
                         <button className="btn btn-square" onClick={() => setShow(!show)}>
                             <CogIcon />
                         </button>
-                        <button
-                            className="btn btn-square btn-sm"
-                            onClick={(evt) => {
-                                evt.stopPropagation();
-                                update.disabled(!value.disabled);
-                            }}
-                        >
-                            {value.disabled ? <EyeInvisibleIcon color="gray" /> : <EyeIcon />}
-                        </button>
+                        <DisabledIcon value={value.disabled} update={update.disabled} />
                         <button
                             className="btn btn-ghost btn-xs text-error"
                             onClick={(evt) => {

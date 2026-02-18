@@ -155,7 +155,7 @@ const swapType = (
                         id: 'style1',
                         kind: [],
                         t: null,
-                        disabled: false,
+                        disabled: '',
                         lines: {
                             line1: {
                                 id: 'line1',
@@ -185,7 +185,7 @@ const swapType = (
                         kind: [],
                         mods: [],
                         order: 0,
-                        disabled: false,
+                        disabled: '',
                         t: null,
                         lines: {
                             line1: {
@@ -217,7 +217,7 @@ const swapType = (
                 styles: {
                     style1: {
                         id: 'style1',
-                        disabled: false,
+                        disabled: '',
                         t: null,
                         kind: [],
                         lines: {
@@ -248,7 +248,7 @@ const swapType = (
                     style1: {
                         id: 'style1',
                         kind: [],
-                        disabled: false,
+                        disabled: '',
                         t: null,
                         fills: {
                             fill1: {

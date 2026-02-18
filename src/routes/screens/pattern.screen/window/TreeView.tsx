@@ -11,7 +11,7 @@ import {useMemo, useState} from 'react';
 import {useExpanded} from './state';
 import {ChevronUp12, DotsHorizontalOutline} from '../../../../icons/Icon';
 
-type TreeNode = {
+export type TreeNode = {
     name: string;
     children: string[];
     kind: string;
@@ -21,7 +21,7 @@ type TreeNode = {
     preview?: React.ReactNode;
 };
 
-type TreeActions = {
+export type TreeActions = {
     move(id: string, parent: string, newParent: string, order: number): void;
     insert(id: string, parent: string, order: number): void;
     delete(id: string, parent: string): void;
@@ -53,6 +53,9 @@ const TreeNodeView = ({ctx, id}: {ctx: CTX; id: string}) => {
     const node = ctx.nodes[id];
     const [expanded, setExpanded] = useExpanded(`tree-node-${id}`);
     const [editing, setEditing] = useState<null | string>(null);
+    if (!node) {
+        return <div>{id} no node</div>;
+    }
     return (
         <div>
             <div
@@ -94,7 +97,7 @@ const TreeNodeView = ({ctx, id}: {ctx: CTX; id: string}) => {
                 <div className="flex-1 justify-end">{node.rightIcons}</div>
             </div>
             {expanded && (
-                <div>
+                <div className="pl-10">
                     {node.children.map((id) => (
                         <TreeNodeView key={id} id={id} ctx={ctx} />
                     ))}

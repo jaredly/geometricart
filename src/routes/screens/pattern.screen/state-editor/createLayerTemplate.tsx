@@ -82,7 +82,7 @@ export const createShapeStyle = <Kind,>(id: string): ShapeStyle<Kind> => ({
     fills: {},
     lines: {},
     mods: [],
-    disabled: false,
+    disabled: '',
     t: null,
 });
 

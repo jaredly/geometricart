@@ -17,7 +17,7 @@ export const makeForPattern = (tiling: ThinTiling, hash: string): State => {
     for (let i = 0; i <= pd.colorInfo.maxColor; i++) {
         styles[`alt-${i}`] = {
             id: `alt-${i}`,
-            disabled: false,
+            disabled: '',
             t: null,
             fills: {
                 [`fill-${i}`]: {
