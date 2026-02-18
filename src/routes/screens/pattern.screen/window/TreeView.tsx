@@ -76,7 +76,7 @@ const TreeNodeView = ({ctx, id, path}: {ctx: CTX; id: string; path: string[]}) =
             {node.childKinds.length === 1 ? (
                 ctx.actions.subKinds[node.childKinds[0]] ? (
                     <select
-                        className="select cursor-pointer"
+                        className="select cursor-pointer select-sm"
                         value=""
                         onChange={(evt) => {
                             if (
@@ -103,7 +103,7 @@ const TreeNodeView = ({ctx, id, path}: {ctx: CTX; id: string; path: string[]}) =
                 )
             ) : (
                 <select
-                    className="select cursor-pointer"
+                    className="select cursor-pointer select-sm"
                     value=""
                     onChange={(evt) => {
                         if (node.childKinds.includes(evt.target.value)) {
@@ -156,6 +156,7 @@ const TreeNodeView = ({ctx, id, path}: {ctx: CTX; id: string; path: string[]}) =
                         <DotsHorizontalOutline />
                     </div>
                 )}
+                {node.preview}
                 {editing != null ? (
                     <input
                         value={editing}

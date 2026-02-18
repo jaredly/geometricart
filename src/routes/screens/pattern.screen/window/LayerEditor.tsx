@@ -2,6 +2,7 @@ import {ObjectUngroup} from '../../../../icons/Icon';
 import {useValue} from '../../../../json-diff/react';
 import {Updater} from '../../../../json-diff/Updater';
 import {
+    AnimatableColor,
     BaseKind,
     describeKind,
     Entity,
@@ -15,7 +16,7 @@ import {
 } from '../export-types';
 import {useExportState} from '../ExportHistory';
 import {HandleProps} from '../state-editor/DragToReorderList';
-import {orderedIds} from '../state-editor/nextOrder';
+import {orderedIds, orderedItems} from '../state-editor/nextOrder';
 import {OrderableEditor} from '../state-editor/PatternEditor';
 import {EntityView} from './EntityView';
 import {Expandable} from './Expandable';
@@ -23,6 +24,7 @@ import {DisabledIcon} from './DisabledIcon';
 import {TreeActions, TreeNode, TreeView} from './TreeView';
 import {useMemo} from 'react';
 import {State} from '../types/state-type';
+import {colorToString, parseColor} from '../utils/colors';
 
 export const ObjectView = ({value, $}: {value: EObject; $: Updater<EObject>}) => {
     return <div>{value.id}</div>;
@@ -171,11 +173,30 @@ export const SingleLayerEditor = ({
     );
 };
 
+type Item =
+    | {type: 'group'; group: Group}
+    | {type: 'style-group'; id: string}
+    | {type: 'pattern'; pattern: Pattern}
+    | {type: 'render'; id: string; style: string}
+    | {type: 'object'; object: EObject}
+    | {
+          type: 'pattern-contents';
+          pattern: Pattern;
+          contents: PatternContents;
+      };
+
 export const LayerEditor = () => {
     const state = useExportState();
     const value = useValue(state.$);
     const nodes = useMemo((): Record<string, TreeNode> => {
+        const ids: Record<string, Item> = {};
         const nodes: Record<string, TreeNode> = {};
+
+        const add = (node: TreeNode, item: Item) => {
+            nodes[node.id] = node;
+            ids[node.id] = item;
+            return node.id;
+        };
 
         const addEntity = (entity: Entity): string => {
             switch (entity.type) {
@@ -188,47 +209,113 @@ export const LayerEditor = () => {
             }
         };
 
-        const addObject = (object: EObject) => {
-            const id = object.id + ':object';
-            nodes[id] = {
-                id,
-                kind: 'Object',
-                childKinds: [],
-                children: [],
-                name: 'Object ' + object.id,
-                rightIcons: [],
-            };
-            return id;
+        const addObject = (object: EObject) =>
+            add(
+                {
+                    id: object.id + ':object',
+                    kind: 'Object',
+                    childKinds: [],
+                    children: [],
+                    name: 'Object ' + object.id,
+                    rightIcons: [],
+                },
+                {type: 'object', object},
+            );
+
+        const colorPreview = (color?: AnimatableColor) => {
+            if (!color) return;
+            let parsed =
+                typeof color === 'number'
+                    ? value.styleConfig.palette[color % value.styleConfig.palette.length]
+                    : parseColor(color);
+            if (parsed) {
+                return (
+                    <div style={{width: 20, height: 20, backgroundColor: colorToString(parsed)}} />
+                );
+            }
         };
 
-        const addPattern = (pattern: Pattern): string => {
-            const id = pattern.id + ':pattern';
-            nodes[id] = {
-                id,
-                kind: 'Pattern',
-                childKinds: ['PatternContents'],
-                children: [],
-                name: 'Pattern ' + pattern.id,
-                rightIcons: [],
-            };
-            return id;
+        const addPatternContents = (pattern: Pattern, contents: PatternContents) => {
+            let children: string[] = [];
+            let childKinds: string[] = [];
+            switch (contents.type) {
+                case 'shapes': {
+                    children = orderedItems(contents.styles).map((item) =>
+                        add(
+                            {
+                                id: item.id + ':' + contents.id + ':' + pattern.id,
+                                rightIcons: [],
+                                kind: 'Style',
+                                childKinds: ['FillOrLine'],
+                                children: orderedItems(item.items).map((render) =>
+                                    add(
+                                        {
+                                            id: `${render.id}`,
+                                            childKinds: [],
+                                            children: [],
+                                            kind: 'FillOrLine',
+                                            name: render.line ? 'line' : 'fill',
+                                            rightIcons: [],
+                                            preview: colorPreview(render.color),
+                                        },
+                                        {type: 'render', style: item.id, id: render.id},
+                                    ),
+                                ),
+                                name: 'Style group ' + item.id,
+                            },
+                            {type: 'style-group', id: item.id},
+                        ),
+                    );
+                    childKinds = ['style-group'];
+                    break;
+                }
+                case 'weave':
+                case 'lines':
+                case 'layers':
+            }
+            return add(
+                {
+                    id: contents.id + ':' + pattern.id,
+                    kind: 'PatternContents',
+                    childKinds,
+                    children,
+                    name: contents.type,
+                    rightIcons: [],
+                },
+                {type: 'pattern-contents', contents, pattern},
+            );
         };
 
-        const addGroup = (group: Group): string => {
-            const id = group.id + ':group';
-            nodes[id] = {
-                id,
-                name: 'Group ' + group.id,
-                children: orderedIds(group.entities)
-                    .map((eid) => value.entities[eid])
-                    .filter((entity): entity is Entity => !!entity)
-                    .map(addEntity),
-                kind: 'Group',
-                childKinds: ['Pattern', 'Group', 'Object'],
-                rightIcons: [],
-            };
-            return id;
-        };
+        const addPattern = (pattern: Pattern): string =>
+            add(
+                {
+                    id: pattern.id + ':pattern',
+                    kind: 'Pattern',
+                    childKinds: ['PatternContents'],
+                    children: orderedItems(pattern.contents).map((contents) =>
+                        addPatternContents(pattern, contents),
+                    ),
+                    name: 'Pattern ' + pattern.id,
+                    rightIcons: [],
+                },
+                {type: 'pattern', pattern},
+            );
+
+        const addGroup = (group: Group): string =>
+            add(
+                {
+                    id: group.id + ':group',
+                    name: 'Group ' + group.id,
+                    children: orderedIds(group.entities)
+                        .map((eid) => value.entities[eid])
+                        .filter((entity): entity is Entity => !!entity)
+                        .map(addEntity),
+                    kind: 'Group',
+                    childKinds: ['Pattern', 'Group', 'Object'],
+                    rightIcons: [],
+                },
+                {type: 'group', group},
+            );
 
         const rootGroup = value.entities[value.rootGroup];
         if (rootGroup?.type !== 'Group') {
@@ -255,6 +342,7 @@ export const LayerEditor = () => {
             add(kind, parent, subKind) {},
             subKinds: {
                 PatternContents: ['shapes', 'weave', 'lines', 'layers'],
+                FillOrLine: ['fill', 'line'],
             },
         };
     }, []);
