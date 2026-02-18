@@ -2,6 +2,8 @@ Going full tree view
 
 -> I think we'll want to collapse Fill and Line. So a ShapeStyle just has an ordered list of Styles which can be a Fill or a Line. maybe. it would be ... weird ... to have an overwrite that switches the kind. but maybe its fine
 
+-> sooo also layers are useless I think. just use groups, right?
+
 # Sidebar! making it happen
 
 I've got my little ... tree view thing, and actually what I want is a component that's a little more normalized about it

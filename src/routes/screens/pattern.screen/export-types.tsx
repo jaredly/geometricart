@@ -85,7 +85,6 @@ export type Layer = {
     opacity: AnimatableNumber;
     rootGroup: string;
     entities: Record<string, Entity>;
-    shared: Orderable<OValue<AnimatableValue>>;
 
     guides: GuideGeom[];
 };
@@ -95,7 +94,8 @@ export type Group = {
     id: string;
     name?: string;
     entities: Record<string, number>; // id -> order
-    disabled: boolean;
+    disabled: string;
+    shared: Orderable<OValue<AnimatableValue>>;
 };
 
 export type CropMode = 'rough' | 'half';
