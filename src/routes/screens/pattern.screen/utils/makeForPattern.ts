@@ -43,6 +43,13 @@ export const makeForPattern = (tiling: ThinTiling, hash: string): State => {
                     order: 0,
                     color: 1,
                 },
+                i2: {
+                    id: 'i2',
+                    mods: [],
+                    order: 0,
+                    color: 2,
+                    line: {width: 10},
+                },
             },
             t: null,
         },
