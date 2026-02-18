@@ -66,6 +66,43 @@ const TreeNodeView = ({ctx, id, path}: {ctx: CTX; id: string; path: string[]}) =
     if (!node) {
         return <div>{id} no node</div>;
     }
+
+    const children = (
+        <div className={path.length === 0 ? '' : 'pl-10'}>
+            {node.children.map((id) => (
+                <TreeNodeView key={id} id={id} ctx={ctx} path={childPath} />
+            ))}
+            {node.childKinds.length === 1 ? (
+                <button
+                    className="btn"
+                    onClick={() => ctx.actions.add(node.childKinds[0], node.id)}
+                >
+                    Add {node.childKinds[0]}
+                </button>
+            ) : (
+                <select
+                    className="select cursor-pointer"
+                    value=""
+                    onChange={(evt) => {
+                        if (node.childKinds.includes(evt.target.value)) {
+                            ctx.actions.add(evt.target.value, node.id);
+                        }
+                    }}
+                >
+                    <option value="">Add child</option>
+                    {node.childKinds.map((kind) => (
+                        <option key={kind} value={kind}>
+                            {kind}
+                        </option>
+                    ))}
+                </select>
+            )}
+        </div>
+    );
+
+    if (path.length === 0) {
+        return children;
+    }
     return (
         <div>
             <div
@@ -110,38 +147,7 @@ const TreeNodeView = ({ctx, id, path}: {ctx: CTX; id: string; path: string[]}) =
                 )}
                 <div className="flex-1 justify-end">{node.rightIcons}</div>
             </div>
-            {expanded && (
-                <div className="pl-10">
-                    {node.children.map((id) => (
-                        <TreeNodeView key={id} id={id} ctx={ctx} path={childPath} />
-                    ))}
-                    {node.childKinds.length === 1 ? (
-                        <button
-                            className="btn"
-                            onClick={() => ctx.actions.add(node.childKinds[0], node.id)}
-                        >
-                            Add
-                        </button>
-                    ) : (
-                        <select
-                            className="select cursor-pointer"
-                            value=""
-                            onChange={(evt) => {
-                                if (node.childKinds.includes(evt.target.value)) {
-                                    ctx.actions.add(evt.target.value, node.id);
-                                }
-                            }}
-                        >
-                            <option value="">Add child</option>
-                            {node.childKinds.map((kind) => (
-                                <option key={kind} value={kind}>
-                                    {kind}
-                                </option>
-                            ))}
-                        </select>
-                    )}
-                </div>
-            )}
+            {expanded && children}
         </div>
     );
 };

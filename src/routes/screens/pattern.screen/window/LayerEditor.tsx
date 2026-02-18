@@ -235,25 +235,18 @@ export const LayerEditor = () => {
 
         const rootGroup = value.entities[value.rootGroup];
         if (rootGroup?.type !== 'Group') {
-            nodes.root = {
-                id: 'root',
-                name: 'Entities',
+            nodes[value.rootGroup] = {
+                id: value.rootGroup,
+                name: 'Invalid Root Group',
                 children: [],
-                kind: 'Root',
+                kind: 'Invalid',
                 childKinds: ['Group', 'Pattern', 'Object'],
                 rightIcons: [],
             };
             return nodes;
         }
+        addGroup(rootGroup);
 
-        nodes.root = {
-            id: 'root',
-            name: 'Entities',
-            children: [addGroup(rootGroup)],
-            kind: 'Root',
-            childKinds: ['Group', 'Pattern', 'Object'],
-            rightIcons: [],
-        };
         return nodes;
     }, [value]);
     const actions = useMemo((): TreeActions => {
@@ -266,5 +259,5 @@ export const LayerEditor = () => {
         };
     }, []);
 
-    return <TreeView actions={actions} nodes={nodes} root={'root'} />;
+    return <TreeView actions={actions} nodes={nodes} root={value.rootGroup + ':group'} />;
 };
