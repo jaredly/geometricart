@@ -85,6 +85,7 @@ export type Layer = {
     opacity: AnimatableNumber;
     rootGroup: string;
     entities: Record<string, Entity>;
+    shared: Orderable<OValue<AnimatableValue>>;
 
     guides: GuideGeom[];
 };

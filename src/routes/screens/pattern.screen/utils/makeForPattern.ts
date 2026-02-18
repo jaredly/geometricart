@@ -45,7 +45,8 @@ export const makeForPattern = (tiling: ThinTiling, hash: string): State => {
                     'root-group': {
                         type: 'Group',
                         id: 'root-group',
-                        disabled: false,
+                        disabled: '',
+                        shared: {},
                         entities: {'one-pattern': 0},
                     },
                     'one-pattern': {

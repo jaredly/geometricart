@@ -47,7 +47,8 @@ export const createGroup = (id: string): Group => ({
     id,
     name: id,
     entities: {},
-    disabled: false,
+    disabled: '',
+    shared: {},
 });
 
 export const createPattern = (id: string, hash: string, tiling: ThinTiling): Pattern => ({
