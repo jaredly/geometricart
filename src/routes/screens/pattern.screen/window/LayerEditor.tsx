@@ -1,4 +1,4 @@
-import {ObjectUngroup} from '../../../../icons/Icon';
+import {CogIcon, ObjectUngroup} from '../../../../icons/Icon';
 import {useValue} from '../../../../json-diff/react';
 import {Updater} from '../../../../json-diff/Updater';
 import {
@@ -188,6 +188,8 @@ type Item =
 export const LayerEditor = () => {
     const state = useExportState();
     const value = useValue(state.$);
+    const [config, setConfig] = useState<null | string[]>(null);
+
     const {ids, nodes} = useMemo(() => {
         const ids: Record<string, Item> = {};
         const nodes: Record<string, TreeNode> = {};
@@ -235,6 +237,8 @@ export const LayerEditor = () => {
             }
         };
 
+        const cid = config?.join(',');
+
         const addPatternContents = (pattern: Pattern, contents: PatternContents) => {
             let children: string[] = [];
             let childKinds: string[] = [];
@@ -255,7 +259,27 @@ export const LayerEditor = () => {
                                             children: [],
                                             kind: 'FillOrLine',
                                             name: render.line ? 'line' : 'fill',
-                                            rightIcons: [],
+                                            rightIcons: [
+                                                <CogIcon
+                                                    onClick={(evt) => {
+                                                        evt.preventDefault();
+                                                        evt.stopPropagation();
+                                                        const p = [pattern.id, item.id, render.id];
+                                                        if (p.join(',') === cid) {
+                                                            setConfig(null);
+                                                        } else {
+                                                            setConfig(p);
+                                                        }
+                                                    }}
+                                                    className={
+                                                        'cursor-pointer ease-linear transition-colors ' +
+                                                        (cid ===
+                                                        [pattern.id, item.id, render.id].join(',')
+                                                            ? 'text-accent'
+                                                            : '')
+                                                    }
+                                                />,
+                                            ],
                                             preview: colorPreview(render.color),
                                         },
                                         {type: 'render', style: item.id, id: render.id},
@@ -332,7 +356,8 @@ export const LayerEditor = () => {
         addGroup(rootGroup);
 
         return {ids, nodes};
-    }, [value]);
+    }, [value, config]);
+
     const actions = useMemo((): TreeActions => {
         return {
             move(id, parent, newParent, order) {},

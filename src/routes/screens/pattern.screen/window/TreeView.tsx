@@ -171,7 +171,8 @@ const TreeNodeView = ({ctx, id, path}: {ctx: CTX; id: string; path: string[]}) =
                 ) : (
                     <div onClick={() => setEditing(node.name)}>{node.name}</div>
                 )}
-                <div className="flex-1 justify-end">{node.rightIcons}</div>
+                <div className="flex-1" />
+                <div className="justify-end">{node.rightIcons}</div>
             </div>
             {expanded && children}
         </div>
