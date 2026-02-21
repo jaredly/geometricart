@@ -206,32 +206,26 @@ const itemToString = (item: Item): string => {
 export const LayerEditor = () => {
     const state = useExportState();
     const value = useValue(state.$);
-    const [config, setConfig] = useState<null | string[]>(null);
+    const [config, setConfig] = useState<null | Item>(null);
 
     const StyleIcons = useCallback(
         (kind: Item) => {
             return (
                 <CogIcon
                     onClick={(evt) => {
-                        // evt.preventDefault();
-                        // evt.stopPropagation();
-                        // if (p.join(',') === cid) {
-                        //     setConfig(null);
-                        // } else {
-                        //     setConfig(p);
-                        // }
+                        evt.stopPropagation();
+                        setConfig(
+                            config && itemToString(config) === itemToString(kind) ? null : kind,
+                        );
                     }}
-                    // className={
-                    //     'cursor-pointer ease-linear transition-colors ' +
-                    //     (cid ===
-                    //     [pattern.id, item.id, render.id].join(',')
-                    //         ? 'text-accent'
-                    //         : '')
-                    // }
+                    className={
+                        'cursor-pointer ease-linear transition-colors ' +
+                        (config && itemToString(config) === itemToString(kind) ? 'text-accent' : '')
+                    }
                 />
             );
         },
-        [state, config, setConfig],
+        [config],
     );
 
     const {ids, nodes} = useMemo(() => {
@@ -275,8 +269,6 @@ export const LayerEditor = () => {
                 );
             }
         };
-
-        const cid = config?.join(',');
 
         const addPatternContents = (pattern: Pattern, contents: PatternContents) => {
             let children: string[] = [];
@@ -381,26 +373,12 @@ export const LayerEditor = () => {
                 />
             </div>
             {config ? (
-                <RenderConfig
-                    config={config}
-                    onClose={() => setSelection(null)}
-                    value={value}
-                    ids={ids}
-                />
+                <RenderConfig config={config} onClose={() => setSelection(null)} value={value} />
             ) : null}
         </div>
     );
 };
 
-const RenderConfig = ({
-    config,
-    ids,
-    onClose,
-}: {
-    value: State;
-    config: string[];
-    ids: Record<string, Item>;
-    onClose(): void;
-}) => {
+const RenderConfig = ({config, onClose}: {value: State; config: Item; onClose(): void}) => {
     return <div>Seelction</div>;
 };
