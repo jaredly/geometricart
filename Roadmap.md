@@ -1,6 +1,8 @@
 -> fill & line be unified
 -> at least in the same listy list
 
+OK SO we ... hmm ... make a style editor thing
+
 #
 
 Going full tree view

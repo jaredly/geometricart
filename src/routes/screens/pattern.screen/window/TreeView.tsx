@@ -33,6 +33,8 @@ export type TreeActions = {
 type Props = {
     actions: TreeActions;
     nodes: Record<string, TreeNode>;
+    selection: string[] | null;
+    setSelection: (s: string[] | null) => void;
     root: string;
 };
 
@@ -46,9 +48,8 @@ type CTX = {
 
 const nullPath: string[] = [];
 
-export const TreeView = ({actions, nodes, root}: Props) => {
+export const TreeView = ({actions, nodes, root, selection, setSelection}: Props) => {
     const refs: CTX['refs'] = useMemo(() => ({}), []);
-    const [selection, setSelection] = useState<null | string[]>(null);
     const ctx = useMemo(
         (): CTX => ({refs, nodes, actions, selection, setSelection}),
         [refs, nodes, actions, selection, setSelection],

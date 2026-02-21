@@ -22,7 +22,7 @@ import {EntityView} from './EntityView';
 import {Expandable} from './Expandable';
 import {DisabledIcon} from './DisabledIcon';
 import {TreeActions, TreeNode, TreeView} from './TreeView';
-import {useMemo} from 'react';
+import {useMemo, useState} from 'react';
 import {State} from '../types/state-type';
 import {colorToString, parseColor} from '../utils/colors';
 
@@ -188,7 +188,7 @@ type Item =
 export const LayerEditor = () => {
     const state = useExportState();
     const value = useValue(state.$);
-    const nodes = useMemo((): Record<string, TreeNode> => {
+    const {ids, nodes} = useMemo(() => {
         const ids: Record<string, Item> = {};
         const nodes: Record<string, TreeNode> = {};
 
@@ -327,11 +327,11 @@ export const LayerEditor = () => {
                 childKinds: ['Group', 'Pattern', 'Object'],
                 rightIcons: [],
             };
-            return nodes;
+            return {ids, nodes};
         }
         addGroup(rootGroup);
 
-        return nodes;
+        return {ids, nodes};
     }, [value]);
     const actions = useMemo((): TreeActions => {
         return {
@@ -346,6 +346,40 @@ export const LayerEditor = () => {
             },
         };
     }, []);
+    const [selection, setSelection] = useState<null | string[]>(null);
 
-    return <TreeView actions={actions} nodes={nodes} root={value.rootGroup + ':group'} />;
+    return (
+        <div>
+            <div className="flex-1 min-h-0 overflow-auto">
+                <TreeView
+                    selection={selection}
+                    setSelection={setSelection}
+                    actions={actions}
+                    nodes={nodes}
+                    root={value.rootGroup + ':group'}
+                />
+            </div>
+            {selection ? (
+                <RenderSelection
+                    selection={selection}
+                    onClose={() => setSelection(null)}
+                    value={value}
+                    ids={ids}
+                />
+            ) : null}
+        </div>
+    );
+};
+
+const RenderSelection = ({
+    selection,
+    ids,
+    onClose,
+}: {
+    value: State;
+    selection: string[];
+    ids: Record<string, Item>;
+    onClose(): void;
+}) => {
+    return <div>Seelction</div>;
 };
