@@ -11,55 +11,71 @@ import {useMemo, useState} from 'react';
 import {useExpanded} from './state';
 import {ChevronUp12, DotsHorizontalOutline} from '../../../../icons/Icon';
 
-export type TreeNode = {
+export type TreeNode<Kind extends {type: string}> = {
     name: string;
     children: string[];
-    kind: string;
-    id: string;
+    id: Kind;
     childKinds: string[];
     // rightIcons: React.ReactNode[];
-    rightIcons?: (id: string, kind: string) => React.ReactNode;
+    rightIcons?: (kind: Kind) => React.ReactNode;
     preview?: React.ReactNode;
 };
 
-export type TreeActions = {
-    move(id: string, parent: string, newParent: string, order: number): void;
-    insert(id: string, parent: string, order: number): void;
-    delete(id: string, parent: string): void;
-    rename(id: string, name: string): void;
-    add(kind: string, parent: string, subKind?: string): void;
+export type TreeActions<Kind extends {type: string}> = {
+    move(id: Kind, parent: Kind, newParent: Kind, order: number): void;
+    insert(id: Kind, parent: Kind, order: number): void;
+    delete(id: Kind, parent: Kind): void;
+    rename(id: Kind, name: string): void;
+    add(kind: string, parent: Kind, subKind?: string): void;
     subKinds: Record<string, string[]>;
 };
 
-type Props = {
-    actions: TreeActions;
-    nodes: Record<string, TreeNode>;
+type Props<Kind extends {type: string}> = {
+    actions: TreeActions<Kind>;
+    nodes: Record<string, TreeNode<Kind>>;
     selection: string[] | null;
     setSelection: (s: string[] | null) => void;
+    kindToString: (k: Kind) => string;
     root: string;
 };
 
-type CTX = {
+type CTX<Kind extends {type: string}> = {
+    kindToString: (k: Kind) => string;
     refs: Record<string, HTMLDivElement>;
-    nodes: Record<string, TreeNode>;
-    actions: TreeActions;
+    nodes: Record<string, TreeNode<Kind>>;
+    actions: TreeActions<Kind>;
     selection: string[] | null;
     setSelection: (sel: string[] | null) => void;
 };
 
 const nullPath: string[] = [];
 
-export const TreeView = ({actions, nodes, root, selection, setSelection}: Props) => {
-    const refs: CTX['refs'] = useMemo(() => ({}), []);
+export const TreeView = <Kind extends {type: string}>({
+    actions,
+    nodes,
+    root,
+    selection,
+    setSelection,
+    kindToString,
+}: Props<Kind>) => {
+    const refs: CTX<Kind>['refs'] = useMemo(() => ({}), []);
     const ctx = useMemo(
-        (): CTX => ({refs, nodes, actions, selection, setSelection}),
-        [refs, nodes, actions, selection, setSelection],
+        (): CTX<Kind> => ({refs, nodes, actions, selection, setSelection, kindToString}),
+        [refs, nodes, actions, selection, setSelection, kindToString],
     );
 
     return <TreeNodeView ctx={ctx} id={root} path={nullPath} />;
 };
 
-const TreeNodeView = ({ctx, id, path}: {ctx: CTX; id: string; path: string[]}) => {
+const TreeNodeView = <Kind extends {type: string}>({
+    ctx,
+    id,
+    path,
+}: {
+    ctx: CTX<Kind>;
+    id: string;
+    path: string[];
+}) => {
     const node = ctx.nodes[id];
     const childPath = useMemo(() => [...path, id], [path, id]);
     const [expanded, setExpanded] = useExpanded(`tree-node-${id}`);
@@ -138,7 +154,7 @@ const TreeNodeView = ({ctx, id, path}: {ctx: CTX; id: string; path: string[]}) =
                     selected === 2 ? ctx.setSelection(null) : ctx.setSelection(childPath)
                 }
                 ref={(div) => {
-                    if (div) ctx.refs[node.id] = div;
+                    if (div) ctx.refs[ctx.kindToString(node.id)] = div;
                 }}
             >
                 {node.childKinds.length ? (
@@ -173,7 +189,7 @@ const TreeNodeView = ({ctx, id, path}: {ctx: CTX; id: string; path: string[]}) =
                     <div onClick={() => setEditing(node.name)}>{node.name}</div>
                 )}
                 <div className="flex-1" />
-                <div className="justify-end">{node.rightIcons?.(node.id, node.kind)}</div>
+                <div className="justify-end">{node.rightIcons?.(node.id)}</div>
             </div>
             {expanded && children}
         </div>

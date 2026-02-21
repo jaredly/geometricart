@@ -175,7 +175,7 @@ export const SingleLayerEditor = ({
 
 // config hereeeee
 type Item =
-    | {type: 'group'; group: Group}
+    | {type: 'group'; id: string}
     | {type: 'style-group'; id: string}
     | {type: 'pattern'; pattern: Pattern}
     | {type: 'render'; id: string; style: string}
@@ -186,13 +186,30 @@ type Item =
           contents: PatternContents;
       };
 
+const itemToString = (item: Item): string => {
+    switch (item.type) {
+        case 'object':
+            return `object:${item.object.id}`;
+        case 'group':
+            return `group:${item.id}`;
+        case 'style-group':
+            return `style-group:${item.id}`;
+        case 'pattern':
+            return `pattern:${item.pattern.id}`;
+        case 'render':
+            return `render:${item.id}:${item.style}`;
+        case 'pattern-contents':
+            return `pattern:${item.pattern.id}:${item.contents.id}`;
+    }
+};
+
 export const LayerEditor = () => {
     const state = useExportState();
     const value = useValue(state.$);
     const [config, setConfig] = useState<null | string[]>(null);
 
     const StyleIcons = useCallback(
-        (id: string, kind: string) => {
+        (kind: Item) => {
             return (
                 <CogIcon
                     onClick={(evt) => {
@@ -219,12 +236,12 @@ export const LayerEditor = () => {
 
     const {ids, nodes} = useMemo(() => {
         const ids: Record<string, Item> = {};
-        const nodes: Record<string, TreeNode> = {};
+        const nodes: Record<string, TreeNode<Item>> = {};
 
-        const add = (node: TreeNode, item: Item) => {
-            nodes[node.id] = node;
-            ids[node.id] = item;
-            return node.id;
+        const add = (node: TreeNode<Item>) => {
+            nodes[itemToString(node.id)] = node;
+            ids[itemToString(node.id)] = node.id;
+            return itemToString(node.id);
         };
 
         const addEntity = (entity: Entity): string => {
@@ -239,16 +256,12 @@ export const LayerEditor = () => {
         };
 
         const addObject = (object: EObject) =>
-            add(
-                {
-                    id: object.id + ':object',
-                    kind: 'Object',
-                    childKinds: [],
-                    children: [],
-                    name: 'Object ' + object.id,
-                },
-                {type: 'object', object},
-            );
+            add({
+                id: {type: 'object', object},
+                childKinds: [],
+                children: [],
+                name: 'Object ' + object.id,
+            });
 
         const colorPreview = (color?: AnimatableColor) => {
             if (!color) return;
@@ -271,29 +284,23 @@ export const LayerEditor = () => {
             switch (contents.type) {
                 case 'shapes': {
                     children = orderedItems(contents.styles).map((item) =>
-                        add(
-                            {
-                                id: item.id + ':' + contents.id + ':' + pattern.id,
-                                kind: 'Style',
-                                childKinds: ['FillOrLine'],
-                                children: orderedItems(item.items).map((render) =>
-                                    add(
-                                        {
-                                            id: `${render.id}`,
-                                            childKinds: [],
-                                            children: [],
-                                            kind: 'FillOrLine',
-                                            name: render.line ? 'line' : 'fill',
-                                            rightIcons: StyleIcons,
-                                            preview: colorPreview(render.color),
-                                        },
-                                        {type: 'render', style: item.id, id: render.id},
-                                    ),
-                                ),
-                                name: 'Style group ' + item.id,
-                            },
-                            {type: 'style-group', id: item.id},
-                        ),
+                        add({
+                            id: {type: 'style-group', id: item.id},
+                            // item.id + ':' + contents.id + ':' + pattern.id,
+                            // kind: 'Style',
+                            childKinds: ['FillOrLine'],
+                            children: orderedItems(item.items).map((render) =>
+                                add({
+                                    id: {type: 'render', style: item.id, id: render.id},
+                                    childKinds: [],
+                                    children: [],
+                                    name: render.line ? 'line' : 'fill',
+                                    rightIcons: StyleIcons,
+                                    preview: colorPreview(render.color),
+                                }),
+                            ),
+                            name: 'Style group ' + item.id,
+                        }),
                     );
                     childKinds = ['style-group'];
                     break;
@@ -302,54 +309,41 @@ export const LayerEditor = () => {
                 case 'lines':
                 case 'layers':
             }
-            return add(
-                {
-                    id: contents.id + ':' + pattern.id,
-                    kind: 'PatternContents',
-                    childKinds,
-                    children,
-                    name: contents.type,
-                },
-                {type: 'pattern-contents', contents, pattern},
-            );
+            return add({
+                id: {type: 'pattern-contents', contents, pattern},
+                childKinds,
+                children,
+                name: contents.type,
+            });
         };
 
         const addPattern = (pattern: Pattern): string =>
-            add(
-                {
-                    id: pattern.id + ':pattern',
-                    kind: 'Pattern',
-                    childKinds: ['PatternContents'],
-                    children: orderedItems(pattern.contents).map((contents) =>
-                        addPatternContents(pattern, contents),
-                    ),
-                    name: 'Pattern ' + pattern.id,
-                },
-                {type: 'pattern', pattern},
-            );
+            add({
+                id: {type: 'pattern', pattern},
+                childKinds: ['PatternContents'],
+                children: orderedItems(pattern.contents).map((contents) =>
+                    addPatternContents(pattern, contents),
+                ),
+                name: 'Pattern ' + pattern.id,
+            });
 
         const addGroup = (group: Group): string =>
-            add(
-                {
-                    id: group.id + ':group',
-                    name: 'Group ' + group.id,
-                    children: orderedIds(group.entities)
-                        .map((eid) => value.entities[eid])
-                        .filter((entity): entity is Entity => !!entity)
-                        .map(addEntity),
-                    kind: 'Group',
-                    childKinds: ['Pattern', 'Group', 'Object'],
-                },
-                {type: 'group', group},
-            );
+            add({
+                id: {type: 'group', id: group.id},
+                name: 'Group ' + group.id,
+                children: orderedIds(group.entities)
+                    .map((eid) => value.entities[eid])
+                    .filter((entity): entity is Entity => !!entity)
+                    .map(addEntity),
+                childKinds: ['Pattern', 'Group', 'Object'],
+            });
 
         const rootGroup = value.entities[value.rootGroup];
         if (rootGroup?.type !== 'Group') {
-            nodes[value.rootGroup] = {
-                id: value.rootGroup,
+            nodes.invalid = {
+                id: {type: 'group', id: value.rootGroup},
                 name: 'Invalid Root Group',
                 children: [],
-                kind: 'Invalid',
                 childKinds: ['Group', 'Pattern', 'Object'],
             };
             return {ids, nodes};
@@ -359,7 +353,7 @@ export const LayerEditor = () => {
         return {ids, nodes};
     }, [value, config, StyleIcons]);
 
-    const actions = useMemo((): TreeActions => {
+    const actions = useMemo((): TreeActions<Item> => {
         return {
             move(id, parent, newParent, order) {},
             insert(id, parent, order) {},
@@ -377,12 +371,13 @@ export const LayerEditor = () => {
     return (
         <div>
             <div className="flex-1 min-h-0 overflow-auto">
-                <TreeView
+                <TreeView<Item>
+                    kindToString={itemToString}
                     selection={selection}
                     setSelection={setSelection}
                     actions={actions}
                     nodes={nodes}
-                    root={value.rootGroup + ':group'}
+                    root={itemToString({type: 'group', id: value.rootGroup})}
                 />
             </div>
             {config ? (
