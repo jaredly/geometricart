@@ -25,6 +25,7 @@ import {TreeActions, TreeNode, TreeView} from './TreeView';
 import {useCallback, useMemo, useState} from 'react';
 import {State} from '../types/state-type';
 import {colorToString, parseColor} from '../utils/colors';
+import {FillEditor} from '../state-editor/FillEditor';
 
 export const ObjectView = ({value, $}: {value: EObject; $: Updater<EObject>}) => {
     return <div>{value.id}</div>;
@@ -178,7 +179,7 @@ type Item =
     | {type: 'group'; id: string}
     | {type: 'style-group'; id: string}
     | {type: 'pattern'; pattern: Pattern}
-    | {type: 'render'; id: string; style: string}
+    | {type: 'render'; pattern: string; id: string; style: string; contents: string}
     | {type: 'object'; object: EObject}
     | {
           type: 'pattern-contents';
@@ -197,7 +198,7 @@ const itemToString = (item: Item): string => {
         case 'pattern':
             return `pattern:${item.pattern.id}`;
         case 'render':
-            return `render:${item.id}:${item.style}`;
+            return `render:${item.pattern}:${item.contents}:${item.id}:${item.style}`;
         case 'pattern-contents':
             return `pattern:${item.pattern.id}:${item.contents.id}`;
     }
@@ -283,7 +284,13 @@ export const LayerEditor = () => {
                             childKinds: ['FillOrLine'],
                             children: orderedItems(item.items).map((render) =>
                                 add({
-                                    id: {type: 'render', style: item.id, id: render.id},
+                                    id: {
+                                        type: 'render',
+                                        pattern: pattern.id,
+                                        contents: contents.id,
+                                        style: item.id,
+                                        id: render.id,
+                                    },
                                     childKinds: [],
                                     children: [],
                                     name: render.line ? 'line' : 'fill',
@@ -373,12 +380,51 @@ export const LayerEditor = () => {
                 />
             </div>
             {config ? (
-                <RenderConfig config={config} onClose={() => setSelection(null)} value={value} />
+                <RenderConfig
+                    update={state.$}
+                    config={config}
+                    onClose={() => setSelection(null)}
+                    value={value}
+                />
             ) : null}
         </div>
     );
 };
 
-const RenderConfig = ({config, onClose}: {value: State; config: Item; onClose(): void}) => {
+const RenderConfig = ({
+    config,
+    update,
+    onClose,
+    value,
+}: {
+    update: Updater<State>;
+    value: State;
+    config: Item;
+    onClose(): void;
+}) => {
+    if (config.type === 'render') {
+        const fill = (
+            (value.entities[config.pattern] as Pattern).contents[
+                config.contents
+            ] as PatternContents & {type: 'shapes'}
+        ).styles[config.style].items[config.id];
+
+        return (
+            <div>
+                Seelction
+                <FillEditor
+                    palette={value.styleConfig.palette}
+                    reId={() => {}}
+                    update={
+                        update.entities[config.pattern]
+                            .$variant('Pattern')
+                            .contents[config.contents].$variant('shapes').styles[config.style]
+                            .items[config.id]
+                    }
+                    value={fill}
+                />
+            </div>
+        );
+    }
     return <div>Seelction</div>;
 };
