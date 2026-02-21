@@ -343,7 +343,7 @@ export const LayerEditor = () => {
         addGroup(rootGroup);
 
         return {ids, nodes};
-    }, [value, config, StyleIcons]);
+    }, [value, StyleIcons]);
 
     const actions = useMemo((): TreeActions<Item> => {
         return {
