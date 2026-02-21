@@ -17,7 +17,8 @@ export type TreeNode = {
     kind: string;
     id: string;
     childKinds: string[];
-    rightIcons: React.ReactNode[];
+    // rightIcons: React.ReactNode[];
+    rightIcons?: (id: string, kind: string) => React.ReactNode;
     preview?: React.ReactNode;
 };
 
@@ -172,7 +173,7 @@ const TreeNodeView = ({ctx, id, path}: {ctx: CTX; id: string; path: string[]}) =
                     <div onClick={() => setEditing(node.name)}>{node.name}</div>
                 )}
                 <div className="flex-1" />
-                <div className="justify-end">{node.rightIcons}</div>
+                <div className="justify-end">{node.rightIcons?.(node.id, node.kind)}</div>
             </div>
             {expanded && children}
         </div>

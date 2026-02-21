@@ -22,7 +22,7 @@ import {EntityView} from './EntityView';
 import {Expandable} from './Expandable';
 import {DisabledIcon} from './DisabledIcon';
 import {TreeActions, TreeNode, TreeView} from './TreeView';
-import {useMemo, useState} from 'react';
+import {useCallback, useMemo, useState} from 'react';
 import {State} from '../types/state-type';
 import {colorToString, parseColor} from '../utils/colors';
 
@@ -173,6 +173,7 @@ export const SingleLayerEditor = ({
     );
 };
 
+// config hereeeee
 type Item =
     | {type: 'group'; group: Group}
     | {type: 'style-group'; id: string}
@@ -189,6 +190,32 @@ export const LayerEditor = () => {
     const state = useExportState();
     const value = useValue(state.$);
     const [config, setConfig] = useState<null | string[]>(null);
+
+    const StyleIcons = useCallback(
+        (id: string, kind: string) => {
+            return (
+                <CogIcon
+                    onClick={(evt) => {
+                        // evt.preventDefault();
+                        // evt.stopPropagation();
+                        // if (p.join(',') === cid) {
+                        //     setConfig(null);
+                        // } else {
+                        //     setConfig(p);
+                        // }
+                    }}
+                    // className={
+                    //     'cursor-pointer ease-linear transition-colors ' +
+                    //     (cid ===
+                    //     [pattern.id, item.id, render.id].join(',')
+                    //         ? 'text-accent'
+                    //         : '')
+                    // }
+                />
+            );
+        },
+        [state, config, setConfig],
+    );
 
     const {ids, nodes} = useMemo(() => {
         const ids: Record<string, Item> = {};
@@ -219,7 +246,6 @@ export const LayerEditor = () => {
                     childKinds: [],
                     children: [],
                     name: 'Object ' + object.id,
-                    rightIcons: [],
                 },
                 {type: 'object', object},
             );
@@ -248,7 +274,6 @@ export const LayerEditor = () => {
                         add(
                             {
                                 id: item.id + ':' + contents.id + ':' + pattern.id,
-                                rightIcons: [],
                                 kind: 'Style',
                                 childKinds: ['FillOrLine'],
                                 children: orderedItems(item.items).map((render) =>
@@ -259,27 +284,7 @@ export const LayerEditor = () => {
                                             children: [],
                                             kind: 'FillOrLine',
                                             name: render.line ? 'line' : 'fill',
-                                            rightIcons: [
-                                                <CogIcon
-                                                    onClick={(evt) => {
-                                                        evt.preventDefault();
-                                                        evt.stopPropagation();
-                                                        const p = [pattern.id, item.id, render.id];
-                                                        if (p.join(',') === cid) {
-                                                            setConfig(null);
-                                                        } else {
-                                                            setConfig(p);
-                                                        }
-                                                    }}
-                                                    className={
-                                                        'cursor-pointer ease-linear transition-colors ' +
-                                                        (cid ===
-                                                        [pattern.id, item.id, render.id].join(',')
-                                                            ? 'text-accent'
-                                                            : '')
-                                                    }
-                                                />,
-                                            ],
+                                            rightIcons: StyleIcons,
                                             preview: colorPreview(render.color),
                                         },
                                         {type: 'render', style: item.id, id: render.id},
@@ -304,7 +309,6 @@ export const LayerEditor = () => {
                     childKinds,
                     children,
                     name: contents.type,
-                    rightIcons: [],
                 },
                 {type: 'pattern-contents', contents, pattern},
             );
@@ -320,7 +324,6 @@ export const LayerEditor = () => {
                         addPatternContents(pattern, contents),
                     ),
                     name: 'Pattern ' + pattern.id,
-                    rightIcons: [],
                 },
                 {type: 'pattern', pattern},
             );
@@ -336,7 +339,6 @@ export const LayerEditor = () => {
                         .map(addEntity),
                     kind: 'Group',
                     childKinds: ['Pattern', 'Group', 'Object'],
-                    rightIcons: [],
                 },
                 {type: 'group', group},
             );
@@ -349,14 +351,13 @@ export const LayerEditor = () => {
                 children: [],
                 kind: 'Invalid',
                 childKinds: ['Group', 'Pattern', 'Object'],
-                rightIcons: [],
             };
             return {ids, nodes};
         }
         addGroup(rootGroup);
 
         return {ids, nodes};
-    }, [value, config]);
+    }, [value, config, StyleIcons]);
 
     const actions = useMemo((): TreeActions => {
         return {
@@ -384,9 +385,9 @@ export const LayerEditor = () => {
                     root={value.rootGroup + ':group'}
                 />
             </div>
-            {selection ? (
-                <RenderSelection
-                    selection={selection}
+            {config ? (
+                <RenderConfig
+                    config={config}
                     onClose={() => setSelection(null)}
                     value={value}
                     ids={ids}
@@ -396,13 +397,13 @@ export const LayerEditor = () => {
     );
 };
 
-const RenderSelection = ({
-    selection,
+const RenderConfig = ({
+    config,
     ids,
     onClose,
 }: {
     value: State;
-    selection: string[];
+    config: string[];
     ids: Record<string, Item>;
     onClose(): void;
 }) => {
