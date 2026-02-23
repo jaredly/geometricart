@@ -16,7 +16,7 @@ import {
 } from '../export-types';
 import {useExportState} from '../ExportHistory';
 import {HandleProps} from '../state-editor/DragToReorderList';
-import {orderedIds, orderedItems} from '../state-editor/nextOrder';
+import {maxOrder, nextOrder, orderedIds, orderedItems} from '../state-editor/nextOrder';
 import {OrderableEditor} from '../state-editor/PatternEditor';
 import {EntityView} from './EntityView';
 import {Expandable} from './Expandable';
@@ -25,8 +25,12 @@ import {TreeActions, TreeNode, TreeView} from './TreeView';
 import {useCallback, useMemo, useState} from 'react';
 import {State} from '../types/state-type';
 import {colorToString, parseColor} from '../utils/colors';
-import {FillEditor} from '../state-editor/FillEditor';
+import {FillEditor, ModsEditor} from '../state-editor/FillEditor';
 import {BlurInput} from '../state-editor/BlurInput';
+import {genid} from '../utils/genid';
+import {ShapeKindEditor} from '../state-editor/BaseKindEditor';
+import {KindOrKinds} from '../state-editor/ShapeStyleCard';
+import {diffBuilder} from '../../../../json-diff/helper2';
 
 export const ObjectView = ({value, $}: {value: EObject; $: Updater<EObject>}) => {
     return <div>{value.id}</div>;
@@ -177,7 +181,7 @@ export const SingleLayerEditor = ({
 
 // config hereeeee
 type Item =
-    | {type: 'invalid'}
+    | {type: 'invalid'; path: Updater<number>}
     | {type: 'group'; path: Updater<Group>; value: Group}
     | {type: 'style-group'; path: Updater<ShapeStyle<ShapeKind>>; value: ShapeStyle<ShapeKind>}
     | {type: 'pattern'; path: Updater<Pattern>; value: Pattern}
@@ -336,6 +340,14 @@ export const LayerEditor = () => {
             nodes.invalid = {
                 id: {
                     type: 'invalid',
+                    path: diffBuilder('type', {
+                        getForPath() {
+                            throw new Error('no');
+                        },
+                        listenToPath() {
+                            throw new Error('no');
+                        },
+                    }),
                 },
                 name: 'Invalid Root Group',
                 children: [],
@@ -354,7 +366,28 @@ export const LayerEditor = () => {
             insert(id, parent, order) {},
             delete(id, parent) {},
             rename(id, name) {},
-            add(kind, parent, subKind) {},
+            add(kind, parent, subKind) {
+                console.log(kind, parent.path.toString(), subKind);
+                switch (parent.type) {
+                    case 'style-group': {
+                        const order = maxOrder(parent.value.items);
+                        const id = genid();
+                        parent.path.items[id].$add({
+                            id,
+                            order,
+                            mods: [],
+                            color: 0,
+                            line:
+                                subKind === 'line'
+                                    ? {
+                                          width: 1,
+                                      }
+                                    : undefined,
+                        });
+                        break;
+                    }
+                }
+            },
             subKinds: {
                 PatternContents: ['shapes', 'weave', 'lines', 'layers'],
                 FillOrLine: ['fill', 'line'],
@@ -405,6 +438,7 @@ const RenderConfig = ({
     config: Item;
     onClose(): void;
 }) => {
+    const palette = useValue(update.styleConfig.palette);
     if (config.type === 'render') {
         return (
             <WithValue
@@ -422,9 +456,20 @@ const RenderConfig = ({
     }
     if (config.type === 'style-group') {
         return (
-            <div>
-                <BlurInput value={config.value.id} onChange={config.path.id.$replace} />
-            </div>
+            <WithValue
+                path={config.path}
+                render={(style) => (
+                    <div>
+                        <BlurInput value={style.id} onChange={config.path.id.$replace} />
+                        <KindOrKinds
+                            value={style.kind}
+                            update={config.path.kind}
+                            KindEditor={ShapeKindEditor}
+                        />
+                        <ModsEditor mods={style.mods} update={config.path.mods} palette={palette} />
+                    </div>
+                )}
+            />
         );
     }
     return <div>Some Selection... {config.type}</div>;

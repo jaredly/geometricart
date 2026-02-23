@@ -106,7 +106,7 @@ export const ShapeStyleCard = <Kind,>({
     );
 };
 
-const KindOrKinds = <Kind,>({
+export const KindOrKinds = <Kind,>({
     value,
     update,
     KindEditor,
