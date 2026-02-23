@@ -22,4 +22,10 @@ export const orderedIds = (items: Record<string, number>) =>
 export const orderedItems = <T extends OrderItem>(t: Orderable<T>) =>
     Object.entries(t)
         .sort(([, a], [, b]) => a.order - b.order)
-        .map((a) => a[1]);
+        .map((a) => {
+            if (a[0] !== a[1].id) {
+                console.warn(`Invalid ID for item`, a);
+                return {...a[1], id: a[0]};
+            }
+            return a[1];
+        });

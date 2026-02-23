@@ -26,6 +26,7 @@ import {useCallback, useMemo, useState} from 'react';
 import {State} from '../types/state-type';
 import {colorToString, parseColor} from '../utils/colors';
 import {FillEditor} from '../state-editor/FillEditor';
+import {BlurInput} from '../state-editor/BlurInput';
 
 export const ObjectView = ({value, $}: {value: EObject; $: Updater<EObject>}) => {
     return <div>{value.id}</div>;
@@ -273,6 +274,7 @@ export const LayerEditor = () => {
                             },
                             // item.id + ':' + contents.id + ':' + pattern.id,
                             // kind: 'Style',
+                            rightIcons: StyleIcons,
                             childKinds: ['FillOrLine'],
                             children: orderedItems(item.items).map((render) =>
                                 add({
@@ -387,6 +389,11 @@ export const LayerEditor = () => {
     );
 };
 
+const WithValue = <T,>({path, render}: {path: Updater<T>; render: (v: T) => React.ReactNode}) => {
+    const value = useValue(path);
+    return render(value);
+};
+
 const RenderConfig = ({
     config,
     update,
@@ -400,13 +407,25 @@ const RenderConfig = ({
 }) => {
     if (config.type === 'render') {
         return (
-            <FillEditor
-                palette={value.styleConfig.palette}
-                reId={() => {}}
-                update={config.path}
-                value={config.value}
+            <WithValue
+                render={(fill) => (
+                    <FillEditor
+                        palette={value.styleConfig.palette}
+                        reId={() => {}}
+                        update={config.path}
+                        value={fill}
+                    />
+                )}
+                path={config.path}
             />
         );
     }
-    return <div>Seelction</div>;
+    if (config.type === 'style-group') {
+        return (
+            <div>
+                <BlurInput value={config.value.id} onChange={config.path.id.$replace} />
+            </div>
+        );
+    }
+    return <div>Some Selection... {config.type}</div>;
 };
