@@ -176,32 +176,20 @@ export const SingleLayerEditor = ({
 
 // config hereeeee
 type Item =
-    | {type: 'group'; id: string}
-    | {type: 'style-group'; id: string}
-    | {type: 'pattern'; pattern: Pattern}
-    | {type: 'render'; pattern: string; id: string; style: string; contents: string}
-    | {type: 'object'; object: EObject}
+    | {type: 'invalid'}
+    | {type: 'group'; path: Updater<Group>; value: Group}
+    | {type: 'style-group'; path: Updater<ShapeStyle<ShapeKind>>; value: ShapeStyle<ShapeKind>}
+    | {type: 'pattern'; path: Updater<Pattern>; value: Pattern}
+    | {type: 'render'; path: Updater<FillOrLine>; value: FillOrLine}
+    | {type: 'object'; path: Updater<EObject>; value: EObject}
     | {
           type: 'pattern-contents';
-          pattern: Pattern;
-          contents: PatternContents;
+          path: Updater<PatternContents>;
+          value: PatternContents;
       };
 
 const itemToString = (item: Item): string => {
-    switch (item.type) {
-        case 'object':
-            return `object:${item.object.id}`;
-        case 'group':
-            return `group:${item.id}`;
-        case 'style-group':
-            return `style-group:${item.id}`;
-        case 'pattern':
-            return `pattern:${item.pattern.id}`;
-        case 'render':
-            return `render:${item.pattern}:${item.contents}:${item.id}:${item.style}`;
-        case 'pattern-contents':
-            return `pattern:${item.pattern.id}:${item.contents.id}`;
-    }
+    return item.type === 'invalid' ? 'invalid' : item.path.toString();
 };
 
 export const LayerEditor = () => {
@@ -239,23 +227,23 @@ export const LayerEditor = () => {
             return itemToString(node.id);
         };
 
-        const addEntity = (entity: Entity): string => {
+        const addEntity = (entity: Entity, path: Updater<Entity>): string => {
             switch (entity.type) {
                 case 'Group':
-                    return addGroup(entity);
+                    return addGroup(entity, path.$variant('Group'), state.$);
                 case 'Pattern':
-                    return addPattern(entity);
+                    return addPattern(entity, path.$variant('Pattern'));
                 case 'Object':
-                    return addObject(entity);
+                    return addObject(entity, path.$variant('Object'));
             }
         };
 
-        const addObject = (object: EObject) =>
+        const addObject = (value: EObject, path: Updater<EObject>) =>
             add({
-                id: {type: 'object', object},
+                id: {type: 'object', path, value},
                 childKinds: [],
                 children: [],
-                name: 'Object ' + object.id,
+                name: 'Object ' + value.id,
             });
 
         const colorPreview = (color?: AnimatableColor) => {
@@ -271,14 +259,18 @@ export const LayerEditor = () => {
             }
         };
 
-        const addPatternContents = (pattern: Pattern, contents: PatternContents) => {
+        const addPatternContents = (path: Updater<PatternContents>, contents: PatternContents) => {
             let children: string[] = [];
             let childKinds: string[] = [];
             switch (contents.type) {
                 case 'shapes': {
                     children = orderedItems(contents.styles).map((item) =>
                         add({
-                            id: {type: 'style-group', id: item.id},
+                            id: {
+                                type: 'style-group',
+                                value: item,
+                                path: path.$variant('shapes').styles[item.id],
+                            },
                             // item.id + ':' + contents.id + ':' + pattern.id,
                             // kind: 'Style',
                             childKinds: ['FillOrLine'],
@@ -286,10 +278,10 @@ export const LayerEditor = () => {
                                 add({
                                     id: {
                                         type: 'render',
-                                        pattern: pattern.id,
-                                        contents: contents.id,
-                                        style: item.id,
-                                        id: render.id,
+                                        path: path.$variant('shapes').styles[item.id].items[
+                                            render.id
+                                        ],
+                                        value: render,
                                     },
                                     childKinds: [],
                                     children: [],
@@ -309,48 +301,50 @@ export const LayerEditor = () => {
                 case 'layers':
             }
             return add({
-                id: {type: 'pattern-contents', contents, pattern},
+                id: {type: 'pattern-contents', value: contents, path: path},
                 childKinds,
                 children,
                 name: contents.type,
             });
         };
 
-        const addPattern = (pattern: Pattern): string =>
+        const addPattern = (pattern: Pattern, path: Updater<Pattern>): string =>
             add({
-                id: {type: 'pattern', pattern},
+                id: {type: 'pattern', value: pattern, path},
                 childKinds: ['PatternContents'],
                 children: orderedItems(pattern.contents).map((contents) =>
-                    addPatternContents(pattern, contents),
+                    addPatternContents(path.contents[contents.id], contents),
                 ),
                 name: 'Pattern ' + pattern.id,
             });
 
-        const addGroup = (group: Group): string =>
+        const addGroup = (group: Group, path: Updater<Group>, base: Updater<State>): string =>
             add({
-                id: {type: 'group', id: group.id},
+                id: {type: 'group', value: group, path},
                 name: 'Group ' + group.id,
                 children: orderedIds(group.entities)
                     .map((eid) => value.entities[eid])
                     .filter((entity): entity is Entity => !!entity)
-                    .map(addEntity),
+                    .map((entity) => addEntity(entity, base.entities[entity.id])),
                 childKinds: ['Pattern', 'Group', 'Object'],
             });
 
         const rootGroup = value.entities[value.rootGroup];
         if (rootGroup?.type !== 'Group') {
             nodes.invalid = {
-                id: {type: 'group', id: value.rootGroup},
+                id: {
+                    type: 'invalid',
+                },
                 name: 'Invalid Root Group',
                 children: [],
                 childKinds: ['Group', 'Pattern', 'Object'],
             };
             return {ids, nodes};
         }
-        addGroup(rootGroup);
+        addGroup(rootGroup, state.$.entities[rootGroup.id].$variant('Group'), state.$);
 
         return {ids, nodes};
-    }, [value, StyleIcons]);
+    }, [value, StyleIcons, state.$]);
 
     const actions = useMemo((): TreeActions<Item> => {
         return {
@@ -376,16 +370,18 @@ export const LayerEditor = () => {
                     setSelection={setSelection}
                     actions={actions}
                     nodes={nodes}
-                    root={itemToString({type: 'group', id: value.rootGroup})}
+                    root={state.$.entities[value.rootGroup].$variant('Group').toString()}
                 />
             </div>
             {config ? (
-                <RenderConfig
-                    update={state.$}
-                    config={config}
-                    onClose={() => setSelection(null)}
-                    value={value}
-                />
+                <div className="p-4 border-t border-r-amber-400 mt-4">
+                    <RenderConfig
+                        update={state.$}
+                        config={config}
+                        onClose={() => setSelection(null)}
+                        value={value}
+                    />
+                </div>
             ) : null}
         </div>
     );
@@ -403,27 +399,13 @@ const RenderConfig = ({
     onClose(): void;
 }) => {
     if (config.type === 'render') {
-        const fill = (
-            (value.entities[config.pattern] as Pattern).contents[
-                config.contents
-            ] as PatternContents & {type: 'shapes'}
-        ).styles[config.style].items[config.id];
-
         return (
-            <div>
-                Seelction
-                <FillEditor
-                    palette={value.styleConfig.palette}
-                    reId={() => {}}
-                    update={
-                        update.entities[config.pattern]
-                            .$variant('Pattern')
-                            .contents[config.contents].$variant('shapes').styles[config.style]
-                            .items[config.id]
-                    }
-                    value={fill}
-                />
-            </div>
+            <FillEditor
+                palette={value.styleConfig.palette}
+                reId={() => {}}
+                update={config.path}
+                value={config.value}
+            />
         );
     }
     return <div>Seelction</div>;
