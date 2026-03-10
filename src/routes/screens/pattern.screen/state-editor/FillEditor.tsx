@@ -19,74 +19,77 @@ export const FillEditor = ({
     update: Updater<FillOrLine>;
     reId(newKey: string): void;
 }) => {
-    const [showAll, setShowAll] = useState(false);
+    // const [showAll, setShowAll] = useState(false);
     return (
         <div className="space-y-2 relative">
-            <div className="flex flex-wrap gap-2 items-center">
+            <div className="flex flex-col flex-wrap gap-2 items-start">
                 <button className="btn btn-ghost btn-xs text-error " onClick={update.$remove}>
                     &times;
                 </button>
                 <ExpandableEditor value={value.id} onChange={reId} />
-                <button className="btn btn-ghost btn-xs " onClick={() => setShowAll(!showAll)}>
+                {/*<button className="btn btn-ghost btn-xs " onClick={() => setShowAll(!showAll)}>
                     <CogIcon />
-                </button>
-                {[
-                    <Labeled text="Enabled" key="enabled">
-                        <BooleanInput
-                            value={value.enabled}
-                            onChange={(enabled) => update.enabled(enabled)}
-                        />
-                    </Labeled>,
-                    <Labeled text="Opacity" key="opacity">
-                        <NumberInput
-                            value={value.opacity}
-                            onChange={(opacity) => update.opacity(opacity)}
-                        />
-                    </Labeled>,
-                    <Labeled text="zIndex" key="zIndex">
-                        <NumberInput
-                            value={value.zIndex}
-                            onChange={(zIndex) => update.zIndex(zIndex)}
-                        />
-                    </Labeled>,
-                    <AnimColor
-                        key="color"
-                        palette={palette}
-                        label="Color"
-                        value={value.color}
-                        // biome-ignore lint: this one is fine
-                        onChange={update.color.$replace}
-                    />,
-                    <AnimColor
-                        key="tint"
-                        palette={palette}
-                        label="Tint"
-                        value={value.tint}
-                        placeholder="rgb or hsl"
-                        onChange={(tint, when) => update.tint(tint as AnimatableColor, when)}
-                    />,
-                    <Labeled text="Rounded" key="rounded">
-                        <NumberInput
-                            value={value.rounded}
-                            onChange={(rounded) => update.rounded(rounded)}
-                        />
-                    </Labeled>,
-                    <Labeled text="shadow" key="shadow" className="bg-base-100 p-2 relative">
-                        <ShadowEditor
-                            value={value.shadow ?? null}
-                            update={update.shadow}
+                </button>*/}
+                {
+                    [
+                        <Labeled text="Enabled" key="enabled">
+                            <BooleanInput
+                                value={value.enabled}
+                                onChange={(enabled) => update.enabled(enabled)}
+                            />
+                        </Labeled>,
+                        <Labeled text="Opacity" key="opacity">
+                            <NumberInput
+                                value={value.opacity}
+                                onChange={(opacity) => update.opacity(opacity)}
+                            />
+                        </Labeled>,
+                        <Labeled text="zIndex" key="zIndex">
+                            <NumberInput
+                                value={value.zIndex}
+                                onChange={(zIndex) => update.zIndex(zIndex)}
+                            />
+                        </Labeled>,
+                        <AnimColor
+                            key="color"
                             palette={palette}
-                        />
-                    </Labeled>,
-                    <ModsEditor
-                        key="mods"
-                        palette={palette}
-                        mods={value.mods}
-                        update={update.mods}
-                    />,
-                ].map((node) =>
-                    showAll || nonNullArray(value[node.key as keyof typeof value]) ? node : null,
-                )}
+                            label="Color"
+                            value={value.color}
+                            // biome-ignore lint: this one is fine
+                            onChange={update.color.$replace}
+                        />,
+                        <AnimColor
+                            key="tint"
+                            palette={palette}
+                            label="Tint"
+                            value={value.tint}
+                            placeholder="rgb or hsl"
+                            onChange={(tint, when) => update.tint(tint as AnimatableColor, when)}
+                        />,
+                        <Labeled text="Rounded" key="rounded">
+                            <NumberInput
+                                value={value.rounded}
+                                onChange={(rounded) => update.rounded(rounded)}
+                            />
+                        </Labeled>,
+                        <Labeled text="shadow" key="shadow" className="bg-base-100 p-2 relative">
+                            <ShadowEditor
+                                value={value.shadow ?? null}
+                                update={update.shadow}
+                                palette={palette}
+                            />
+                        </Labeled>,
+                        <ModsEditor
+                            key="mods"
+                            palette={palette}
+                            mods={value.mods}
+                            update={update.mods}
+                        />,
+                    ]
+                    // .map((node) =>
+                    //     showAll || nonNullArray(value[node.key as keyof typeof value]) ? node : null,
+                    // )
+                }
                 {value.line ? (
                     <>
                         <Labeled text="Width" key="width">

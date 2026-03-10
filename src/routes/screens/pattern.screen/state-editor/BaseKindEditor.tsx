@@ -4,6 +4,7 @@ import {DistanceEditor} from './DistanceEditor';
 import {TextField} from './TextField';
 import {NumberField} from './NumberField';
 import {Updater} from '../../../../json-diff/Updater';
+import {BaseKindSelector, KindSelector} from './ShapeStyleCard';
 
 export const ShapeKindEditor = ({
     value,
@@ -22,52 +23,7 @@ export const ShapeKindEditor = ({
                 <DistanceEditor value={value} update={update.$variant('distance')} />
             ) : null}
             <div className="flex flex-wrap gap-2">
-                <select
-                    value={type}
-                    onChange={(evt) => {
-                        switch (evt.target.value) {
-                            case 'alternating':
-                                update(
-                                    value.type === 'alternating'
-                                        ? value
-                                        : {type: 'alternating', index: 0},
-                                );
-                                return;
-                            case 'explicit':
-                                update(
-                                    value.type === 'explicit' ? value : {type: 'explicit', ids: {}},
-                                );
-                                return;
-                            case 'shape':
-                                update(
-                                    value.type === 'shape'
-                                        ? value
-                                        : {type: 'shape', key: '', rotInvariant: false},
-                                );
-                                return;
-                            case 'distance':
-                                update(
-                                    value.type === 'distance'
-                                        ? value
-                                        : {
-                                              type: 'distance',
-                                              corner: 0,
-                                              distances: [0, 1],
-                                              repeat: true,
-                                          },
-                                );
-                                return;
-                        }
-                    }}
-                >
-                    {(['everything', 'alternating', 'explicit', 'shape', 'distance'] as const).map(
-                        (t) => (
-                            <option key={t} value={t}>
-                                {t}
-                            </option>
-                        ),
-                    )}
-                </select>
+                <KindSelector value={value} onSelect={update.$replace} />
                 {type === 'alternating' ? (
                     <NumberField
                         label="Index"
@@ -131,43 +87,7 @@ export const BaseKindEditor = ({value, update}: {value: BaseKind; update: Update
                 <DistanceEditor value={value} update={update.$variant('distance')} />
             ) : null}
             <div className="flex flex-wrap gap-2">
-                <select
-                    value={type}
-                    onChange={(evt) => {
-                        switch (evt.target.value) {
-                            case 'alternating':
-                                update(
-                                    value.type === 'alternating'
-                                        ? value
-                                        : {type: 'alternating', index: 0},
-                                );
-                                return;
-                            case 'explicit':
-                                update(
-                                    value.type === 'explicit' ? value : {type: 'explicit', ids: {}},
-                                );
-                                return;
-                            case 'distance':
-                                update(
-                                    value.type === 'distance'
-                                        ? value
-                                        : {
-                                              type: 'distance',
-                                              corner: 0,
-                                              distances: [0, 1],
-                                              repeat: true,
-                                          },
-                                );
-                                return;
-                        }
-                    }}
-                >
-                    {(['everything', 'alternating', 'explicit', 'distance'] as const).map((t) => (
-                        <option key={t} value={t}>
-                            {t}
-                        </option>
-                    ))}
-                </select>
+                <BaseKindSelector value={value} onSelect={update.$replace} />
                 {type === 'alternating' ? (
                     <NumberField
                         label="Index"

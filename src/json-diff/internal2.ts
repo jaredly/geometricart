@@ -1,13 +1,16 @@
 // biome-ignore-all lint/suspicious/noExplicitAny : this is internal and fine
 
-import {PathSegment} from './helper2';
+import {PathSegment, pathToString} from './helper2';
 
 export function _get(base: any, at: PathSegment[]) {
+    const obase = base;
     for (let i = 0; i < at.length; i++) {
         const key = at[i];
         if (!base) {
+            console.log(obase);
+
             throw new Error(
-                `missing base ${JSON.stringify(at.slice(0, i))} :: ${JSON.stringify(at.slice(i))}`,
+                `missing base\n${pathToString(at.slice(0, i))}\n${pathToString(at.slice(i))}`,
             );
         }
         if (key.type === 'tag') {

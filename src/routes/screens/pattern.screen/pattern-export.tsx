@@ -90,6 +90,7 @@ const LoadAndMigratePattern = ({id}: {id: string}) => {
                   .then((r) => (r.status === 200 ? r.json() : null))
                   .then(loadState),
     );
+    const [showJson, setShowJson] = useState(false);
 
     const bcr = [
         {title: 'Geometric Art', href: '/', dropdown: [{title: 'Gallery', href: '/gallery/'}]},
@@ -163,7 +164,13 @@ const LoadAndMigratePattern = ({id}: {id: string}) => {
                         >
                             Migrate from {state.value.version} to latest (will lose some history)
                         </button>
+                        <button onClick={() => setShowJson(true)}>View JSON</button>
                     </div>
+                    {showJson ? (
+                        <pre className="mockup-code max-h-9/12 overflow-auto">
+                            {JSON.stringify(state.value.value.current, null, 2)}
+                        </pre>
+                    ) : null}
                 </div>
             </div>
         );

@@ -10,6 +10,7 @@ import {AnimInput, AnimValueInput} from './AnimInput';
 import {SharedEditor} from './SharedEditor';
 import {useExportState} from '../ExportHistory';
 import {useValue} from '../../../../json-diff/react';
+import {BaseKindSelector, KindSelector} from './ShapeStyleCard';
 
 export const PatternContentsEditor = ({
     value,
@@ -70,6 +71,7 @@ export const PatternContentsEditor = ({
                         styles={value.styles}
                         update={update.$variant('layers').styles}
                         KindEditor={BaseKindEditor}
+                        KindSelector={BaseKindSelector}
                     />
                     <SharedEditor
                         shared={value.shared}
@@ -100,6 +102,7 @@ export const PatternContentsEditor = ({
                         styles={value.styles}
                         update={update.$variant('weave').styles}
                         KindEditor={BaseKindEditor}
+                        KindSelector={BaseKindSelector}
                     />
                     <SharedEditor
                         shared={value.shared}
@@ -113,6 +116,7 @@ export const PatternContentsEditor = ({
                     styles={value.styles}
                     update={update.$variant('shapes').styles}
                     KindEditor={ShapeKindEditor}
+                    KindSelector={KindSelector}
                 />
             ) : null}
             {value.type === 'lines' ? (
@@ -131,6 +135,7 @@ export const PatternContentsEditor = ({
                         styles={value.styles}
                         update={update.$variant('lines').styles}
                         KindEditor={BaseKindEditor}
+                        KindSelector={BaseKindSelector}
                     />
                 </>
             ) : null}

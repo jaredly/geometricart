@@ -1,6 +1,6 @@
 import {useMemo} from 'react';
 import {Color, ShapeKind, ShapeStyle} from '../export-types';
-import {ShapeStyleCard} from './ShapeStyleCard';
+import {KindSelector, ShapeStyleCard} from './ShapeStyleCard';
 import {createShapeStyle} from './createLayerTemplate';
 import {DragToReorderList} from './DragToReorderList';
 import {Updater} from '../../../../json-diff/Updater';
@@ -11,11 +11,13 @@ export const ShapeStylesEditor = <Kind,>({
     update,
     palette,
     KindEditor,
+    KindSelector,
 }: {
     palette: Color[];
     styles: Record<string, ShapeStyle<Kind>>;
     update: Updater<Record<string, ShapeStyle<Kind>>>;
     KindEditor: React.ComponentType<{value: Kind; update: Updater<Kind>}>;
+    KindSelector: React.ComponentType<{onSelect(v: Kind): void}>;
 }) => {
     const entries = useMemo(() => orderedItems(styles), [styles]);
 
@@ -54,6 +56,7 @@ export const ShapeStylesEditor = <Kind,>({
                                 update={update[style.id]}
                                 onRemove={update[style.id].$remove}
                                 KindEditor={KindEditor}
+                                KindSelector={KindSelector}
                             />
                         ),
                     }))}

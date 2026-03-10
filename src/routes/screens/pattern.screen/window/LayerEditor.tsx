@@ -1,5 +1,5 @@
 import {CogIcon, ObjectUngroup} from '../../../../icons/Icon';
-import {useValue} from '../../../../json-diff/react';
+import {Extra, useValue} from '../../../../json-diff/react';
 import {Updater} from '../../../../json-diff/Updater';
 import {
     AnimatableColor,
@@ -29,7 +29,7 @@ import {FillEditor, ModsEditor} from '../state-editor/FillEditor';
 import {BlurInput} from '../state-editor/BlurInput';
 import {genid} from '../utils/genid';
 import {ShapeKindEditor} from '../state-editor/BaseKindEditor';
-import {KindOrKinds} from '../state-editor/ShapeStyleCard';
+import {KindOrKinds, KindSelector} from '../state-editor/ShapeStyleCard';
 import {diffBuilder} from '../../../../json-diff/helper2';
 
 export const ObjectView = ({value, $}: {value: EObject; $: Updater<EObject>}) => {
@@ -340,7 +340,7 @@ export const LayerEditor = () => {
             nodes.invalid = {
                 id: {
                     type: 'invalid',
-                    path: diffBuilder('type', {
+                    path: diffBuilder<number, Extra, 'type'>('type', {
                         getForPath() {
                             throw new Error('no');
                         },
@@ -414,6 +414,7 @@ export const LayerEditor = () => {
                         update={state.$}
                         config={config}
                         onClose={() => setSelection(null)}
+                        key={config.path.toString()}
                         value={value}
                     />
                 </div>
@@ -465,6 +466,7 @@ const RenderConfig = ({
                             value={style.kind}
                             update={config.path.kind}
                             KindEditor={ShapeKindEditor}
+                            Selector={KindSelector}
                         />
                         <ModsEditor mods={style.mods} update={config.path.mods} palette={palette} />
                     </div>

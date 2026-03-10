@@ -1,24 +1,99 @@
 import React, {useState} from 'react';
-import {EyeInvisibleIcon, EyeIcon} from '../../../../icons/Eyes';
-import {Color, ShapeKind, ShapeStyle} from '../export-types';
+import {AddIcon, CogIcon, DragMove2Fill} from '../../../../icons/Icon';
+import {Updater} from '../../../../json-diff/Updater';
+import {BaseKind, Color, ShapeKind, ShapeStyle} from '../export-types';
+import {DisabledIcon} from '../window/DisabledIcon';
+import {ChunkEditor} from './ChunkEditor';
 import {createFill} from './createLayerTemplate';
-import {NumberField} from './NumberField';
-import {LineEditor} from './LineEditor';
+import {HandleProps} from './DragToReorderList';
 import {FillEditor, ModsEditor} from './FillEditor';
 import {SubStyleList} from './SubStyleList';
-import {ShapeKindEditor} from './BaseKindEditor';
-import {
-    AddIcon,
-    ChevronUp12,
-    CogIcon,
-    DotsHorizontalOutline,
-    DragMove2Fill,
-    SelectDragIcon,
-} from '../../../../icons/Icon';
-import {HandleProps} from './DragToReorderList';
-import {SingleUpdater, Updater} from '../../../../json-diff/Updater';
-import {ChunkEditor} from './ChunkEditor';
-import {DisabledIcon} from '../window/DisabledIcon';
+
+export const BaseKindSelector = ({
+    value,
+    onSelect,
+}: {
+    value?: BaseKind;
+    onSelect(t: BaseKind): void;
+}) => {
+    return (
+        <select
+            value={value?.type ?? ''}
+            onChange={(evt) => {
+                switch (evt.target.value) {
+                    case 'alternating':
+                        if (value?.type !== 'alternating')
+                            onSelect({type: 'alternating', index: 0});
+                        return;
+                    case 'explicit':
+                        if (value?.type !== 'explicit') onSelect({type: 'explicit', ids: {}});
+                        return;
+                    case 'distance':
+                        if (value?.type !== 'distance')
+                            onSelect({
+                                type: 'distance',
+                                corner: 0,
+                                distances: [0, 1],
+                                repeat: true,
+                            });
+                        return;
+                }
+            }}
+        >
+            <option value="">Select a kind</option>
+            {(['alternating', 'explicit', 'distance'] as const).map((t) => (
+                <option key={t} value={t}>
+                    {t}
+                </option>
+            ))}
+        </select>
+    );
+};
+
+export const KindSelector = ({
+    value,
+    onSelect,
+}: {
+    value?: ShapeKind;
+    onSelect(t: ShapeKind): void;
+}) => {
+    return (
+        <select
+            value={value?.type}
+            onChange={(evt) => {
+                switch (evt.target.value) {
+                    case 'alternating':
+                        if (value?.type !== 'alternating')
+                            onSelect({type: 'alternating', index: 0});
+                        return;
+                    case 'explicit':
+                        if (value?.type !== 'explicit') onSelect({type: 'explicit', ids: {}});
+                        return;
+                    case 'shape':
+                        if (value?.type !== 'shape')
+                            onSelect({type: 'shape', key: '', rotInvariant: false});
+                        return;
+                    case 'distance':
+                        if (value?.type !== 'distance')
+                            onSelect({
+                                type: 'distance',
+                                corner: 0,
+                                distances: [0, 1],
+                                repeat: true,
+                            });
+                        return;
+                }
+            }}
+        >
+            <option value="">Select a kind</option>
+            {(['alternating', 'explicit', 'shape', 'distance'] as const).map((t) => (
+                <option key={t} value={t}>
+                    {t}
+                </option>
+            ))}
+        </select>
+    );
+};
 
 export const ShapeStyleCard = <Kind,>({
     value,
@@ -27,6 +102,7 @@ export const ShapeStyleCard = <Kind,>({
     palette,
     handleProps,
     KindEditor,
+    KindSelector,
 }: {
     palette: Color[];
     handleProps: HandleProps;
@@ -34,6 +110,7 @@ export const ShapeStyleCard = <Kind,>({
     update: Updater<ShapeStyle<Kind>>;
     onRemove: () => void;
     KindEditor: React.ComponentType<{value: Kind; update: Updater<Kind>}>;
+    KindSelector: React.ComponentType<{onSelect(v: Kind): void}>;
 }) => {
     const [show, setShow] = useState(false);
     return (
@@ -81,6 +158,7 @@ export const ShapeStyleCard = <Kind,>({
                             KindEditor={KindEditor}
                             value={value.kind}
                             update={update.kind}
+                            Selector={KindSelector}
                         />
                         <SubStyleList
                             label="Fills"
@@ -110,43 +188,29 @@ export const KindOrKinds = <Kind,>({
     value,
     update,
     KindEditor,
+    Selector,
 }: {
     value: Kind[];
     update: Updater<Kind[]>;
     KindEditor: React.ComponentType<{value: Kind; update: Updater<Kind>}>;
+    Selector: React.ComponentType<{onSelect(v: Kind): void}>;
 }) => {
-    // const kinds = Array.isArray(value) ? value : [value];
-    // const single = update as unknown as SingleUpdater<Kind>;
     return (
         <div className="bg-base-200 rounded-lg p-3 border border-base-300 space-y-2">
             <div className="flex items-center justify-between">
                 <div className="font-semibold text-sm">Kind</div>
-                <button
-                    onClick={() => {
-                        // if (Array.isArray(value)) {
-                        //     const res = kinds.slice();
-                        //     res.push(defaultValue);
-                        //     single.single(false).push(defaultValue);
-                        // } else {
-                        //     update.replace([value, defaultValue]);
-                        // }
-                        // TODO: need a dropdown I guess
-                    }}
-                    className="btn btn-square"
-                >
-                    <AddIcon />
-                </button>
+                <Selector onSelect={(v) => update.$push(v)} />
             </div>
             {value.map((kind, i) => {
                 return (
                     <div key={i}>
                         <button
-                            onClick={() => update[i + 1].$remove()}
+                            onClick={() => update[i].$remove()}
                             className="btn btn-square text-red-400"
                         >
                             &times;
                         </button>
-                        <KindEditor value={kind} update={update[i + 1]} />
+                        <KindEditor value={kind} update={update[i]} />
                     </div>
                 );
             })}
