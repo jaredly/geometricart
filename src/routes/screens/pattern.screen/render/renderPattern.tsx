@@ -98,6 +98,7 @@ export const renderPattern = (ctx: Ctx, _outer: CropsAndMatrices, pattern: Patte
     }
 
     orderedItems(pattern.contents).forEach((contents) => {
+        if (contents.disabled === 'true') return;
         if (contents.type === 'lines') {
             return renderPatternLines(baseShapes, pattern, contents, simple, ctx, panim);
         }

@@ -184,6 +184,7 @@ type Item =
     | {type: 'invalid'; path: Updater<number>}
     | {type: 'group'; path: Updater<Group>; value: Group}
     | {type: 'style-group'; path: Updater<ShapeStyle<ShapeKind>>; value: ShapeStyle<ShapeKind>}
+    | {type: 'base-style-group'; path: Updater<ShapeStyle<BaseKind>>; value: ShapeStyle<BaseKind>}
     | {type: 'pattern'; path: Updater<Pattern>; value: Pattern}
     | {type: 'render'; path: Updater<FillOrLine>; value: FillOrLine}
     | {type: 'object'; path: Updater<EObject>; value: EObject}
@@ -303,6 +304,39 @@ export const LayerEditor = () => {
                     break;
                 }
                 case 'weave':
+                    // children = orderedItems(contents.styles)
+                    children = orderedItems(contents.styles).map((item) =>
+                        add({
+                            id: {
+                                type: 'base-style-group',
+                                value: item,
+                                path: path.$variant('weave').styles[item.id],
+                            },
+                            // item.id + ':' + contents.id + ':' + pattern.id,
+                            // kind: 'Style',
+                            rightIcons: StyleIcons,
+                            childKinds: ['FillOrLine'],
+                            children: orderedItems(item.items).map((render) =>
+                                add({
+                                    id: {
+                                        type: 'render',
+                                        path: path.$variant('weave').styles[item.id].items[
+                                            render.id
+                                        ],
+                                        value: render,
+                                    },
+                                    childKinds: [],
+                                    children: [],
+                                    name: render.line ? 'line' : 'fill',
+                                    rightIcons: StyleIcons,
+                                    preview: colorPreview(render.color),
+                                }),
+                            ),
+                            name: 'Style group ' + item.id,
+                        }),
+                    );
+                    childKinds = ['style-group'];
+                    break;
                 case 'lines':
                 case 'layers':
             }
@@ -311,6 +345,7 @@ export const LayerEditor = () => {
                 childKinds,
                 children,
                 name: contents.type,
+                rightIcons: StyleIcons,
             });
         };
 
@@ -385,6 +420,39 @@ export const LayerEditor = () => {
                                     : undefined,
                         });
                         break;
+                    }
+                    case 'pattern': {
+                        const order = maxOrder(parent.value.contents);
+                        const id = genid();
+                        const sid = genid();
+                        const lid = genid();
+                        parent.path.contents[id].$add({
+                            type: 'weave',
+                            id,
+                            order,
+                            disabled: '',
+                            orderings: {},
+                            shared: {},
+                            styles: {
+                                [sid]: {
+                                    id: sid,
+                                    disabled: '',
+                                    items: {
+                                        [lid]: {
+                                            id: lid,
+                                            mods: [],
+                                            order: 0,
+                                            color: '#0000ff',
+                                            line: {width: 1},
+                                        },
+                                    },
+                                    kind: [],
+                                    mods: [],
+                                    order: 0,
+                                    t: null,
+                                },
+                            },
+                        });
                     }
                 }
             },
@@ -471,6 +539,79 @@ const RenderConfig = ({
                         <ModsEditor mods={style.mods} update={config.path.mods} palette={palette} />
                     </div>
                 )}
+            />
+        );
+    }
+    if (config.type === 'pattern-contents') {
+        return (
+            <WithValue
+                path={config.path}
+                render={(style) => {
+                    switch (style.type) {
+                        case 'shapes':
+                            return (
+                                <div>
+                                    <BlurInput
+                                        value={style.id}
+                                        onChange={config.path.$variant(style.type).id.$replace}
+                                    />
+                                    <DisabledIcon
+                                        value={style.disabled}
+                                        update={config.path.$variant(style.type).disabled}
+                                    />
+                                </div>
+                            );
+                        case 'weave':
+                            return (
+                                <div>
+                                    <BlurInput
+                                        value={style.id}
+                                        onChange={config.path.$variant(style.type).id.$replace}
+                                    />
+                                    <DisabledIcon
+                                        value={style.disabled}
+                                        update={config.path.$variant(style.type).disabled}
+                                    />
+                                </div>
+                            );
+                        case 'lines':
+                            return (
+                                <div>
+                                    <BlurInput
+                                        value={style.id}
+                                        onChange={config.path.$variant(style.type).id.$replace}
+                                    />
+                                    <DisabledIcon
+                                        value={style.disabled}
+                                        update={config.path.$variant(style.type).disabled}
+                                    />
+                                </div>
+                            );
+                        case 'layers':
+                            return (
+                                <div>
+                                    <BlurInput
+                                        value={style.id}
+                                        onChange={config.path.$variant(style.type).id.$replace}
+                                    />
+                                    <DisabledIcon
+                                        value={style.disabled}
+                                        update={config.path.$variant(style.type).disabled}
+                                    />
+                                </div>
+                            );
+                    }
+                    // <div>
+                    //     <BlurInput value={style.id} onChange={config.path.$variant(style.type).id.$replace} />
+                    //     <KindOrKinds
+                    //         value={style.kind}
+                    //         update={config.path.kind}
+                    //         KindEditor={ShapeKindEditor}
+                    //         Selector={KindSelector}
+                    //     />
+                    //     <ModsEditor mods={style.mods} update={config.path.mods} palette={palette} />
+                    // </div>
+                }}
             />
         );
     }

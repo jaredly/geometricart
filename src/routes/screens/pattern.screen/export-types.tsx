@@ -214,7 +214,7 @@ export type PatternContents =
           disabled: string;
           flip?: number;
           orderings: Record<string, number[]>;
-          styles: Orderable<ShapeStyle<BaseKind & {under?: boolean}>>;
+          styles: Orderable<ShapeStyle<BaseKind>>;
           shared: Orderable<OValue<AnimatableValue>>;
       }
     | {
