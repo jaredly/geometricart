@@ -33,6 +33,8 @@ import {
     WindowState,
 } from './window/state';
 import {GlobalDependenciesCtx} from './window/GlobalDependencies';
+import {JsonEditor} from './state-editor/JsonEditor';
+import {JsonViewer} from './JsonViewer';
 
 const CreateAndRedirectLocalStorage = ({id}: {id: string}) => {
     const [error, setError] = useState<null | Error>(null);
@@ -168,7 +170,8 @@ const LoadAndMigratePattern = ({id}: {id: string}) => {
                     </div>
                     {showJson ? (
                         <pre className="mockup-code max-h-9/12 overflow-auto">
-                            {JSON.stringify(state.value.value.current, null, 2)}
+                            <JsonViewer value={state.value.value.current} />
+                            {/*{JSON.stringify(state.value.value.current, null, 2)}*/}
                         </pre>
                     ) : null}
                 </div>
