@@ -8,6 +8,7 @@ import {unique, joinAdjacentShapeSegments, edgesByEndpoint} from '../../../shape
 import {weaveIntersections2} from '../../../weaveIntersections';
 import {Ctx, AnimCtx} from '../eval/evaluate';
 import {ConcreteFillOrLine, Pattern, PatternContents, colorToRgb} from '../export-types';
+import {orderedItems} from '../state-editor/nextOrder';
 import {sortCoordPair, coordPairKey} from '../utils/adjustShapes';
 import {withShared, withLocals, barePathFromCoords} from '../utils/resolveMods';
 import {resolveFill} from './renderPattern';
@@ -85,25 +86,31 @@ export const renderPatternWeave = (
         if (!stylesForPathId[pathId ?? 'null']) {
             throw new Error(`not prepared for ${pathId}`);
         }
-        stylesForPathId[pathId ?? 'null'].forEach((line, k) => {
-            if (line.color == null || !line.line?.width || (line.enabled != null && !line.enabled))
-                return;
+        stylesForPathId[pathId ?? 'null']
+            .sort((a, b) => a.order - b.order)
+            .forEach((line, k) => {
+                if (
+                    line.color == null ||
+                    !line.line?.width ||
+                    (line.enabled != null && !line.enabled)
+                )
+                    return;
 
-            ctx.items.push({
-                key: `elm-${i}--${k}`,
-                type: 'path',
-                shapes: [barePathFromCoords(points, true)],
-                masks: masks.map(({line, pathId}) => ({
-                    shape: barePathFromCoords(line, true),
-                    strokeWidth: maxLineWidthForPathId[pathId ?? 'null'] * 0.01,
-                })),
-                opacity: line.opacity,
-                // opacity: i % 10 === 0 ? 1 : 0.1,
-                zIndex: line.zIndex,
-                color: colorToRgb(line.color!),
-                strokeWidth: line.line.width! * 0.01,
+                ctx.items.push({
+                    key: `elm-${i}--${k}`,
+                    type: 'path',
+                    shapes: [barePathFromCoords(points, true)],
+                    masks: masks.map(({line, pathId}) => ({
+                        shape: barePathFromCoords(line, true),
+                        strokeWidth: maxLineWidthForPathId[pathId ?? 'null'] * 0.01,
+                    })),
+                    opacity: line.opacity,
+                    // opacity: i % 10 === 0 ? 1 : 0.1,
+                    zIndex: line.zIndex,
+                    color: colorToRgb(line.color!),
+                    strokeWidth: line.line.width! * 0.01,
+                });
             });
-        });
     });
 
     return;

@@ -28,8 +28,8 @@ import {colorToString, parseColor} from '../utils/colors';
 import {FillEditor, ModsEditor} from '../state-editor/FillEditor';
 import {BlurInput} from '../state-editor/BlurInput';
 import {genid} from '../utils/genid';
-import {ShapeKindEditor} from '../state-editor/BaseKindEditor';
-import {KindOrKinds, KindSelector} from '../state-editor/ShapeStyleCard';
+import {BaseKindEditor, ShapeKindEditor} from '../state-editor/BaseKindEditor';
+import {BaseKindSelector, KindOrKinds, KindSelector} from '../state-editor/ShapeStyleCard';
 import {diffBuilder} from '../../../../json-diff/helper2';
 
 export const ObjectView = ({value, $}: {value: EObject; $: Updater<EObject>}) => {
@@ -404,6 +404,7 @@ export const LayerEditor = () => {
             add(kind, parent, subKind) {
                 console.log(kind, parent.path.toString(), subKind);
                 switch (parent.type) {
+                    case 'base-style-group':
                     case 'style-group': {
                         const order = maxOrder(parent.value.items);
                         const id = genid();
@@ -535,6 +536,25 @@ const RenderConfig = ({
                             update={config.path.kind}
                             KindEditor={ShapeKindEditor}
                             Selector={KindSelector}
+                        />
+                        <ModsEditor mods={style.mods} update={config.path.mods} palette={palette} />
+                    </div>
+                )}
+            />
+        );
+    }
+    if (config.type === 'base-style-group') {
+        return (
+            <WithValue
+                path={config.path}
+                render={(style) => (
+                    <div>
+                        <BlurInput value={style.id} onChange={config.path.id.$replace} />
+                        <KindOrKinds
+                            value={style.kind}
+                            update={config.path.kind}
+                            KindEditor={BaseKindEditor}
+                            Selector={BaseKindSelector}
                         />
                         <ModsEditor mods={style.mods} update={config.path.mods} palette={palette} />
                     </div>

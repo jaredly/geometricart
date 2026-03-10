@@ -292,6 +292,7 @@ export const shadowKey = (sh: ConcreteShadow) =>
 
 export type ConcreteFillOrLine = {
     id: string;
+    order: number;
     enabled?: boolean;
     shadow?: RenderShadow;
     zIndex?: number;

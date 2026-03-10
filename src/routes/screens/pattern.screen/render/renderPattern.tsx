@@ -100,11 +100,13 @@ export const renderPattern = (ctx: Ctx, _outer: CropsAndMatrices, pattern: Patte
     orderedItems(pattern.contents).forEach((contents) => {
         if (contents.disabled === 'true') return;
         if (contents.type === 'lines') {
-            return renderPatternLines(baseShapes, pattern, contents, simple, ctx, panim);
+            renderPatternLines(baseShapes, pattern, contents, simple, ctx, panim);
+            return;
         }
 
         if (contents.type === 'weave') {
-            return renderPatternWeave(baseShapes, pattern, contents, ctx, panim);
+            renderPatternWeave(baseShapes, pattern, contents, ctx, panim);
+            return;
         }
 
         if (contents.type === 'layers') {
@@ -192,7 +194,7 @@ export const renderPattern = (ctx: Ctx, _outer: CropsAndMatrices, pattern: Patte
                                   matchKind(k, key, colors[i], center, simple.eigenCorners),
                               );
                     if (!match) {
-                        return;
+                        return null;
                     }
                     return {style, match};
                 });
@@ -304,6 +306,7 @@ export const renderFill = (
 export const resolveFill = (anim: Ctx['anim'], f: FillOrLine): ConcreteFillOrLine => {
     return {
         id: f.id,
+        order: f.order,
         mods: resolveEnabledPMods(anim, f.mods),
         color: f.color != null ? (a.color(anim, f.color) ?? undefined) : undefined,
         opacity: f.opacity != null ? a.number(anim, f.opacity) : undefined,

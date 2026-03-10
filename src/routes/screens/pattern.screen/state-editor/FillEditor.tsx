@@ -7,6 +7,7 @@ import {addMod} from './createLayerTemplate';
 import {BooleanInput, ExpandableEditor, Labeled, NumberInput} from './ExpandableEditor';
 import {PModEditor} from './PModEditor';
 import {ShadowEditor} from './ShadowEditor';
+import {BlurInt} from '../../../../editor/Forms';
 
 export const FillEditor = ({
     value,
@@ -36,6 +37,12 @@ export const FillEditor = ({
                             <BooleanInput
                                 value={value.enabled}
                                 onChange={(enabled) => update.enabled(enabled)}
+                            />
+                        </Labeled>,
+                        <Labeled text="Order" key="enabled">
+                            <BlurInt
+                                value={value.order}
+                                onChange={(order) => (order != null ? update.order(order) : null)}
                             />
                         </Labeled>,
                         <Labeled text="Opacity" key="opacity">
