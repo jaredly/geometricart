@@ -1,4 +1,3 @@
-
 import {useMemo} from 'react';
 import {Tiling} from '../types';
 import {getSvgData} from './handleTiling';

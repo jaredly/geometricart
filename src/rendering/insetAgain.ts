@@ -1,5 +1,4 @@
-
-import {Coord, } from '../types';
+import {Coord} from '../types';
 
 type Line = {type: 'Line'; p0: Coord; p1: Coord};
 type Full = Line | Arc;

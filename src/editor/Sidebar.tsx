@@ -1,4 +1,3 @@
-
 import {diff} from 'json-diff-ts';
 import React from 'react';
 import {PendingMirror} from '../useUIState';

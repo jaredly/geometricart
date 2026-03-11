@@ -87,18 +87,15 @@ type OptionalKeys<T extends object> = {
 type IsOptionalKey<T extends object, K extends keyof T> = K extends OptionalKeys<T> ? true : false;
 
 /** Can property T[K] be removed under config C? */
-type IsRemovableProperty<
-    T extends object,
-    K extends keyof T,
-    C extends JsonPatchConfig,
-> = IsOptionalKey<T, K> extends true // Optional properties are always removable
-    ? true
-    : // Nullable properties optionally removable
-      NullsAreRemovable<C> extends true
-      ? null extends T[K]
-          ? true
-          : false
-      : false;
+type IsRemovableProperty<T extends object, K extends keyof T, C extends JsonPatchConfig> =
+    IsOptionalKey<T, K> extends true // Optional properties are always removable
+        ? true
+        : // Nullable properties optionally removable
+          NullsAreRemovable<C> extends true
+          ? null extends T[K]
+              ? true
+              : false
+          : false;
 
 /* -------------------------------------------------------------------------- */
 /*  Path<T> – all JSON Pointer paths into T                                   */
@@ -183,11 +180,12 @@ type ArrayContainerPathImpl<T, Prefix extends string> = T extends (infer U)[]
 export type ArrayContainerPath<T> = ArrayContainerPathImpl<T, ''>;
 
 /** Paths that end with "/-" to append to arrays. */
-type AddArrayEndPath<T, C extends JsonPatchConfig> = AddDashAllowed<C> extends true
-    ? ArrayContainerPath<T> extends infer P extends string
-        ? `${P}/-`
-        : never
-    : never;
+type AddArrayEndPath<T, C extends JsonPatchConfig> =
+    AddDashAllowed<C> extends true
+        ? ArrayContainerPath<T> extends infer P extends string
+            ? `${P}/-`
+            : never
+        : never;
 
 // /** Valid `path` values for an "add" op (normal paths + `/-` for arrays). */
 // export type AddPath<T, C extends JsonPatchConfig = DefaultJsonPatchConfig> =

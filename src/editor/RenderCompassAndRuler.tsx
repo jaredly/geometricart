@@ -1,4 +1,3 @@
-
 import {angleTo, dist, push} from '../rendering/getMirrorTransforms';
 import {lineToSlope, Primitive} from '../rendering/intersect';
 import {Coord, View} from '../types';

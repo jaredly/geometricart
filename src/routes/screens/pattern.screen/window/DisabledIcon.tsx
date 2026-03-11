@@ -3,12 +3,12 @@ import {EyeIcon, EyeInvisibleIcon} from '../../../../icons/Eyes';
 import {EyePencilIcon} from '../../../../icons/Icon';
 import {Updater} from '../../../../json-diff/Updater';
 import {ExpandableEditor} from '../state-editor/ExpandableEditor';
-import { useValue } from '../../../../json-diff/react';
+import {useValue} from '../../../../json-diff/react';
 
 export const DisabledIconForPath = ({path}: {path: Updater<string>}) => {
-    const value = useValue(path)
-    return <DisabledIcon value={value} update={path} />
-}
+    const value = useValue(path);
+    return <DisabledIcon value={value} update={path} />;
+};
 
 export const DisabledIcon = ({update, value}: {value: string; update: Updater<string>}) => {
     const id = useId();

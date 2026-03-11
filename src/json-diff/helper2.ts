@@ -403,9 +403,8 @@ type VariantOf<T, Tag extends PropertyKey, V extends VariantTags<T, Tag>> = Extr
 
 // "Is this a tagged union on Tag?"
 // biome-ignore lint: this one is fine
-type IsTaggedUnion<Current, Tag extends PropertyKey> = NonNullish<Current> extends {[K in Tag]: any}
-    ? IsUnion<NonNullish<Current>>
-    : false;
+type IsTaggedUnion<Current, Tag extends PropertyKey> =
+    NonNullish<Current> extends {[K in Tag]: any} ? IsUnion<NonNullish<Current>> : false;
 
 // For normal object navigation over unions
 // biome-ignore lint: this one is fine

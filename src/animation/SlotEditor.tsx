@@ -1,4 +1,3 @@
-
 import {State, TimelineSlot} from '../types';
 
 export const SlotEditor = ({

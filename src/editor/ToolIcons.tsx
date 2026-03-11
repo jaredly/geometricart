@@ -1,4 +1,3 @@
-
 import React from 'react';
 import {Action} from '../state/Action';
 import {push} from '../rendering/getMirrorTransforms';

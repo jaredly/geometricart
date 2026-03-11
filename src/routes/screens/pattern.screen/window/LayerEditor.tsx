@@ -206,20 +206,22 @@ export const LayerEditor = () => {
     const StyleIcons = useCallback(
         (kind: Item) => {
             return (
-                <div className='flex items-center'>
+                <div className="flex items-center">
                     {/*<DisabledIconForPath path={kind.path.disabled} />*/}
-                <CogIcon
-                    onClick={(evt) => {
-                        evt.stopPropagation();
-                        setConfig(
-                            config && itemToString(config) === itemToString(kind) ? null : kind,
-                        );
-                    }}
-                    className={
-                        'cursor-pointer ease-linear transition-colors ' +
-                        (config && itemToString(config) === itemToString(kind) ? 'text-accent' : '')
-                    }
-                />
+                    <CogIcon
+                        onClick={(evt) => {
+                            evt.stopPropagation();
+                            setConfig(
+                                config && itemToString(config) === itemToString(kind) ? null : kind,
+                            );
+                        }}
+                        className={
+                            'cursor-pointer ease-linear transition-colors ' +
+                            (config && itemToString(config) === itemToString(kind)
+                                ? 'text-accent'
+                                : '')
+                        }
+                    />
                 </div>
             );
         },

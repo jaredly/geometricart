@@ -43,20 +43,24 @@ declare type BarePath = {
     open?: boolean;
 };
 
-declare type BaseKind = {
-    type: 'everything';
-} | {
-    type: 'alternating';
-    index: number;
-} | {
-    type: 'explicit';
-    ids: Record<string, true>;
-} | {
-    type: 'distance';
-    corner: number;
-    repeat: boolean;
-    distances: number[];
-};
+declare type BaseKind =
+    | {
+          type: 'everything';
+      }
+    | {
+          type: 'alternating';
+          index: number;
+      }
+    | {
+          type: 'explicit';
+          ids: Record<string, true>;
+      }
+    | {
+          type: 'distance';
+          corner: number;
+          repeat: boolean;
+          distances: number[];
+      };
 
 declare type Box = {
     x: number;
@@ -134,13 +138,15 @@ declare type EObject = {
     };
 };
 
-declare type ExportAnnotation = {
-    type: 'img';
-    id: string;
-} | {
-    type: 'video';
-    id: string;
-};
+declare type ExportAnnotation =
+    | {
+          type: 'img';
+          id: string;
+      }
+    | {
+          type: 'video';
+          id: string;
+      };
 
 export declare type ExportHistory = History_2<State, ExportAnnotation>;
 
@@ -165,7 +171,18 @@ declare type Group = {
     disabled?: boolean;
 };
 
-declare type GuideGeom = Line_2 | Split | Circle | CloneCircle | CircleMark | AngleBisector | PerpendicularBisector | Perpendicular | InCicle | Polygon | CircumCircle;
+declare type GuideGeom =
+    | Line_2
+    | Split
+    | Circle
+    | CloneCircle
+    | CircleMark
+    | AngleBisector
+    | PerpendicularBisector
+    | Perpendicular
+    | InCicle
+    | Polygon
+    | CircumCircle;
 
 declare type History_2<T, An> = {
     version: 1;
@@ -246,17 +263,20 @@ declare type MoveOp<T> = {
 
 declare type Path = PathSegment[];
 
-declare type PathSegment = {
-    type: 'key';
-    key: string | number;
-} | {
-    type: 'tag';
-    key: string;
-    value: string;
-} | {
-    type: 'single';
-    isSingle: boolean;
-};
+declare type PathSegment =
+    | {
+          type: 'key';
+          key: string | number;
+      }
+    | {
+          type: 'tag';
+          key: string;
+          value: string;
+      }
+    | {
+          type: 'single';
+          isSingle: boolean;
+      };
 
 declare type Pattern = {
     type: 'Pattern';
@@ -273,29 +293,38 @@ declare type Pattern = {
     disabled?: boolean;
 };
 
-declare type PatternContents = {
-    type: 'shapes';
-    styles: Record<string, ShapeStyle<ShapeKind>>;
-} | {
-    type: 'weave';
-    flip?: number;
-    orderings: Record<string, number[]>;
-    styles: Record<string, ShapeStyle<BaseKind & {
-        under?: boolean;
-    }>>;
-    shared?: Record<string, AnimatableValue>;
-} | {
-    type: 'lines';
-    styles: Record<string, ShapeStyle<BaseKind>>;
-    includeBorders?: boolean;
-    sort?: AnimatableValue;
-} | {
-    type: 'layers';
-    origin: AnimatableCoord;
-    reverse: AnimatableBoolean;
-    styles: Record<string, ShapeStyle<BaseKind>>;
-    shared?: Record<string, AnimatableValue>;
-};
+declare type PatternContents =
+    | {
+          type: 'shapes';
+          styles: Record<string, ShapeStyle<ShapeKind>>;
+      }
+    | {
+          type: 'weave';
+          flip?: number;
+          orderings: Record<string, number[]>;
+          styles: Record<
+              string,
+              ShapeStyle<
+                  BaseKind & {
+                      under?: boolean;
+                  }
+              >
+          >;
+          shared?: Record<string, AnimatableValue>;
+      }
+    | {
+          type: 'lines';
+          styles: Record<string, ShapeStyle<BaseKind>>;
+          includeBorders?: boolean;
+          sort?: AnimatableValue;
+      }
+    | {
+          type: 'layers';
+          origin: AnimatableCoord;
+          reverse: AnimatableBoolean;
+          styles: Record<string, ShapeStyle<BaseKind>>;
+          shared?: Record<string, AnimatableValue>;
+      };
 
 declare type Perpendicular = {
     type: 'Perpendicular';
@@ -309,39 +338,46 @@ declare type PerpendicularBisector = {
     p2: Coord;
 };
 
-declare type PMods = {
-    type: 'stroke';
-    width: AnimatableNumber;
-    round: AnimatableBoolean;
-    disabled?: boolean;
-} | {
-    type: 'inner';
-    disabled?: boolean;
-} | {
-    type: 'inset';
-    v: AnimatableNumber;
-    disabled?: boolean;
-} | {
-    type: 'crop';
-    id: string;
-    hole?: boolean;
-    mode?: CropMode;
-    disabled?: boolean;
-} | {
-    type: 'scale';
-    v: AnimatableCoord | AnimatableNumber;
-    origin?: AnimatableCoord;
-    disabled?: boolean;
-} | {
-    type: 'rotate';
-    v: AnimatableNumber;
-    origin?: AnimatableCoord;
-    disabled?: boolean;
-} | {
-    type: 'translate';
-    v: AnimatableCoord;
-    disabled?: boolean;
-};
+declare type PMods =
+    | {
+          type: 'stroke';
+          width: AnimatableNumber;
+          round: AnimatableBoolean;
+          disabled?: boolean;
+      }
+    | {
+          type: 'inner';
+          disabled?: boolean;
+      }
+    | {
+          type: 'inset';
+          v: AnimatableNumber;
+          disabled?: boolean;
+      }
+    | {
+          type: 'crop';
+          id: string;
+          hole?: boolean;
+          mode?: CropMode;
+          disabled?: boolean;
+      }
+    | {
+          type: 'scale';
+          v: AnimatableCoord | AnimatableNumber;
+          origin?: AnimatableCoord;
+          disabled?: boolean;
+      }
+    | {
+          type: 'rotate';
+          v: AnimatableNumber;
+          origin?: AnimatableCoord;
+          disabled?: boolean;
+      }
+    | {
+          type: 'translate';
+          v: AnimatableCoord;
+          disabled?: boolean;
+      };
 
 declare type Polygon = {
     type: 'Polygon';
@@ -383,18 +419,22 @@ declare type SegPrev = {
     prev: Coord;
 };
 
-declare type Shadow = {
-    color?: AnimatableColor;
-    offset?: AnimatableCoord | AnimatableNumber;
-    blur?: AnimatableCoord | AnimatableNumber;
-    inner?: AnimatableBoolean;
-} | string;
+declare type Shadow =
+    | {
+          color?: AnimatableColor;
+          offset?: AnimatableCoord | AnimatableNumber;
+          blur?: AnimatableCoord | AnimatableNumber;
+          inner?: AnimatableBoolean;
+      }
+    | string;
 
-declare type ShapeKind = BaseKind | {
-    type: 'shape';
-    key: string;
-    rotInvariant: boolean;
-};
+declare type ShapeKind =
+    | BaseKind
+    | {
+          type: 'shape';
+          key: string;
+          rotInvariant: boolean;
+      };
 
 declare type ShapeStyle<Kind> = {
     id: string;
@@ -415,9 +455,12 @@ declare type Split = {
 };
 
 export declare type State = {
-    shapes: Record<string, BarePath & {
-        multiply?: string;
-    }>;
+    shapes: Record<
+        string,
+        BarePath & {
+            multiply?: string;
+        }
+    >;
     layers: Record<string, Layer>;
     crops: Record<string, Crop>;
     view: {
@@ -451,21 +494,24 @@ declare type ThinTiling = {
     segments: SegPrev[];
 };
 
-declare type TilingShape = {
-    type: 'right-triangle';
-    rotateHypotenuse: boolean;
-    start: Coord;
-    corner: Coord;
-    end: Coord;
-} | {
-    type: 'isocelese';
-    flip?: boolean;
-    first: Coord;
-    second: Coord;
-    third: Coord;
-} | {
-    type: 'parallellogram';
-    points: [Coord, Coord, Coord, Coord];
-};
+declare type TilingShape =
+    | {
+          type: 'right-triangle';
+          rotateHypotenuse: boolean;
+          start: Coord;
+          corner: Coord;
+          end: Coord;
+      }
+    | {
+          type: 'isocelese';
+          flip?: boolean;
+          first: Coord;
+          second: Coord;
+          third: Coord;
+      }
+    | {
+          type: 'parallellogram';
+          points: [Coord, Coord, Coord, Coord];
+      };
 
-export { }
+export {};

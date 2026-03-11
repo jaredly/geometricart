@@ -1,4 +1,3 @@
-
 import {Coord, Segment} from '../types';
 import {arcPath} from './RenderPendingPath';
 import React from 'react';

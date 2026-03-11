@@ -1,9 +1,4 @@
-import {
-    angleTo,
-    applyMatrices,
-    getTransformsForNewMirror,
-    Matrix,
-} from './getMirrorTransforms';
+import {angleTo, applyMatrices, getTransformsForNewMirror, Matrix} from './getMirrorTransforms';
 import {Coord, Guide, GuideGeom, Id, Mirror} from '../types';
 import {getCircumCircle} from './points';
 import {angleBetween} from './isAngleBetween';
