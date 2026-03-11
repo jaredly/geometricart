@@ -20,7 +20,7 @@ import {maxOrder, nextOrder, orderedIds, orderedItems} from '../state-editor/nex
 import {OrderableEditor} from '../state-editor/PatternEditor';
 import {EntityView} from './EntityView';
 import {Expandable} from './Expandable';
-import {DisabledIcon} from './DisabledIcon';
+import {DisabledIcon, DisabledIconForPath} from './DisabledIcon';
 import {TreeActions, TreeNode, TreeView} from './TreeView';
 import {useCallback, useMemo, useState} from 'react';
 import {State} from '../types/state-type';
@@ -206,6 +206,8 @@ export const LayerEditor = () => {
     const StyleIcons = useCallback(
         (kind: Item) => {
             return (
+                <div className='flex items-center'>
+                    {/*<DisabledIconForPath path={kind.path.disabled} />*/}
                 <CogIcon
                     onClick={(evt) => {
                         evt.stopPropagation();
@@ -218,6 +220,7 @@ export const LayerEditor = () => {
                         (config && itemToString(config) === itemToString(kind) ? 'text-accent' : '')
                     }
                 />
+                </div>
             );
         },
         [config],

@@ -1,3 +1,9 @@
+
+# For fine art prints maybeeee
+
+- the Export shape, can I (1) duplicate an export, and then (2) constrain the output to be like "the largest 9:5 rect that fits inside the shape?"
+
+
 # Tree View here we go
 
 -> a fill editor
