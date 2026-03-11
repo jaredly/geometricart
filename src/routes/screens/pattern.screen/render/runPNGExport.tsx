@@ -36,13 +36,13 @@ export const runSVGExport = (
 };
 
 export const runPNGExport = (
-    size: number,
+    ppu: number,
     box: Box,
     items: RenderItem[],
     bg: Color | null,
     antiAlias = true,
 ) => {
-    const canvas = new OffscreenCanvas(size, size);
+    const canvas = new OffscreenCanvas(box.width * ppu, box.height * ppu);
     const surface = pk.MakeWebGLCanvasSurface(canvas)!;
 
     renderItems(surface, box, items, bg, antiAlias);

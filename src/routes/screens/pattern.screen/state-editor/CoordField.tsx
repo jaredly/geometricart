@@ -1,6 +1,44 @@
 import React from 'react';
 import {Coord} from '../../../../types';
 import {NumberField} from './NumberField';
+import {BlurInput} from './BlurInput';
+import {closeEnough} from '../../../../rendering/epsilonToZero';
+import {PatternSize} from '../export-types';
+
+const numOrZero = (v: string) => {
+    const n = Number(v);
+    return Number.isFinite(n) ? n : 0;
+};
+
+// TODO: up/down arrwos plssss
+export const CoordOrNumberField = ({
+    label,
+    value,
+    onChange,
+}: {
+    label: string;
+    value: PatternSize;
+    onChange: (next: PatternSize) => void;
+}) => {
+    return (
+        <BlurInput
+            className="w-12"
+            value={
+                value.type === 'uniform'
+                    ? value.size.toString()
+                    : `${value.coord.x},${value.coord.y}`
+            }
+            onChange={(v) => {
+                if (v.includes(',')) {
+                    const [x, y] = v.split(',');
+                    return onChange({type: 'coord', coord: {x: numOrZero(x), y: numOrZero(y)}});
+                }
+                const n = numOrZero(v);
+                return onChange({type: 'uniform', size: n});
+            }}
+        />
+    );
+};
 
 export const CoordField = ({
     label,

@@ -200,8 +200,6 @@ export const weaveIntersections = (segs: [Coord, Coord][], segLinks: SegLink[]) 
 
 export const weaveIntersections2 = (segs: [Coord, Coord][], segLinks: SegLink[]) => {
     const {intersections, segInts, weird} = calculateIntersections(segs, segLinks);
-    // console.log('Weaving', segLinks, segInts);
-    // if (weird) return;
 
     const first = Object.keys(intersections).find((k) => intersections[k].other != null);
     if (!first) return;
@@ -243,8 +241,6 @@ export const weaveIntersections2 = (segs: [Coord, Coord][], segLinks: SegLink[])
         }
     });
 
-    // console.log('Intersections', intersections);
-
     const intLines = (key: string) =>
         allPairs(
             intersections[key].exits.map((seg) =>
@@ -252,113 +248,98 @@ export const weaveIntersections2 = (segs: [Coord, Coord][], segLinks: SegLink[])
             ),
         ).map(([a, b]) => ({key, left: a, right: b}));
 
+    const followStraight = (key: string, next: string, el: number) => {
+        const line = [intersections[next].pos];
+        while (intersections[next].exits.length === 2 && intersections[next].elevation! >= el) {
+            const [a, b] = intersections[next].exits.map((seg) =>
+                segInts[seg][0] === next ? segInts[seg][1] : segInts[seg][0],
+            );
+            [next, key] = [a === key ? b : a, next];
+            line.push(intersections[next].pos);
+        }
+        return line;
+    };
+
     const intMasks = (key: string) =>
         intLines(key).map(({key, left, right}) => ({
-            line: [intersections[left].pos, intersections[key].pos, intersections[right].pos],
+            line: [
+                // ...followStraight(key, left, intersections[key].elevation!).reverse(),
+                intersections[left].pos,
+                intersections[key].pos,
+                intersections[right].pos,
+                // ...followStraight(key, right, intersections[key].elevation!),
+            ],
             pathId: intersections[key].pathId,
         }));
 
     type Woven = {line: Coord[]; pathId?: number; masks: {line: Coord[]; pathId?: number}[]};
+
+    // take a path and follow it
+    const used = new Set<string>();
+
+    const follow = (key: string, next: string) => {
+        const points: Coord[] = [];
+        const masks: Woven['masks'] = [];
+        while (true) {
+            const int = intersections[next];
+            const other = int.other;
+            points.push(int.pos);
+            if (other && intersections[other].elevation! > int.elevation!) {
+                masks.push(...intMasks(other));
+                used.add(next);
+                break;
+            } else if (!used.has(next) && int.exits.length === 2) {
+                used.add(next);
+                const [a, b] = int.exits.map((seg) =>
+                    segInts[seg][0] === int.key ? segInts[seg][1] : segInts[seg][0],
+                );
+                const nnext = a === key ? b : a;
+                key = next;
+                next = nnext;
+            } else {
+                break;
+            }
+        }
+        return {points, masks};
+    };
+
     return Object.values(intersections).flatMap((int, i): Woven[] => {
-        // if (i % 20 !== 0) return [];
+        if (used.has(int.key)) return [];
+
+        used.add(int.key);
         const el = int.elevation!;
 
         const other =
             int.other && intersections[int.other].elevation! > el ? intMasks(int.other) : [];
 
-        // console.log('at', i, int.key, intLines(int.key));
-
         // lines going out of here
         return intLines(int.key).map(({left, right}) => {
-            const lo = intersections[left].other;
-            const ro = intersections[right].other;
-            // console.log(`Line ${left} - ${int.key} - ${right}`, lo, ro);
-            // console.log(
-            //     coordKey(intersections[left].pos),
-            //     coordKey(int.pos),
-            //     coordKey(intersections[right].pos),
-            // );
-            const ell = lo && intersections[lo].elevation! > intersections[left].elevation!;
-            const elr = ro && intersections[ro].elevation! > intersections[right].elevation!;
+            const ll = follow(int.key, left);
+            const lr = follow(int.key, right);
             return {
-                line: [
-                    midPoint(intersections[left].pos, int.pos),
-                    int.pos,
-                    midPoint(intersections[right].pos, int.pos),
-                ],
+                line: [...ll.points.reverse(), int.pos, ...lr.points],
                 pathId: int.pathId,
                 // Sooooo these masks might need to /follow/ the line until we get to
                 // an int that is at or below the current el. right?
-                masks: [...other, ...(ell ? intMasks(lo) : []), ...(elr ? intMasks(ro) : [])],
+                masks: [...other, ...ll.masks, ...lr.masks],
             };
+
+            // This is the "nofollow" version. Keeping this around just for a minute in case
+            // const lo = intersections[left].other;
+            // const ro = intersections[right].other;
+            // const ell = lo && intersections[lo].elevation! > intersections[left].elevation!;
+            // const elr = ro && intersections[ro].elevation! > intersections[right].elevation!;
+            // return {
+            //     line: [
+            //         midPoint(intersections[left].pos, int.pos),
+            //         int.pos,
+            //         midPoint(intersections[right].pos, int.pos),
+            //     ],
+            //     pathId: int.pathId,
+            //     // Sooooo these masks might need to /follow/ the line until we get to
+            //     // an int that is at or below the current el. right?
+            //     masks: [...other, ...(ell ? intMasks(lo) : []), ...(elr ? intMasks(ro) : [])],
+            // };
         });
-
-        // // const backOff = -0.35;
-        // for (let seg of int.exits) {
-        //     const key = segInts[seg][0] === int.key ? segInts[seg][1] : segInts[seg][0]
-        //     const other = intersections[key].elevation ?? -2;
-        //     const masks = other > el
-        //         ? [
-        //             intLines(key)
-        //         ] : []
-
-        // }
-
-        // const mids = int.exits
-        //     .map((seg) => (segInts[seg][0] === int.key ? segInts[seg][1] : segInts[seg][0]))
-        //     .flatMap((key): Woven[] => {
-
-        //         // So here, we're drawing a line from self to other.
-
-        //         const other = intersections[key].elevation ?? -2;
-        //         const mid = el + (other - el) * 0.3;
-        //         return [
-        //             {
-        //                 points: [
-        //                     [
-        //                         midPoint(int.pos, intersections[key].pos, 0.26),
-        //                         midPoint(int.pos, intersections[key].pos, 0.5),
-        //                     ],
-        //                 ],
-        //                 order: mid + backOff,
-        //                 pathId: int.pathId,
-        //                 isBack: true,
-        //             },
-        //             {
-        //                 points: [
-        //                     [
-        //                         midPoint(int.pos, intersections[key].pos, 0.25),
-        //                         midPoint(int.pos, intersections[key].pos, 0.51),
-        //                     ],
-        //                 ],
-        //                 order: mid,
-        //                 pathId: int.pathId,
-        //             },
-        //         ];
-        //     });
-
-        // const neighbors = int.exits
-        //     .map((seg) => (segInts[seg][0] === int.key ? segInts[seg][1] : segInts[seg][0]))
-        //     .map((key) => midPoint(int.pos, intersections[key].pos, 0.3));
-
-        // const second = int.exits
-        //     .map((seg) => (segInts[seg][0] === int.key ? segInts[seg][1] : segInts[seg][0]))
-        //     .map((key) => midPoint(int.pos, intersections[key].pos, 0.31));
-
-        // return [
-        //     ...mids,
-        //     {
-        //         points: allPairs(neighbors).map(([a, b]) => [a, int.pos, b]),
-        //         order: el + backOff,
-        //         pathId: int.pathId,
-        //         isBack: true,
-        //     },
-        //     {
-        //         points: allPairs(second).map(([a, b]) => [a, int.pos, b]),
-        //         order: el,
-        //         pathId: int.pathId,
-        //     },
-        // ];
     });
-    // .sort((a, b) => a.order - b.order);
 };

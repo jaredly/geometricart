@@ -4,6 +4,7 @@ import {DistanceEditor} from './DistanceEditor';
 import {TextField} from './TextField';
 import {NumberField} from './NumberField';
 import {Updater} from '../../../../json-diff/Updater';
+import {BaseKindSelector, KindSelector} from './ShapeStyleCard';
 
 export const ShapeKindEditor = ({
     value,
@@ -19,63 +20,15 @@ export const ShapeKindEditor = ({
     return (
         <div className="flex flex-wrap">
             {value.type === 'distance' ? (
-                <DistanceEditor value={value} update={update.variant('distance')} />
+                <DistanceEditor value={value} update={update.$variant('distance')} />
             ) : null}
             <div className="flex flex-wrap gap-2">
-                <select
-                    value={type}
-                    onChange={(evt) => {
-                        switch (evt.target.value) {
-                            case 'everything':
-                                update.replace({type: 'everything'});
-                                return;
-                            case 'alternating':
-                                update.replace(
-                                    value.type === 'alternating'
-                                        ? value
-                                        : {type: 'alternating', index: 0},
-                                );
-                                return;
-                            case 'explicit':
-                                update.replace(
-                                    value.type === 'explicit' ? value : {type: 'explicit', ids: {}},
-                                );
-                                return;
-                            case 'shape':
-                                update.replace(
-                                    value.type === 'shape'
-                                        ? value
-                                        : {type: 'shape', key: '', rotInvariant: false},
-                                );
-                                return;
-                            case 'distance':
-                                update.replace(
-                                    value.type === 'distance'
-                                        ? value
-                                        : {
-                                              type: 'distance',
-                                              corner: 0,
-                                              distances: [0, 1],
-                                              repeat: true,
-                                          },
-                                );
-                                return;
-                        }
-                    }}
-                >
-                    {(['everything', 'alternating', 'explicit', 'shape', 'distance'] as const).map(
-                        (t) => (
-                            <option key={t} value={t}>
-                                {t}
-                            </option>
-                        ),
-                    )}
-                </select>
+                <KindSelector value={value} onSelect={update.$replace} />
                 {type === 'alternating' ? (
                     <NumberField
                         label="Index"
                         value={value.index}
-                        onChange={update.variant('alternating').index}
+                        onChange={update.$variant('alternating').index}
                     />
                 ) : null}
                 {type === 'explicit' ? (
@@ -94,7 +47,7 @@ export const ShapeKindEditor = ({
                                     },
                                     {} as Record<string, true>,
                                 );
-                            update.variant('explicit').ids(ids);
+                            update.$variant('explicit').ids(ids);
                         }}
                     />
                 ) : null}
@@ -103,7 +56,7 @@ export const ShapeKindEditor = ({
                         <TextField
                             label="Shape key"
                             value={value.key}
-                            onChange={update.variant('shape').key}
+                            onChange={update.$variant('shape').key}
                         />
                         <label className="label cursor-pointer gap-2">
                             <span className="label-text text-sm">Rotation invariant</span>
@@ -112,7 +65,7 @@ export const ShapeKindEditor = ({
                                 type="checkbox"
                                 checked={value.rotInvariant}
                                 onChange={(evt) =>
-                                    update.variant('shape').rotInvariant(evt.target.checked)
+                                    update.$variant('shape').rotInvariant(evt.target.checked)
                                 }
                             />
                         </label>
@@ -131,54 +84,15 @@ export const BaseKindEditor = ({value, update}: {value: BaseKind; update: Update
     return (
         <div className="flex flex-wrap">
             {value.type === 'distance' ? (
-                <DistanceEditor value={value} update={update.variant('distance')} />
+                <DistanceEditor value={value} update={update.$variant('distance')} />
             ) : null}
             <div className="flex flex-wrap gap-2">
-                <select
-                    value={type}
-                    onChange={(evt) => {
-                        switch (evt.target.value) {
-                            case 'everything':
-                                update.replace({type: 'everything'});
-                                return;
-                            case 'alternating':
-                                update.replace(
-                                    value.type === 'alternating'
-                                        ? value
-                                        : {type: 'alternating', index: 0},
-                                );
-                                return;
-                            case 'explicit':
-                                update.replace(
-                                    value.type === 'explicit' ? value : {type: 'explicit', ids: {}},
-                                );
-                                return;
-                            case 'distance':
-                                update.replace(
-                                    value.type === 'distance'
-                                        ? value
-                                        : {
-                                              type: 'distance',
-                                              corner: 0,
-                                              distances: [0, 1],
-                                              repeat: true,
-                                          },
-                                );
-                                return;
-                        }
-                    }}
-                >
-                    {(['everything', 'alternating', 'explicit', 'distance'] as const).map((t) => (
-                        <option key={t} value={t}>
-                            {t}
-                        </option>
-                    ))}
-                </select>
+                <BaseKindSelector value={value} onSelect={update.$replace} />
                 {type === 'alternating' ? (
                     <NumberField
                         label="Index"
                         value={value.index}
-                        onChange={update.variant('alternating').index}
+                        onChange={update.$variant('alternating').index}
                     />
                 ) : null}
                 {type === 'explicit' ? (
@@ -197,7 +111,7 @@ export const BaseKindEditor = ({value, update}: {value: BaseKind; update: Update
                                     },
                                     {} as Record<string, true>,
                                 );
-                            update.variant('explicit').ids(ids);
+                            update.$variant('explicit').ids(ids);
                         }}
                     />
                 ) : null}

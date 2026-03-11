@@ -7,15 +7,29 @@ export type PathSegment =
     | {type: 'tag'; key: string; value: string}
     | {type: 'single'; isSingle: boolean};
 
-type ReplaceAndTestMethodsA<Value, R> = {
-    replace(value: Value, when?: ApplyTiming): R;
+export const pathToString = (path: PathSegment[]) =>
+    path
+        .map((p) =>
+            p.type === 'key'
+                ? p.key
+                : p.type === 'tag'
+                  ? `[${p.key}=${p.value}]`
+                  : p.isSingle
+                    ? '[]'
+                    : '[..]',
+        )
+        .join('/');
+
+type ReplaceAndTestMethodsA<Value, Tag extends PropertyKey, R, Extra> = {
+    $replace(value: Value, when?: ApplyTiming): R;
+    $update(opMaker: OpMaker<Value, Tag, Extra>, when?: ApplyTiming): R;
 };
 
 // Only if P is an AddPath<Root, C>
-type AddMethodsA<Value, R> = {add(value: Value, when?: ApplyTiming): R};
+type AddMethodsA<Value, R> = {$add(value: Value, when?: ApplyTiming): R};
 
 // Only if P is a RemovablePath<Root, C>
-type RemoveMethodsA<R> = {remove(when?: ApplyTiming | React.MouseEvent): R};
+type RemoveMethodsA<R> = {$remove(when?: ApplyTiming | React.MouseEvent): R};
 
 type OpMaker<Value, Tag extends PropertyKey, Extra> = (
     v: Value,
@@ -31,7 +45,7 @@ const getPathSymbol = Symbol('get path');
 const getExtraSymbol = Symbol('get extra');
 
 export type SingleableNode<Root, Current, Tag extends PropertyKey, R, Extra = unknown> = {
-    single<V extends boolean>(
+    $single<V extends boolean>(
         isSingle: V,
     ): DiffNodeA<Root, V extends true ? Current : Current[], Tag, R, Extra>;
 };
@@ -43,7 +57,7 @@ export type DiffNodeA<Root, Current, Tag extends PropertyKey, R, Extra = unknown
     // operations at this path (unchanged)
     [getPathSymbol]: Path;
     [getExtraSymbol]: Extra;
-} & ReplaceAndTestMethodsA<Current, R> &
+} & ReplaceAndTestMethodsA<Current, Tag, R, Extra> &
     RemoveMethodsA<R> &
     UpdateFunction<Current, Tag, R, Extra> &
     // navigation
@@ -55,10 +69,10 @@ export type DiffNodeA<Root, Current, Tag extends PropertyKey, R, Extra = unknown
     // 🔹 tagged union → must choose an arm via variant()
     (IsTaggedUnion<Current, Tag> extends true
         ? {
-              variant<V extends VariantTags<NonNullish<Current>, Tag> & (string | number | symbol)>(
-                  tag: V,
-              ): DiffNodeA<Root, VariantOf<NonNullish<Current>, Tag, V>, Tag, R, Extra>;
-              variant<Result>(
+              $variant<
+                  V extends VariantTags<NonNullish<Current>, Tag> & (string | number | symbol),
+              >(tag: V): DiffNodeA<Root, VariantOf<NonNullish<Current>, Tag, V>, Tag, R, Extra>;
+              $variant<Result>(
                   value: Current,
                   kindFns: {
                       [V in VariantTags<NonNullish<Current>, Tag> & (string | number | symbol)]: (
@@ -79,9 +93,9 @@ export type DiffNodeA<Root, Current, Tag extends PropertyKey, R, Extra = unknown
           ? {
                 [K in number]: DiffNodeA<Root, Elem, Tag, R, Extra>;
             } & {
-                push(value: Elem, when?: ApplyTiming): R;
-                move(from: string | number, to: string | number, when?: ApplyTiming): R;
-                reorder(indices: number[]): R;
+                $push(value: Elem, when?: ApplyTiming): R;
+                $move(from: string | number, to: string | number, when?: ApplyTiming): R;
+                $reorder(indices: number[]): R;
             }
           : // 🔹 plain objects (including unions that are NOT tagged on Tag)
             NonNullish<Current> extends object
@@ -94,7 +108,7 @@ export type DiffNodeA<Root, Current, Tag extends PropertyKey, R, Extra = unknown
                       Extra
                   >;
               } & {
-                  move(from: string | number, to: string | number, when?: ApplyTiming): R;
+                  $move(from: string | number, to: string | number, when?: ApplyTiming): R;
               } & (string extends keyof NonNullish<Current> // optional: index signatures (Record<string, V>)
                       ? {
                             [key: string]: DiffNodeA<
@@ -141,11 +155,19 @@ export function diffBuilderApply<T, Extra, Tag extends string = 'type', R = void
     function makeProxy(path: Array<PathSegment>): any {
         const pathString = JSON.stringify(path);
 
+        const updateFn = (value: T | OpMaker<T, Tag, Extra>, when?: ApplyTiming) => {
+            if (typeof value !== 'function') {
+                return apply({op: 'replace', path, value, ...ghost}, when);
+            }
+            // biome-ignore lint: this one is fine
+            return apply({op: 'nested', make: value as any, path, ...ghost}, when);
+        };
+
         // biome-ignore lint: this one is fine
         const handler: ProxyHandler<any> = {
             get(_target, prop, _receiver) {
                 // 🔹 variant(): refine the *last* path segment with `[kind=value]`
-                if (prop === 'variant') {
+                if (prop === '$variant') {
                     return (...args: [string] | [any, Record<string, any>]) => {
                         if (!args.length) {
                             throw new Error(`Invalid call`);
@@ -175,13 +197,17 @@ export function diffBuilderApply<T, Extra, Tag extends string = 'type', R = void
                     };
                 }
 
-                if (prop === 'valueOf' || prop === 'toString') {
+                if (prop === 'toString') {
+                    return () => pathToString(path);
+                }
+
+                if (prop === 'valueOf') {
                     // weird react thing
                     return null;
                 }
 
                 // 🔹 operations
-                if (prop === 'replace') {
+                if (prop === '$replace') {
                     const k = pathString + '/replace';
                     if (!cache[k])
                         cache[k] = (value, when?: ApplyTiming) =>
@@ -189,7 +215,11 @@ export function diffBuilderApply<T, Extra, Tag extends string = 'type', R = void
                     return cache[k];
                 }
 
-                if (prop === 'single') {
+                if (prop === '$update') {
+                    return updateFn;
+                }
+
+                if (prop === '$single') {
                     return (isSingle: boolean) => {
                         const k = pathString + '/single/' + (isSingle ? '1' : '0');
                         if (!proxyCache[k])
@@ -201,7 +231,7 @@ export function diffBuilderApply<T, Extra, Tag extends string = 'type', R = void
                     };
                 }
 
-                if (prop === 'add') {
+                if (prop === '$add') {
                     const k = pathString + '/add';
                     if (!cache[k])
                         cache[k] = (value, when?: ApplyTiming) =>
@@ -209,7 +239,7 @@ export function diffBuilderApply<T, Extra, Tag extends string = 'type', R = void
                     return cache[k];
                 }
 
-                if (prop === 'move') {
+                if (prop === '$move') {
                     const k = pathString + '/move';
                     if (!cache[k])
                         cache[k] = (
@@ -235,7 +265,7 @@ export function diffBuilderApply<T, Extra, Tag extends string = 'type', R = void
                     return cache[k];
                 }
 
-                if (prop === 'push') {
+                if (prop === '$push') {
                     const k = pathString + '/push';
                     if (!cache[k])
                         cache[k] = (value, when?: ApplyTiming) =>
@@ -243,7 +273,7 @@ export function diffBuilderApply<T, Extra, Tag extends string = 'type', R = void
                     return cache[k];
                 }
 
-                if (prop === 'remove') {
+                if (prop === '$remove') {
                     const k = pathString + '/remove';
                     if (!cache[k])
                         cache[k] = (when?: ApplyTiming | React.MouseEvent) =>
@@ -261,6 +291,15 @@ export function diffBuilderApply<T, Extra, Tag extends string = 'type', R = void
                     return extra;
                 }
 
+                if (prop === Symbol.toPrimitive) {
+                    return (hint: string) => {
+                        if (hint === 'string' || hint === 'default') {
+                            return '() => {}'; // react does this
+                        }
+                        return 0;
+                    };
+                }
+
                 // ignore symbols
                 if (typeof prop === 'symbol') return undefined;
 
@@ -276,13 +315,7 @@ export function diffBuilderApply<T, Extra, Tag extends string = 'type', R = void
             },
         };
 
-        return new Proxy((value: T | OpMaker<T, Tag, Extra>, when?: ApplyTiming) => {
-            if (typeof value !== 'function') {
-                return apply({op: 'replace', path, value, ...ghost}, when);
-            }
-            // biome-ignore lint: this one is fine
-            return apply({op: 'nested', make: value as any, path, ...ghost}, when);
-        }, handler);
+        return new Proxy(updateFn, handler);
     }
     return makeProxy([]) as DiffBuilderA<T, Tag, R, Extra>;
 }
@@ -370,9 +403,8 @@ type VariantOf<T, Tag extends PropertyKey, V extends VariantTags<T, Tag>> = Extr
 
 // "Is this a tagged union on Tag?"
 // biome-ignore lint: this one is fine
-type IsTaggedUnion<Current, Tag extends PropertyKey> = NonNullish<Current> extends {[K in Tag]: any}
-    ? IsUnion<NonNullish<Current>>
-    : false;
+type IsTaggedUnion<Current, Tag extends PropertyKey> =
+    NonNullish<Current> extends {[K in Tag]: any} ? IsUnion<NonNullish<Current>> : false;
 
 // For normal object navigation over unions
 // biome-ignore lint: this one is fine

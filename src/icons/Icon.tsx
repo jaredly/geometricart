@@ -2,6 +2,23 @@ import * as React from 'react';
 import {SVGProps} from 'react';
 import {useTouchClick} from '../editor/RenderIntersections';
 
+export function ObjectUngroup(props: SVGProps<SVGSVGElement>) {
+    return (
+        <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 512 512"
+            width="1em"
+            height="1em"
+            {...props}
+        >
+            <path
+                fill="currentColor"
+                d="M400 168h-72v-56h32V16h-96v32H112V16H16v96h32v152H16v96h96v-32h72v72h-32v96h96v-32h152v32h96v-96h-32V232h32v-96h-96ZM296 48h32v32h-32Zm32 248v32h-32v-32ZM48 48h32v32H48Zm32 280H48v-32h32Zm32-32v-32H80V112h32V80h152v32h32v152h-32v32Zm104 168h-32v-32h32Zm248 0h-32v-32h32Zm-32-296h32v32h-32Zm0 232h-32v32H248v-32h-32v-72h48v32h96v-96h-32v-64h72v32h32Z"
+            ></path>
+        </svg>
+    );
+}
+
 /** Gotten from https://reactsvgicons.com/search?q=scissors */
 export function SpinnerEarring(props: SVGProps<SVGSVGElement>) {
     return (
@@ -108,7 +125,7 @@ export function CheckboxUnchecked(props: SVGProps<SVGSVGElement>) {
     );
 }
 
-export function ExternalLinkIcon() {
+export function ExternalLinkIcon(props: SVGProps<SVGSVGElement>) {
     return (
         <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -120,7 +137,7 @@ export function ExternalLinkIcon() {
             strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
-            style={{opacity: 1}}
+            {...props}
         >
             <path d="M15 3h6v6m-11 5L21 3m-3 10v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
         </svg>
@@ -592,6 +609,23 @@ export function CubeIcon(props: React.SVGProps<SVGSVGElement>) {
     return (
         <svg viewBox="0 0 24 24" fill="currentColor" height="1em" width="1em" {...props}>
             <path d="M21.406 6.086l-9-4a1.001 1.001 0 00-.813 0l-9 4c-.02.009-.034.024-.054.035-.028.014-.058.023-.084.04-.022.015-.039.034-.06.05a.87.87 0 00-.19.194c-.02.028-.041.053-.059.081a1.119 1.119 0 00-.076.165c-.009.027-.023.052-.031.079A1.013 1.013 0 002 7v10c0 .396.232.753.594.914l9 4c.13.058.268.086.406.086a.997.997 0 00.402-.096l.004.01 9-4A.999.999 0 0022 17V7a.999.999 0 00-.594-.914zM12 4.095L18.538 7 12 9.905l-1.308-.581L5.463 7 12 4.095zm1 15.366V11.65l7-3.111v7.812l-7 3.11z" />
+        </svg>
+    );
+}
+
+export function EyePencilIcon(props: React.SVGProps<SVGSVGElement>) {
+    return (
+        <svg viewBox="0 0 1024 1024" fill="currentColor" height="1em" width="1em" {...props}>
+            <path d="M396 512a112 112 0 10224 0 112 112 0 10-224 0zm546.2-25.8C847.4 286.5 704.1 186 512 186c-192.2 0-335.4 100.5-430.2 300.3a60.3 60.3 0 000 51.5C176.6 737.5 319.9 838 512 838c192.2 0 335.4-100.5 430.2-300.3 7.7-16.2 7.7-35 0-51.5zM508 688c-97.2 0-176-78.8-176-176s78.8-176 176-176 176 78.8 176 176-78.8 176-176 176z" />
+            <g transform="scale(42,42) translate(5,10)">
+                <path
+                    fill="none"
+                    stroke="currentColor"
+                    strokeLinecap="round"
+                    strokeWidth="3"
+                    d="M6 12h.01m6 0h.01m5.99 0h.01"
+                ></path>
+            </g>
         </svg>
     );
 }

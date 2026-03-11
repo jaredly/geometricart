@@ -1,14 +1,13 @@
-import {Segment, ThinTiling} from '../../../../types';
+import {Coord, Segment, ThinTiling} from '../../../../types';
 import {
     PMods,
-    Layer,
+    EntityRoot,
     Group,
     Pattern,
     AnimatableNumber,
     ShapeStyle,
-    Fill,
-    Line,
     ShapeKind,
+    FillOrLine,
 } from '../export-types';
 
 export const addMod = (type: PMods['type']): PMods => {
@@ -16,7 +15,7 @@ export const addMod = (type: PMods['type']): PMods => {
         case 'inset':
             return {type, v: 1};
         case 'translate':
-            return {type, v: {x: 0, y: 0}};
+            return {type, v: '0,0'};
         case 'crop':
             return {type, id: ''};
         case 'scale':
@@ -31,14 +30,9 @@ export const addMod = (type: PMods['type']): PMods => {
             throw new Error(`bad mod type: ${type}`);
     }
 };
-export const createLayerTemplate = (id: string): Layer => ({
-    id,
-    order: 0,
-    opacity: 1,
+export const createLayerTemplate = (_id: string): EntityRoot => ({
     rootGroup: 'root',
     entities: {},
-    guides: [],
-    shared: {},
 });
 
 export const createGroup = (id: string): Group => ({
@@ -46,6 +40,9 @@ export const createGroup = (id: string): Group => ({
     id,
     name: id,
     entities: {},
+    disabled: '',
+    shared: {},
+    opacity: 1,
 });
 
 export const createPattern = (id: string, hash: string, tiling: ThinTiling): Pattern => ({
@@ -53,9 +50,11 @@ export const createPattern = (id: string, hash: string, tiling: ThinTiling): Pat
     id,
     tiling: {id: hash, tiling},
     adjustments: {},
-    psize: {x: 1, y: 1},
-    contents: {type: 'shapes', styles: {}},
+    psize: {type: 'uniform', size: 1},
+    contents: {cid: {id: 'cid', order: 0, type: 'shapes', styles: {}, disabled: ''}},
     mods: [],
+    disabled: false,
+    shared: {},
 });
 const defaultCropShape = (): Segment[] => [
     {type: 'Line', to: {x: 1, y: 0}},
@@ -71,24 +70,19 @@ export const parseAnimatable = (value: string): AnimatableNumber => {
     return Number.isFinite(num) ? (num as AnimatableNumber) : (trimmed as AnimatableNumber);
 };
 
-export const createShapeStyle = <Kind,>(id: string, kind: Kind): ShapeStyle<Kind> => ({
+export const createShapeStyle = <Kind,>(id: string): ShapeStyle<Kind> => ({
     id,
     order: 0,
-    kind,
-    fills: {},
-    lines: {},
+    kind: [],
+    items: {},
     mods: [],
+    disabled: '',
+    t: null,
 });
 
-export const createFill = (id: string): Fill => ({
+export const createFill = (id: string): FillOrLine => ({
     id,
     color: 0,
     mods: [],
-});
-
-export const createLine = (id: string): Line => ({
-    id,
-    color: 0,
-    width: 1,
-    mods: [],
+    order: 0,
 });

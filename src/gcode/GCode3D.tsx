@@ -140,7 +140,7 @@ export const GCode3D = ({
     const stateRef = React.useRef(null as null | any);
     const [download, setDownload] = React.useState(null as null | {url: string; img: string});
     const qsize = 500;
-    const virtualCamera = React.useRef<Camera >(null);
+    const virtualCamera = React.useRef<Camera>(null);
 
     return (
         <div>

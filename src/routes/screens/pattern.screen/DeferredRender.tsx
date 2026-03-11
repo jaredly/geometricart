@@ -3,14 +3,16 @@ import {Coord} from '../../../types';
 import {PendingState, PendingStateUpdate, useEditState, usePendingState} from './utils/editState';
 import {RenderItem} from './eval/evaluate';
 import {Color} from './export-types';
-import {State} from './types/state-type';
+import {ExportConfig2d, State} from './types/state-type';
 import {WorkerSend} from './render/render-client';
 import {MessageResponse, MessageToWorker} from './render/render-worker';
 import {renderShape} from './render/renderShape';
 import {Hover} from './utils/resolveMods';
-import {Canvas, SVGCanvas} from './SVGCanvas';
+import {SVGCanvas} from './SVGCanvas';
+import {Canvas} from './Canvas';
 import {ZoomProps} from './hooks/useSVGZoom';
 import {expandShapes} from './utils/expandShapes';
+import {useValue} from '../../../json-diff/react';
 
 export const renderShapes = (
     shapes: State['shapes'],
@@ -30,22 +32,26 @@ export const DeferredRender = ({
     state,
     t,
     zoomProps,
-    size,
+    config,
     onFPS,
+    size,
+    setSize,
 }: {
     setWarnings(v: string[]): void;
-    size: number;
+    config: ExportConfig2d;
     t: number;
     state: State;
     worker: WorkerSend;
+    size: Coord;
+    setSize: (size: Coord) => void;
     zoomProps: ZoomProps;
     onFPS: (v: number) => void;
 }) => {
     const [mouse, setMouse] = useState(null as null | Coord);
 
     const editContext = useEditState();
-    const hover = editContext.use((v) => v.hover);
-    const eShowShapes = editContext.use((v) => v.showShapes);
+    const hover = useValue(editContext.$.hover);
+    const eShowShapes = useValue(editContext.$.showShapes);
 
     const [remoteData, setRemoteData] = useState<null | {
         bg: Color | null;
@@ -57,7 +63,7 @@ export const DeferredRender = ({
     const bouncy = useRef<boolean | MessageToWorker>(false);
 
     useEffect(() => {
-        const msg: MessageToWorker = {type: 'frame', state, t};
+        const msg: MessageToWorker = {type: 'frame', state, t, config};
         if (bouncy.current) {
             bouncy.current = msg;
             return;
@@ -81,10 +87,10 @@ export const DeferredRender = ({
 
         bouncy.current = true;
         worker(msg, got);
-    }, [state, t, worker, setWarnings, onFPS]);
+    }, [state, t, worker, setWarnings, onFPS, config]);
 
     const pendingState = usePendingState();
-    const pending = pendingState.use((v) => v.pending);
+    const pending = useValue(pendingState.$.pending);
     const selectedShapes = pending?.type === 'select-shapes' ? pending.shapes : [];
 
     const showShapes =
@@ -92,7 +98,7 @@ export const DeferredRender = ({
 
     const shapesItems = useMemo((): RenderItem[] => {
         if (!showShapes && !hover) return [];
-        let expanded = expandShapes(state.shapes, state.layers);
+        let expanded = expandShapes(state.shapes, state.entities);
         if (!showShapes && hover) {
             expanded = Object.fromEntries(
                 Object.entries(expanded).filter(([k, v]) =>
@@ -101,18 +107,10 @@ export const DeferredRender = ({
             );
         }
 
-        return renderShapes(expanded, hover, selectedShapes, pendingState.update, pending).sort(
+        return renderShapes(expanded, hover, selectedShapes, pendingState.$, pending).sort(
             (a, b) => (a.zIndex ?? 0) - (b.zIndex ?? 0),
         );
-    }, [
-        showShapes,
-        state.shapes,
-        state.layers,
-        hover,
-        selectedShapes,
-        pendingState.update,
-        pending,
-    ]);
+    }, [showShapes, state.shapes, state.entities, hover, selectedShapes, pendingState.$, pending]);
 
     const both = useMemo(
         () => (remoteData?.items ? [...remoteData.items, ...shapesItems] : []),
@@ -143,6 +141,7 @@ export const DeferredRender = ({
             mouse={mouse}
             setMouse={setMouse}
             items={both}
+            setSize={setSize}
             size={size}
             byKey={remoteData.byKey}
             bg={remoteData.bg}

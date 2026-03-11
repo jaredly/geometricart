@@ -5,7 +5,7 @@ import {push} from '../../../rendering/getMirrorTransforms';
 import {BarePath, Coord} from '../../../types';
 import {AnimCtx, RenderItem} from './eval/evaluate';
 import {colorToRgb} from './export-types';
-import {State} from './types/state-type';
+import {ExportConfig2d, State} from './types/state-type';
 import {LogItem, LogItems, RenderLog} from './utils/resolveMods';
 import {svgItems} from './render/svgItems';
 import {SVGCanvas} from './SVGCanvas';
@@ -17,6 +17,8 @@ import {Updater} from '../../../json-diff/Updater';
 import {ShowRenderLog} from './ShowRenderLog';
 import {useLocalStorage} from '../../../vest/useLocalStorage';
 import {useLocation} from 'react-router';
+import {makeBox} from './makeBox';
+import {useValue} from '../../../json-diff/react';
 
 const allItems = (log: RenderLog): LogItem[] => {
     if (log.type === 'items') return log.items.flatMap((l) => l.item);
@@ -180,7 +182,7 @@ export const RenderDebug = ({state, update}: {state: State; update: Updater<Stat
     const t = m ? +m[0].split('=')[1] : 0;
 
     const es = useEditState();
-    const hover = es.use((es) => es.hover);
+    const hover = useValue(es.$.hover);
     // const t = 0.763;
     // const t = 0.592;
     // const t = 0.992;
@@ -191,9 +193,14 @@ export const RenderDebug = ({state, update}: {state: State; update: Updater<Stat
         [state, cropCache, animCache, t],
     );
 
-    const {zoomProps, box, reset: resetZoom} = useElementZoom(state.view.box);
+    const vbox = useMemo(() => makeBox(state.view, 500, 500), [state.view]);
+
+    const {zoomProps, box, reset: resetZoom} = useElementZoom(vbox);
     const [mouse, setMouse] = useState(null as null | Coord);
-    const size = 500;
+    const config = useMemo(
+        () => ({scale: state.view.ppu, box, type: '2d' as const}),
+        [state.view.ppu, box],
+    );
 
     const [detectOverlaps, setDetectOverlaps] = useState(false);
 
@@ -236,7 +243,7 @@ export const RenderDebug = ({state, update}: {state: State; update: Updater<Stat
                     keyPoints={keyPoints}
                     setMouse={setMouse}
                     items={both}
-                    size={size}
+                    size={{x: 500, y: 500}}
                     byKey={byKey}
                     bg={bg}
                 />
@@ -251,7 +258,7 @@ export const RenderDebug = ({state, update}: {state: State; update: Updater<Stat
                         <button
                             className="btn btn-square px-2 py-1 bg-base-100"
                             onClick={() => {
-                                update.view.box(box);
+                                // update.view.box(box);
                             }}
                         >
                             <AddIcon />

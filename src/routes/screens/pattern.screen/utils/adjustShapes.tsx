@@ -15,7 +15,7 @@ import {
 import {addToMap} from '../../../addToMap';
 import {coordPairOnShape, coordPairOnShape2, overlapping} from './coordPairOnShape';
 import {Ctx} from '../eval/evaluate';
-import {PMods, TChunk, AnimatableValue} from '../export-types';
+import {PMods, TChunk, AnimatableValue, Orderable, OValue} from '../export-types';
 import {
     resolveT,
     withShared,
@@ -58,8 +58,8 @@ export const adjustShapes2 = (
     adjustments: {
         shapes: {path: BarePath; id: string}[];
         mods: PMods[];
-        t?: TChunk;
-        shared?: Record<string, AnimatableValue>;
+        t: TChunk | null;
+        shared?: Orderable<OValue<AnimatableValue>>;
     }[],
     log = false,
 ) => {
@@ -238,7 +238,7 @@ export const adjustShapes = (
         shapes: {path: BarePath; id: string}[];
         mods: PMods[];
         t?: TChunk;
-        shared?: Record<string, AnimatableValue>;
+        shared: Orderable<OValue<AnimatableValue>>;
     }[],
     log = false,
 ) => {

@@ -1,11 +1,11 @@
 import React, {useState} from 'react';
 import {
     Color,
-    Line,
     AnimatableNumber,
     AnimatableColor,
     AnimatableBoolean,
     AnimatableValue,
+    FillOrLine,
 } from '../export-types';
 import {ShadowEditor} from './ShadowEditor';
 import {AnimColor} from './AnimColor';
@@ -23,15 +23,15 @@ export const LineEditor = ({
     reId,
 }: {
     palette: Color[];
-    value: Line;
-    update: Updater<Line>;
+    value: FillOrLine;
+    update: Updater<FillOrLine>;
     reId(newKey: string): void;
 }) => {
     const [showAll, setShowAll] = useState(false);
     return (
         <div className="space-y-2">
             <div className="flex flex-row flex-wrap gap-2 items-center">
-                <button className="btn btn-ghost btn-xs text-error " onClick={update.remove}>
+                <button className="btn btn-ghost btn-xs text-error " onClick={update.$remove}>
                     &times;
                 </button>
                 <ExpandableEditor value={value.id} onChange={reId} />
@@ -40,30 +40,20 @@ export const LineEditor = ({
                 </button>
                 {[
                     <Labeled text="Enabled" key="enabled">
-                        <BooleanInput
-                            value={value.enabled}
-                            onChange={(enabled) => update.enabled(enabled)}
-                        />
+                        <BooleanInput value={value.enabled} onChange={update.enabled.$replace} />
                     </Labeled>,
                     <Labeled text="Opacity" key="opacity">
-                        <NumberInput
-                            value={value.opacity}
-                            onChange={(opacity) => update.opacity(opacity)}
-                        />
+                        <NumberInput value={value.opacity} onChange={update.opacity.$replace} />
                     </Labeled>,
                     <Labeled text="zIndex" key="zIndex">
-                        <NumberInput
-                            value={value.zIndex}
-                            onChange={(zIndex) => update.zIndex(zIndex)}
-                        />
+                        <NumberInput value={value.zIndex} onChange={update.zIndex.$replace} />
                     </Labeled>,
                     <AnimColor
                         key="color"
                         palette={palette}
                         label="Color"
                         value={value.color}
-                        // biome-ignore lint: this one is fine
-                        onChange={update.color as Updater<any>}
+                        onChange={update.color.$replace}
                     />,
                     <AnimColor
                         key="tint"
@@ -73,19 +63,15 @@ export const LineEditor = ({
                         placeholder="rgb or hsl"
                         onChange={(tint, when) => update.tint(tint as AnimatableColor, when)}
                     />,
-                    <Labeled text="Width" key="width">
-                        <NumberInput
-                            value={value.width}
-                            onChange={(width) => update.width(width)}
-                        />
-                    </Labeled>,
-                    <Labeled text="Sharp" key="sharp">
-                        <BooleanInput
-                            value={value.sharp}
-                            // biome-ignore lint: this one is fine
-                            onChange={update.sharp as Updater<any>}
-                        />
-                    </Labeled>,
+                    // <Labeled text="Width" key="width">
+                    //     <NumberInput
+                    //         value={value.width}
+                    //         onChange={(width) => update.width(width)}
+                    //     />
+                    // </Labeled>,
+                    // <Labeled text="Sharp" key="sharp">
+                    //     <BooleanInput value={value.sharp} onChange={update.sharp.$replace} />
+                    // </Labeled>,
                     <Labeled text="shadow" key="shadow" className="bg-base-100 p-2 relative">
                         <ShadowEditor
                             value={value.shadow ?? null}

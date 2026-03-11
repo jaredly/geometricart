@@ -1,103 +1,82 @@
-import {useEffect, useMemo, useRef, useState} from 'react';
-import {BarePath, Coord, shapeKey} from '../../../types';
-import {Path, pk} from '../../pk';
-import {shapeD} from '../../shapeD';
-import {colorToString} from './utils/colors';
-import {RenderItem, RenderShadow} from './eval/evaluate';
-import {Box, Color} from './export-types';
-import {State} from './types/state-type';
-import {renderItems} from './render/renderItems';
-import {percentToWorld, worldToPercent, svgCoord, ZoomProps} from './hooks/useSVGZoom';
-import {coordKey} from '../../../rendering/coordKey';
-import {useEditState, usePendingState} from './utils/editState';
-import {coordsEqual} from '../../../rendering/pathsAreIdentical';
+import {useEffect, useMemo, useState} from 'react';
 import {calcPathD} from '../../../editor/calcPathD';
-import {transformBarePath} from '../../../rendering/points';
+import {useValue} from '../../../json-diff/react';
+import {coordKey} from '../../../rendering/coordKey';
 import {translationMatrix} from '../../../rendering/getMirrorTransforms';
-import {edgesByEndpoint, unique} from '../../shapesFromSegments';
-import {coordPairKey, sortCoordPair} from './utils/adjustShapes';
-import {pathsFromSegments} from '../../pathsFromSegments';
-import {outerBoundary} from '../../outerBoundary';
+import {coordsEqual} from '../../../rendering/pathsAreIdentical';
+import {transformBarePath} from '../../../rendering/points';
+import {BarePath, Coord} from '../../../types';
 import {followPath} from '../../followPath';
-import {barePathFromCoords} from './utils/resolveMods';
+import {outerBoundary} from '../../outerBoundary';
+import {pathsFromSegments} from '../../pathsFromSegments';
+import {edgesByEndpoint, unique} from '../../shapesFromSegments';
+import {RenderItem} from './eval/evaluate';
+import {Box, Color} from './export-types';
 import {generateSvgItems} from './generateSvgItems';
-import {GrDirectContext, Surface} from 'canvaskit-wasm';
-import {getConstrainedSurface} from './render/recordVideo';
+import {svgCoord, ZoomProps} from './hooks/useSVGZoom';
+import {State} from './types/state-type';
+import {coordPairKey, sortCoordPair} from './utils/adjustShapes';
+import {colorToString} from './utils/colors';
+import {usePendingState} from './utils/editState';
+import {barePathFromCoords} from './utils/resolveMods';
+import {Bounds, boundsForCoords} from '../../../editor/Bounds';
 
-export const Canvas = ({
-    items,
-    size,
-    setMouse,
-    zoomProps: {innerRef, box},
-    bg,
-    t,
-}: {
-    items: RenderItem[];
-    bg: Color | null;
-    state: State;
-    mouse: Coord | null;
-    size: number;
-    zoomProps: ZoomProps;
-    setMouse: (m: Coord | null) => void;
-    byKey: Record<string, string[]>;
-    t: number;
-}) => {
-    const sref = useRef<null | {surface: Surface | null; grc: GrDirectContext}>(null);
-    // const font = usePromise(() => fetch('/assets/Roboto-Regular.ttf').then((r) => r.arrayBuffer()));
-    useEffect(() => {
-        if (!sref.current) return;
-        const {surface} = sref.current;
-        // const {surface, grc} = getConstrainedSurface(innerRef.current.node! as HTMLCanvasElement);
-        // no need for AA when previewing
-        renderItems(surface!, box, items, bg, false);
-        // surface!.delete();
-        // grc.releaseResourcesAndAbandonContext();
-    }, [box, items, bg]);
+export const boxForBounds = (bounds: Bounds): Box => ({
+    x: bounds.x0,
+    y: bounds.y0,
+    width: bounds.x1 - bounds.x0,
+    height: bounds.y1 - bounds.y0,
+});
 
-    useEffect(() => {
-        return () => sref.current?.grc.releaseResourcesAndAbandonContext();
-    }, []);
-
-    return (
-        <canvas
-            ref={(node) => {
-                if (node && innerRef.current.node !== node) {
-                    sref.current = getConstrainedSurface(node);
-                    innerRef.current.node = node;
-                    innerRef.current.tick();
-                }
-            }}
-            style={{background: 'black', width: size, height: size}}
-            width={size * 2}
-            height={size * 2}
-            onMouseLeave={() => setMouse(null)}
-            onMouseMove={(evt) => {
-                const cbox = evt.currentTarget.getBoundingClientRect();
-                setMouse(
-                    percentToWorld(worldToPercent({x: evt.clientX, y: evt.clientY}, cbox), box),
-                );
-            }}
-        />
-    );
+export const asRect = (coords: Coord[], startCenter: boolean) => {
+    if (startCenter) {
+        const c = coords[0];
+        let x0 = c.x;
+        let y0 = c.y;
+        let x1 = c.x;
+        let y1 = c.y;
+        const add = (coord: Coord) => {
+            x0 = Math.min(x0, coord.x);
+            y0 = Math.min(y0, coord.y);
+            x1 = Math.max(x1, coord.x);
+            y1 = Math.max(y1, coord.y);
+        };
+        for (let i = 1; i < coords.length; i++) {
+            add(coords[i]);
+            add({x: c.x * 2 - coords[i].x, y: c.y * 2 - coords[i].y});
+        }
+        return boxForBounds({x0, y0, x1, y1});
+    } else {
+        return boxForBounds(boundsForCoords(...coords));
+    }
 };
+
+const barePathForBox = (box: Box): BarePath => ({
+    origin: {x: box.x, y: box.y},
+    segments: [
+        {type: 'Line', to: {x: box.x, y: box.y + box.height}},
+        {type: 'Line', to: {x: box.x + box.width, y: box.y + box.height}},
+        {type: 'Line', to: {x: box.x + box.width, y: box.y}},
+    ],
+});
 
 export const SVGCanvas = ({
     items,
-    size,
     zoomProps: {box, innerRef},
     state,
+    size,
     setMouse,
     keyPoints,
     // byKey,
     mouse,
     bg,
 }: {
+    size: Coord;
     state: State;
     mouse: Coord | null;
     keyPoints: ([Coord, Coord] | Coord)[];
     bg: Color | null;
     items: RenderItem[];
-    size: number;
     zoomProps: ZoomProps;
     setMouse: (m: Coord | null) => void;
     byKey: Record<string, string[]>;
@@ -112,17 +91,24 @@ export const SVGCanvas = ({
 
     const editContext = usePendingState();
 
-    const pending = editContext.use((s) => s.pending);
+    const pending = useValue(editContext.$.pending);
 
     useEffect(() => {
         const fn = (evt: KeyboardEvent) => {
             if (evt.key === 'Enter') {
+                if (pending?.type === 'rect') {
+                    editContext.$.pending(null);
+                    if (pending.points.length > 1) {
+                        pending.onDone(asRect(pending.points, pending.startCenter));
+                    }
+                    return;
+                }
                 if (pending?.type !== 'shape') return;
-                editContext.update.pending.replace(null);
+                editContext.$.pending(null);
                 pending.onDone(pending.points, true);
             }
             if (evt.key === 'Escape') {
-                editContext.update.pending.replace(null);
+                editContext.$.pending(null);
             }
         };
         document.addEventListener('keydown', fn);
@@ -136,11 +122,15 @@ export const SVGCanvas = ({
     const svgItems = generateSvgItems(paths, focus, lw);
 
     const pendingShape =
-        pending?.type === 'shape' && pending.points.length > (mouse ? 0 : 1)
-            ? pending.asShape
-                ? pending.asShape(mouse ? [...pending.points, mouse] : pending.points)
-                : barePathFromCoords(mouse ? [...pending.points, mouse] : pending.points)
-            : null;
+        pending?.type === 'rect' && pending.points.length > (mouse ? 0 : 1)
+            ? barePathForBox(
+                  asRect(mouse ? [...pending.points, mouse] : pending.points, pending.startCenter),
+              )
+            : pending?.type === 'shape' && pending.points.length > (mouse ? 0 : 1)
+              ? pending.asShape
+                  ? pending.asShape(mouse ? [...pending.points, mouse] : pending.points)
+                  : barePathFromCoords(mouse ? [...pending.points, mouse] : pending.points)
+              : null;
 
     return (
         // <div>
@@ -153,7 +143,11 @@ export const SVGCanvas = ({
                     innerRef.current.tick();
                 }
             }}
-            style={{background: bg ? colorToString(bg) : undefined, width: size, height: size}}
+            style={{
+                background: bg ? colorToString(bg) : undefined,
+                width: size.x,
+                height: size.y,
+            }}
             onMouseLeave={() => setMouse(null)}
             onMouseMove={(evt) => setMouse(svgCoord(evt))}
         >
@@ -187,9 +181,13 @@ export const SVGCanvas = ({
                                 pending.onDone(pt);
                                 return;
                             }
+                            if (pending.type === 'rect') {
+                                editContext.$.pending.$variant('rect').points.$push(pt);
+                                return;
+                            }
                             if (pending.type !== 'shape') return;
                             if (pending.points.length && coordsEqual(pending.points[0], pt)) {
-                                editContext.update.pending.replace(null);
+                                editContext.$.pending(null);
 
                                 if (pending.points.length === 1) {
                                     const byEndPoint = edgesByEndpoint(segs);
@@ -208,7 +206,7 @@ export const SVGCanvas = ({
                                     pending.onDone(pending.points, false);
                                 }
                             } else {
-                                editContext.update.pending.variant('shape').points.push(pt);
+                                editContext.$.pending.$variant('shape').points.$push(pt);
                             }
                         }}
                         cursor={'pointer'}

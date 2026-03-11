@@ -8,11 +8,9 @@ export function useInitialPatterns(state?: ExportHistory | null) {
         async (signal) => {
             if (!state) return {};
             const ids = unique(
-                Object.values(state.current.layers)
-                    .flatMap((l) =>
-                        Object.values(l.entities).map((e) =>
-                            e.type === 'Pattern' && typeof e.tiling === 'string' ? e.tiling : null,
-                        ),
+                Object.values(state.current.entities)
+                    .map((e) =>
+                        e.type === 'Pattern' && typeof e.tiling === 'string' ? e.tiling : null,
                     )
                     .filter(notNull),
                 (x) => x,

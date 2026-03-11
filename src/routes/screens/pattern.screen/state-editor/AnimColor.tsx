@@ -106,8 +106,8 @@ export const AnimColor = ({
                 {colorV ? (
                     <ColorInput
                         value={colorV}
-                        onChange={(color) => onChange(color)}
-                        onPreview={(color) => onChange(color, 'preview')}
+                        onChange={(color) => onChange(colorToString(color))}
+                        onPreview={(color) => onChange(colorToString(color), 'preview')}
                     />
                 ) : null}
             </div>
@@ -121,8 +121,7 @@ export const AnimColor = ({
                 }
                 placeholder={placeholder}
                 onChange={(value) => {
-                    const parsed = parseAnimatable(value);
-                    onChange(value.trim() ? parsed : undefined);
+                    onChange(value.trim() ? value.trim() : undefined);
                 }}
             />
         </label>

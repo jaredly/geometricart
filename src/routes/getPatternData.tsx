@@ -48,6 +48,7 @@ import {coordsEqual} from '../rendering/pathsAreIdentical';
 import {evalQuad} from './screens/animator.screen/splitSegment';
 import {centroid} from './findReflectionAxes';
 import {RenderLog} from './screens/pattern.screen/utils/resolveMods';
+import {PatternSize} from './screens/pattern.screen/export-types';
 
 export const cmdsForCoords = (coords: Coord[], open = true) => {
     return [
@@ -234,7 +235,7 @@ export const shapeSegments = (shape: Coord[]) => {
 
 export type Crop = {segments: Segment[]; hole?: boolean; rough?: boolean};
 
-export const getSimplePatternData = (tiling: ThinTiling, size: Coord | number) => {
+export const getSimplePatternData = (tiling: ThinTiling, size: PatternSize) => {
     const bounds = tilingPoints(tiling.shape);
     const eigenSegments = tiling.segments.map((s) => [s.prev, s.segment.to] as [Coord, Coord]);
 
@@ -257,7 +258,7 @@ export const getSimplePatternData = (tiling: ThinTiling, size: Coord | number) =
         tiling.shape,
         bounds[2],
         bounds,
-        typeof size === 'number' ? simpleSize(tiling.shape, size) : size,
+        size.type === 'uniform' ? simpleSize(tiling.shape, size.size) : size.coord,
     );
     const transformedShapes = applyTilingTransformsG(initialShapes, ttt, transformShape);
     const uniqueShapes = sortShapesByPolar(
@@ -301,10 +302,10 @@ export const getShapeColors = (allShapes: Coord[][], minSegLength: number, log?:
 
 export const getNewPatternData = (tiling: ThinTiling, size = 2, crops?: Crop[]) => {
     const bounds = tilingPoints(tiling.shape);
-    const {uniqueShapes, initialShapes, minSegLength, canons, ttt} = getSimplePatternData(
-        tiling,
-        simpleSize(tiling.shape, size),
-    );
+    const {uniqueShapes, initialShapes, minSegLength, canons, ttt} = getSimplePatternData(tiling, {
+        type: 'uniform',
+        size,
+    });
 
     const allShapes = cropShapes(uniqueShapes, crops).flat();
     const allSegments = unique(

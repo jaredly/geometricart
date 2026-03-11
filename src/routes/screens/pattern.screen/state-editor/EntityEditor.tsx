@@ -5,7 +5,7 @@ import {Color, Entity, EObject} from '../export-types';
 import {useExportState} from '../ExportHistory';
 import {useEditState} from '../utils/editState';
 import {objectShapes} from '../utils/resolveMods';
-import {createFill, createLine} from './createLayerTemplate';
+import {createFill} from './createLayerTemplate';
 import {FillEditor, ModsEditor} from './FillEditor';
 import {GroupEditor} from './GroupEditor';
 import {LineEditor} from './LineEditor';
@@ -38,23 +38,23 @@ export const EntityEditor = ({
                     onMouseEnter={() => {
                         if (value.type === 'Object') {
                             if (value.multiply) {
-                                es.update.hover({
+                                es.$.hover({
                                     type: 'shapes',
                                     ids: objectShapes(value.shape, expandedShapes),
                                 });
                             } else {
-                                es.update.hover({type: 'shape', id: value.shape});
+                                es.$.hover({type: 'shape', id: value.shape});
                             }
                         }
                     }}
-                    onMouseLeave={() => (value.type === 'Object' ? es.update.hover.remove() : null)}
+                    onMouseLeave={() => (value.type === 'Object' ? es.$.hover.$remove() : null)}
                 >
                     {value.type}
                     {value.type === 'Object' ? <span className="px-4">{value.shape}</span> : null}
                     <div className="flex-1" />
                     {value.type === 'Pattern' && (
                         <a
-                            className="link text-sm mx-4"
+                            className="link text-sm mx-4 hover:text-amber-400"
                             target="_blank"
                             href={`/gallery/pattern/${typeof value.tiling === 'string' ? value.tiling : value.tiling.id}`}
                         >
@@ -62,24 +62,28 @@ export const EntityEditor = ({
                         </a>
                     )}
 
-                    <button className="btn btn-ghost btn-xs text-error" onClick={update.remove}>
+                    <button className="btn btn-ghost btn-xs text-error" onClick={update.$remove}>
                         Remove
                     </button>
                 </div>
             </summary>
 
             {value.type === 'Group' ? (
-                <GroupEditor value={value} update={update.variant('Group')} />
+                <GroupEditor value={value} update={update.$variant('Group')} />
             ) : null}
             {value.type === 'Pattern' ? (
-                <PatternEditor palette={palette} value={value} update={update.variant('Pattern')} />
+                <PatternEditor
+                    palette={palette}
+                    value={value}
+                    update={update.$variant('Pattern')}
+                />
             ) : null}
             {value.type === 'Object' ? (
                 <ObjectEditor
                     expandedShapes={expandedShapes}
                     palette={palette}
                     value={value}
-                    update={update.variant('Object')}
+                    update={update.$variant('Object')}
                 />
             ) : null}
         </details>
@@ -107,9 +111,9 @@ const ObjectEditor = ({
                         onChange={(evt) => {
                             const id = evt.target.value;
                             if (id !== '') {
-                                update.shape.replace(id);
+                                update.shape(id);
                             } else {
-                                update.shape.remove();
+                                update.shape.$remove();
                             }
                         }}
                         value={value.shape ?? ''}
@@ -131,7 +135,7 @@ const ObjectEditor = ({
                             if (evt.target.checked) {
                                 update.multiply(true);
                             } else {
-                                update.multiply.remove();
+                                update.multiply.$remove();
                             }
                         }}
                         checked={!!value.multiply}
@@ -141,7 +145,7 @@ const ObjectEditor = ({
             <SubStyleList
                 label="Fills"
                 emptyLabel="No fills"
-                items={value.style.fills}
+                items={value.style.items}
                 createItem={createFill}
                 render={(key, fill, update, reId) => (
                     <FillEditor
@@ -152,9 +156,9 @@ const ObjectEditor = ({
                         palette={palette}
                     />
                 )}
-                update={update.style.fills}
+                update={update.style.items}
             />
-            <SubStyleList
+            {/*<SubStyleList
                 label="Lines"
                 emptyLabel="No lines"
                 items={value.style.lines}
@@ -169,7 +173,7 @@ const ObjectEditor = ({
                     />
                 )}
                 update={update.style.lines}
-            />
+            />*/}
             <ModsEditor palette={palette} mods={value.style.mods} update={update.style.mods} />
         </div>
     );

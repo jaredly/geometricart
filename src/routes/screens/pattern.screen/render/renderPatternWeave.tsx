@@ -7,10 +7,11 @@ import {pathsFromSegments} from '../../../pathsFromSegments';
 import {unique, joinAdjacentShapeSegments, edgesByEndpoint} from '../../../shapesFromSegments';
 import {weaveIntersections2} from '../../../weaveIntersections';
 import {Ctx, AnimCtx} from '../eval/evaluate';
-import {Pattern, PatternContents, ConcreteLine, colorToRgb} from '../export-types';
+import {ConcreteFillOrLine, Pattern, PatternContents, colorToRgb} from '../export-types';
+import {orderedItems} from '../state-editor/nextOrder';
 import {sortCoordPair, coordPairKey} from '../utils/adjustShapes';
 import {withShared, withLocals, barePathFromCoords} from '../utils/resolveMods';
-import {resolveLine} from './renderPattern';
+import {resolveFill} from './renderPattern';
 
 export const renderPatternWeave = (
     baseShapes: Coord[][],
@@ -32,8 +33,8 @@ export const renderPatternWeave = (
     const pointNames = Object.fromEntries(uniquePoints.map((p, i) => [coordKey(p), i]));
     const outer = outerBoundary(allSegments, byEndPoint, pointNames);
     const paths = pathsFromSegments(allSegments, byEndPoint, outer);
-    const fronts = Object.values(pattern.contents.styles).flatMap((m) =>
-        m.disabled || Array.isArray(m.kind) ? [] : Object.values(m.lines),
+    const fronts = Object.values(contents.styles).flatMap((m) =>
+        m.disabled ? [] : Object.values(m.items),
     );
 
     const woven = weaveIntersections2(allSegments, paths);
@@ -54,9 +55,9 @@ export const renderPatternWeave = (
     );
 
     const animNone = withLocals(pwanim, {pathId: undefined, pathCenter: pathCenters.null});
-    const stylesForPathId: Record<string, ConcreteLine[]> = {};
+    const stylesForPathId: Record<string, ConcreteFillOrLine[]> = {};
     stylesForPathId.null = fronts.map((style) => {
-        return resolveLine(animNone, style);
+        return resolveFill(animNone, style);
     });
 
     for (let i = minPathId; i <= maxPathId; i++) {
@@ -64,16 +65,18 @@ export const renderPatternWeave = (
             pathId: i,
             pathCenter: pathCenters[i],
         });
-        stylesForPathId[i] = fronts.map((style) => resolveLine(anim, style));
+        stylesForPathId[i] = fronts.map((style) => resolveFill(anim, style));
     }
     const maxLineWidthForPathId = Object.fromEntries(
         Object.entries(stylesForPathId).map(([key, lines]) => [
             key,
             lines.reduce(
                 (max, line) =>
-                    line.color == null || !line.width || (line.enabled != null && !line.enabled)
+                    line.color == null ||
+                    !line.line?.width ||
+                    (line.enabled != null && !line.enabled)
                         ? max
-                        : Math.max(max, line.width),
+                        : Math.max(max, line.line.width),
                 0,
             ),
         ]),
@@ -83,25 +86,31 @@ export const renderPatternWeave = (
         if (!stylesForPathId[pathId ?? 'null']) {
             throw new Error(`not prepared for ${pathId}`);
         }
-        stylesForPathId[pathId ?? 'null'].forEach((line, k) => {
-            if (line.color == null || !line.width || (line.enabled != null && !line.enabled))
-                return;
+        stylesForPathId[pathId ?? 'null']
+            .sort((a, b) => a.order - b.order)
+            .forEach((line, k) => {
+                if (
+                    line.color == null ||
+                    !line.line?.width ||
+                    (line.enabled != null && !line.enabled)
+                )
+                    return;
 
-            ctx.items.push({
-                key: `elm-${i}--${k}`,
-                type: 'path',
-                shapes: [barePathFromCoords(points, true)],
-                masks: masks.map(({line, pathId}) => ({
-                    shape: barePathFromCoords(line, true),
-                    strokeWidth: maxLineWidthForPathId[pathId ?? 'null'] * 0.01,
-                })),
-                opacity: line.opacity,
-                // opacity: i % 10 === 0 ? 1 : 0.1,
-                zIndex: line.zIndex,
-                color: colorToRgb(line.color!),
-                strokeWidth: line.width! * 0.01,
+                ctx.items.push({
+                    key: `elm-${i}--${k}`,
+                    type: 'path',
+                    shapes: [barePathFromCoords(points, true)],
+                    masks: masks.map(({line, pathId}) => ({
+                        shape: barePathFromCoords(line, true),
+                        strokeWidth: maxLineWidthForPathId[pathId ?? 'null'] * 0.01,
+                    })),
+                    opacity: line.opacity,
+                    // opacity: i % 10 === 0 ? 1 : 0.1,
+                    zIndex: line.zIndex,
+                    color: colorToRgb(line.color!),
+                    strokeWidth: line.line.width! * 0.01,
+                });
             });
-        });
     });
 
     return;

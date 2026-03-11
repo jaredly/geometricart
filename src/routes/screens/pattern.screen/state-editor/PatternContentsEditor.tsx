@@ -8,16 +8,19 @@ import {Updater} from '../../../../json-diff/Updater';
 import {BaseKindEditor, ShapeKindEditor} from './BaseKindEditor';
 import {AnimInput, AnimValueInput} from './AnimInput';
 import {SharedEditor} from './SharedEditor';
+import {useExportState} from '../ExportHistory';
+import {useValue} from '../../../../json-diff/react';
+import {BaseKindSelector, KindSelector} from './ShapeStyleCard';
 
 export const PatternContentsEditor = ({
     value,
-    palette,
     update,
 }: {
-    palette: Color[];
     value: PatternContents;
     update: Updater<PatternContents>;
 }) => {
+    const state = useExportState();
+    const palette = useValue(state.$.styleConfig.palette);
     // const [type, setType] = useState<PatternContents['type']>(value.type);
     // useEffect(() => {
     //     setType(value.type);
@@ -34,7 +37,7 @@ export const PatternContentsEditor = ({
                     onChange={(evt) => {
                         const nextType = evt.target.value as PatternContents['type'];
                         if (nextType === value.type) return;
-                        update(swapType(nextType));
+                        update(swapType(nextType, value.id, value.order));
                     }}
                 >
                     <option value="shapes">Shapes</option>
@@ -49,7 +52,7 @@ export const PatternContentsEditor = ({
                         label="Origin"
                         value={value.origin}
                         onChange={(origin: AnimatableCoord | undefined | null) =>
-                            origin != null ? update.variant('layers').origin(origin) : undefined
+                            origin != null ? update.$variant('layers').origin(origin) : undefined
                         }
                     />
                     <label className="label cursor-pointer gap-2">
@@ -58,19 +61,21 @@ export const PatternContentsEditor = ({
                             className="checkbox"
                             type="checkbox"
                             checked={!!value.reverse}
-                            onChange={(evt) => update.variant('layers').reverse(evt.target.checked)}
+                            onChange={(evt) =>
+                                update.$variant('layers').reverse(evt.target.checked)
+                            }
                         />
                     </label>
                     <ShapeStylesEditor<BaseKind>
                         palette={palette}
                         styles={value.styles}
-                        update={update.variant('layers').styles}
+                        update={update.$variant('layers').styles}
                         KindEditor={BaseKindEditor}
-                        defaultKind={{type: 'everything'}}
+                        KindSelector={BaseKindSelector}
                     />
                     <SharedEditor
                         shared={value.shared}
-                        onChange={update.variant('layers').shared}
+                        onChange={update.$variant('layers').shared.$replace}
                     />
 
                     {/* <JsonEditor
@@ -90,25 +95,28 @@ export const PatternContentsEditor = ({
                     <NumberField
                         label="Flip"
                         value={value.flip ?? 0}
-                        onChange={update.variant('weave').flip}
+                        onChange={update.$variant('weave').flip.$replace}
                     />
                     <ShapeStylesEditor<BaseKind>
                         palette={palette}
                         styles={value.styles}
-                        update={update.variant('weave').styles}
+                        update={update.$variant('weave').styles}
                         KindEditor={BaseKindEditor}
-                        defaultKind={{type: 'everything'}}
+                        KindSelector={BaseKindSelector}
                     />
-                    <SharedEditor shared={value.shared} onChange={update.variant('weave').shared} />
+                    <SharedEditor
+                        shared={value.shared}
+                        onChange={update.$variant('weave').shared.$replace}
+                    />
                 </div>
             ) : null}
             {value.type === 'shapes' ? (
                 <ShapeStylesEditor<ShapeKind>
                     palette={palette}
                     styles={value.styles}
-                    update={update.variant('shapes').styles}
+                    update={update.$variant('shapes').styles}
                     KindEditor={ShapeKindEditor}
-                    defaultKind={{type: 'everything'}}
+                    KindSelector={KindSelector}
                 />
             ) : null}
             {value.type === 'lines' ? (
@@ -117,17 +125,17 @@ export const PatternContentsEditor = ({
                         label="Sort"
                         onChange={(v) =>
                             v == null
-                                ? update.variant('lines').sort.remove()
-                                : update.variant('lines').sort(v)
+                                ? update.$variant('lines').sort.$remove()
+                                : update.$variant('lines').sort(v)
                         }
                         value={value.sort}
                     />
                     <ShapeStylesEditor<BaseKind>
                         palette={palette}
                         styles={value.styles}
-                        update={update.variant('lines').styles}
+                        update={update.$variant('lines').styles}
                         KindEditor={BaseKindEditor}
-                        defaultKind={{type: 'everything'}}
+                        KindSelector={BaseKindSelector}
                     />
                 </>
             ) : null}
@@ -135,24 +143,33 @@ export const PatternContentsEditor = ({
     );
 };
 
-const swapType = (nextType: PatternContents['type']): PatternContents => {
+const swapType = (
+    nextType: PatternContents['type'],
+    id: string,
+    order: number,
+): PatternContents => {
     switch (nextType) {
         case 'shapes':
             return {
                 type: 'shapes',
+                id,
+                order,
+                disabled: '',
                 styles: {
                     style1: {
                         id: 'style1',
-                        kind: {type: 'everything'},
-                        lines: {
+                        kind: [],
+                        t: null,
+                        disabled: '',
+                        items: {
                             line1: {
                                 id: 'line1',
                                 mods: [],
-                                color: {r: 255, g: 0, b: 0},
-                                width: 1,
+                                color: '#f00',
+                                line: {width: 1},
+                                order: 0,
                             },
                         },
-                        fills: {},
                         mods: [],
                         order: 0,
                     },
@@ -161,47 +178,60 @@ const swapType = (nextType: PatternContents['type']): PatternContents => {
         case 'weave':
             return {
                 type: 'weave',
+                id,
+                order,
                 orderings: {},
+                shared: {},
+                disabled: '',
                 styles: {
                     line1: {
                         id: 'line1',
-                        kind: {type: 'everything'},
+                        kind: [],
                         mods: [],
                         order: 0,
-                        lines: {
+                        disabled: '',
+                        t: null,
+                        items: {
                             line1: {
                                 id: 'line1',
                                 mods: [],
                                 color: 'black',
-                                width: 10,
+                                line: {width: 10},
+                                order: 0,
                             },
                             line2: {
                                 id: 'line2',
                                 mods: [],
                                 color: 0,
-                                width: 5,
+                                line: {width: 5},
+                                order: 1,
                             },
                         },
-                        fills: {},
                     },
                 },
             };
         case 'lines':
             return {
                 type: 'lines',
+                id,
+                order,
+                sort: '',
+                disabled: '',
                 styles: {
                     style1: {
                         id: 'style1',
-                        kind: {type: 'everything'},
-                        lines: {
+                        disabled: '',
+                        t: null,
+                        kind: [],
+                        items: {
                             line1: {
                                 id: 'line1',
                                 mods: [],
                                 color: 'groupId',
-                                width: 1,
+                                line: {width: 1},
+                                order: 0,
                             },
                         },
-                        fills: {},
                         mods: [],
                         order: 0,
                     },
@@ -210,21 +240,27 @@ const swapType = (nextType: PatternContents['type']): PatternContents => {
         case 'layers':
             return {
                 type: 'layers',
-                origin: {x: 0, y: 0},
+                id,
+                order,
+                origin: '0,0',
                 reverse: false,
+                shared: {},
+                disabled: '',
                 styles: {
                     style1: {
                         id: 'style1',
-                        kind: {type: 'everything'},
-                        fills: {
+                        kind: [],
+                        disabled: '',
+                        t: null,
+                        items: {
                             fill1: {
+                                order: 0,
                                 id: 'fill1',
                                 mods: [],
                                 color: 0,
                                 opacity: 0.1,
                             },
                         },
-                        lines: {},
                         mods: [],
                         order: 0,
                     },

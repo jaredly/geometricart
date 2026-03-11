@@ -1,4 +1,4 @@
-import {useCallback, useMemo, useRef, useState} from 'react';
+import {useCallback, useContext, useMemo, useRef, useState} from 'react';
 import {AddIcon, BaselineFilterCenterFocus, BaselineZoomInMap} from '../../../icons/Icon';
 import {Updater} from '../../../json-diff/Updater';
 import {closeEnough} from '../../../rendering/epsilonToZero';
@@ -13,23 +13,22 @@ import {useElementZoom} from './hooks/useSVGZoom';
 import {VideoExport} from './VideoExport';
 import {SnapshotUrl} from './state-editor/saveAnnotation';
 import {useLocation, useNavigate} from 'react-router';
+import {makeBox} from './makeBox';
+import {GlobalDependenciesCtx} from './window/GlobalDependencies';
 
 export const RenderExport = ({
     namePrefix,
     state,
-    snapshotUrl,
     onChange,
-    worker,
 }: {
-    worker: WorkerSend;
     namePrefix: string;
     state: State;
     onChange: Updater<State>;
-    snapshotUrl: SnapshotUrl;
 }) => {
     const [t, setT] = useState(0); // animateeeee
     const animCache = useMemo<AnimCtx['cache']>(() => new Map(), []);
     const nav = useNavigate();
+    const {snapshotUrl, worker} = useContext(GlobalDependenciesCtx);
 
     const [duration, setDuration] = useState(5);
     const [animate, setAnimate] = useState(false);
@@ -40,8 +39,18 @@ export const RenderExport = ({
     // well this is exciting
     const cropCache = useCropCache(state, t, animCache);
 
-    const {zoomProps, box, reset: resetZoom} = useElementZoom(state.view.box);
-    const size = 500;
+    const [size, setSize] = useState({x: 1000, y: 500});
+
+    const vbox = useMemo(() => makeBox(state.view, size.x, size.y), [state.view, size]);
+    const {zoomProps, box, reset: resetZoom} = useElementZoom(vbox);
+    const config = useMemo(
+        () => ({
+            scale: Math.max(size.x / box.width, size.y / box.height),
+            box,
+            type: '2d' as const,
+        }),
+        [box, size],
+    );
 
     const statusRef = useRef<HTMLDivElement>(null);
 
@@ -53,7 +62,7 @@ export const RenderExport = ({
     );
 
     return (
-        <div className="flex">
+        <div className="flex flex-1">
             <div className="relative overflow-hidden">
                 <DeferredRender
                     worker={worker}
@@ -61,6 +70,8 @@ export const RenderExport = ({
                     onFPS={onFPS}
                     t={t}
                     state={state}
+                    config={config}
+                    setSize={setSize}
                     size={size}
                     zoomProps={zoomProps}
                 />
@@ -76,7 +87,12 @@ export const RenderExport = ({
                         <button
                             className="btn btn-square px-2 py-1 bg-base-100"
                             onClick={() => {
-                                onChange.view.box(box);
+                                const ppu = size.x / box.width;
+                                const center = {
+                                    x: box.x + box.width / 2,
+                                    y: box.y + box.height / 2,
+                                };
+                                onChange.view((one, up) => [up.ppu(ppu), up.center(center)]);
                             }}
                         >
                             <AddIcon />
@@ -125,8 +141,8 @@ export const RenderExport = ({
                 <VideoExport
                     worker={worker}
                     state={state}
-                    box={box}
-                    size={size}
+                    // box={box}
+                    config={config}
                     duration={duration}
                     statusRef={statusRef}
                     cropCache={cropCache}

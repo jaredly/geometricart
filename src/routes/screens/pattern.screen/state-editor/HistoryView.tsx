@@ -1,15 +1,17 @@
-import {useCallback, useMemo, useState} from 'react';
+import {useCallback, useContext, useMemo, useState} from 'react';
 import {addToMap} from '../../../addToMap';
 import {useOnOpen} from '../../../useOnOpen';
 import {useExportState, ExportHistory} from '../ExportHistory';
 import {AnnotationView, anSnapshot} from './AnnotationView';
 import {SnapshotUrl} from './saveAnnotation';
+import {GlobalDependenciesCtx} from '../window/GlobalDependencies';
 
-export const HistoryView = ({snapshotUrl}: {snapshotUrl: SnapshotUrl}) => {
+export const HistoryView = () => {
     const ctx = useExportState();
     const history = ctx.useHistory();
     const [showDialog, setShowDialog] = useState(false);
     const dialogRef = useOnOpen(setShowDialog);
+    const {snapshotUrl} = useContext(GlobalDependenciesCtx);
 
     const jump = useCallback((id: string) => ctx.dispatch({op: 'jump', id}), [ctx]);
 
@@ -149,7 +151,7 @@ const renderNode = (id: string, ctx: NCtx) => {
                 id={`annotation-${id}`}
             >
                 <div className="font-mono">{id}</div>
-                {history.annotations[id]?.map((an, i) => (
+                {Object.values(history.annotations[id] ?? {}).map((an, i) => (
                     <AnnotationView
                         key={i}
                         src={anSnapshot(an, snapshotUrl)}

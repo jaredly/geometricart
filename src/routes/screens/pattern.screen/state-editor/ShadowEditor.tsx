@@ -12,7 +12,7 @@ export const ShadowEditor = ({
 }: {
     palette: Color[];
     value: Shadow | null;
-    update: Updater<Shadow>;
+    update: Updater<Shadow | undefined>;
 }) => {
     if (!value) {
         return (
@@ -21,9 +21,9 @@ export const ShadowEditor = ({
                     className="btn btn-sm"
                     onClick={() =>
                         update({
-                            blur: {x: 0, y: 0},
-                            offset: {x: 3, y: 3},
-                            color: {r: 0, g: 0, b: 0},
+                            blur: '0,0',
+                            offset: '3,3',
+                            color: '#000',
                         })
                     }
                 >
@@ -38,7 +38,7 @@ export const ShadowEditor = ({
                 <div className="flex flex-col md:flex-row gap-2 md:items-center">
                     <button
                         className="btn btn-ghost btn-xs text-error"
-                        onClick={() => update.remove()}
+                        onClick={() => update.$remove()}
                     >
                         Remove
                     </button>
@@ -52,7 +52,7 @@ export const ShadowEditor = ({
             <div className="flex flex-col md:flex-row gap-2 md:items-center">
                 <button
                     className="btn btn-ghost btn-xs text-error absolute top-2 right-2"
-                    onClick={() => update.remove()}
+                    onClick={() => update.$remove()}
                 >
                     Remove
                 </button>

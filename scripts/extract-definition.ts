@@ -228,15 +228,21 @@ async function extractDefinition(options: ExtractOptions) {
 
     // let finalFileContent: string;
     let existingDefinitionNames: Set<string> = new Set();
-    let newFileImports: string[] = necessaryImports
-    let existingCode: string = ''
+    let newFileImports: string[] = necessaryImports;
+    let existingCode: string = '';
 
     if (fs.existsSync(targetFile)) {
         // File exists - merge imports and append definitions
         console.log(`⚠️  Target file already exists, appending definitions...`);
-        const result = constructMergedFileContent(targetFile, existingDefinitionNames, definitionNames, sourceFile, necessaryImports, );
-        newFileImports = result.imports
-        existingCode = result.existingCode
+        const result = constructMergedFileContent(
+            targetFile,
+            existingDefinitionNames,
+            definitionNames,
+            sourceFile,
+            necessaryImports,
+        );
+        newFileImports = result.imports;
+        existingCode = result.existingCode;
         // console.log(finalFileContent)
     } else {
         // New file - just write imports and definitions
@@ -244,7 +250,11 @@ async function extractDefinition(options: ExtractOptions) {
     }
 
     // console.log('writing to', targetFile)
-    fs.writeFileSync(targetFile, [...newFileImports, existingCode, allDefinitionCode].join('\n'), 'utf-8');
+    fs.writeFileSync(
+        targetFile,
+        [...newFileImports, existingCode, allDefinitionCode].join('\n'),
+        'utf-8',
+    );
     console.log(`✓ Wrote ${targetFile}`);
 
     // Find all definitions in the source file (to detect same-file dependencies)
@@ -290,10 +300,12 @@ async function extractDefinition(options: ExtractOptions) {
         );
 
         // Recreate the new file with updated imports
-        const updatedNewFileContent = [...newFileImports, '', existingCode, allDefinitionCode].join('\n');
+        const updatedNewFileContent = [...newFileImports, '', existingCode, allDefinitionCode].join(
+            '\n',
+        );
 
         // NOTE HERE IS THE ISSUE! We need to RE_READ the targetfile.
-        console.log(`Updating with same-file dependencies ${targetFile}`)
+        console.log(`Updating with same-file dependencies ${targetFile}`);
         fs.writeFileSync(targetFile, updatedNewFileContent, 'utf-8');
     }
 
@@ -497,7 +509,13 @@ function getAllSourceDefinitions(ast: parser.ParseResult<t.File>) {
     return allSourceDefinitions;
 }
 
-function constructMergedFileContent(targetFile: string, existingDefinitionNames: Set<string>, definitionNames: string[], sourceFile: string, necessaryImports: string[], ) {
+function constructMergedFileContent(
+    targetFile: string,
+    existingDefinitionNames: Set<string>,
+    definitionNames: string[],
+    sourceFile: string,
+    necessaryImports: string[],
+) {
     const existingContent = fs.readFileSync(targetFile, 'utf-8');
     const existingLines = existingContent.split('\n');
 
@@ -510,7 +528,7 @@ function constructMergedFileContent(targetFile: string, existingDefinitionNames:
     // Collect existing imports
     const existingImports = new Map<
         string,
-        { specifiers: Set<string>; isTypeImport: boolean; isDefault: boolean; isNamespace: boolean; }
+        {specifiers: Set<string>; isTypeImport: boolean; isDefault: boolean; isNamespace: boolean}
     >();
 
     traverse(existingAst, {
@@ -562,7 +580,7 @@ function constructMergedFileContent(targetFile: string, existingDefinitionNames:
     const duplicates = definitionNames.filter((name) => existingDefinitionNames.has(name));
     if (duplicates.length > 0) {
         throw new Error(
-            `Cannot append - definitions already exist in ${path.basename(targetFile)}: ${duplicates.join(', ')}`
+            `Cannot append - definitions already exist in ${path.basename(targetFile)}: ${duplicates.join(', ')}`,
         );
     }
 
@@ -609,7 +627,7 @@ function constructMergedFileContent(targetFile: string, existingDefinitionNames:
 
     console.log(`✓ Appended to existing ${targetFile}`);
     // return finalFileContent;
-    return {imports: mergedImports, existingCode: contentAfterImports}
+    return {imports: mergedImports, existingCode: contentAfterImports};
 }
 
 function findNecessaryImports(ast: parser.ParseResult<t.File>, localDependencies: Set<string>) {
@@ -623,7 +641,7 @@ function findNecessaryImports(ast: parser.ParseResult<t.File>, localDependencies
 
             nodePath.node.specifiers.forEach(
                 (
-                    spec: t.ImportSpecifier | t.ImportDefaultSpecifier | t.ImportNamespaceSpecifier
+                    spec: t.ImportSpecifier | t.ImportDefaultSpecifier | t.ImportNamespaceSpecifier,
                 ) => {
                     if (t.isImportSpecifier(spec) && t.isIdentifier(spec.imported)) {
                         const imported = spec.imported.name;
@@ -640,7 +658,7 @@ function findNecessaryImports(ast: parser.ParseResult<t.File>, localDependencies
                         if (localDependencies.has(local)) {
                             const typeKeyword = isTypeImport ? 'type ' : '';
                             necessaryImports.push(
-                                `import ${typeKeyword}${local} from '${source}';`
+                                `import ${typeKeyword}${local} from '${source}';`,
                             );
                         }
                     } else if (t.isImportNamespaceSpecifier(spec)) {
@@ -648,17 +666,17 @@ function findNecessaryImports(ast: parser.ParseResult<t.File>, localDependencies
                         if (localDependencies.has(local)) {
                             const typeKeyword = isTypeImport ? 'type ' : '';
                             necessaryImports.push(
-                                `import ${typeKeyword}* as ${local} from '${source}';`
+                                `import ${typeKeyword}* as ${local} from '${source}';`,
                             );
                         }
                     }
-                }
+                },
             );
 
             if (neededSpecifiers.length > 0) {
                 const typeKeyword = isTypeImport ? 'type ' : '';
                 necessaryImports.push(
-                    `import ${typeKeyword}{${neededSpecifiers.join(', ')}} from '${source}';`
+                    `import ${typeKeyword}{${neededSpecifiers.join(', ')}} from '${source}';`,
                 );
             }
         },
@@ -666,7 +684,12 @@ function findNecessaryImports(ast: parser.ParseResult<t.File>, localDependencies
     return necessaryImports;
 }
 
-function findDefinitions(ast: parser.ParseResult<t.File>, definitionNamesSet: Set<string>, definitions: DefinitionInfo[], lines: string[]) {
+function findDefinitions(
+    ast: parser.ParseResult<t.File>,
+    definitionNamesSet: Set<string>,
+    definitions: DefinitionInfo[],
+    lines: string[],
+) {
     traverse(ast, {
         ExportNamedDeclaration(nodePath: NodePath<t.ExportNamedDeclaration>) {
             const declaration = nodePath.node.declaration;
@@ -700,10 +723,12 @@ function findDefinitions(ast: parser.ParseResult<t.File>, definitionNamesSet: Se
         },
         FunctionDeclaration(nodePath: NodePath<t.FunctionDeclaration>) {
             const name = nodePath.node.id?.name;
-            if (name &&
+            if (
+                name &&
                 definitionNamesSet.has(name) &&
                 nodePath.node.loc &&
-                (!nodePath.parent || t.isProgram(nodePath.parent))) {
+                (!nodePath.parent || t.isProgram(nodePath.parent))
+            ) {
                 const start = nodePath.node.loc.start.line;
                 const end = nodePath.node.loc.end.line;
                 definitions.push({
@@ -717,10 +742,12 @@ function findDefinitions(ast: parser.ParseResult<t.File>, definitionNamesSet: Se
         },
         ClassDeclaration(nodePath: NodePath<t.ClassDeclaration>) {
             const name = nodePath.node.id?.name;
-            if (name &&
+            if (
+                name &&
                 definitionNamesSet.has(name) &&
                 nodePath.node.loc &&
-                (!nodePath.parent || t.isProgram(nodePath.parent))) {
+                (!nodePath.parent || t.isProgram(nodePath.parent))
+            ) {
                 const start = nodePath.node.loc.start.line;
                 const end = nodePath.node.loc.end.line;
                 definitions.push({
@@ -751,9 +778,11 @@ function findDefinitions(ast: parser.ParseResult<t.File>, definitionNamesSet: Se
         },
         TSTypeAliasDeclaration(nodePath: NodePath<t.TSTypeAliasDeclaration>) {
             const name = nodePath.node.id.name;
-            if (definitionNamesSet.has(name) &&
+            if (
+                definitionNamesSet.has(name) &&
                 nodePath.node.loc &&
-                (!nodePath.parent || t.isProgram(nodePath.parent))) {
+                (!nodePath.parent || t.isProgram(nodePath.parent))
+            ) {
                 const start = nodePath.node.loc.start.line;
                 const end = nodePath.node.loc.end.line;
                 definitions.push({
@@ -767,9 +796,11 @@ function findDefinitions(ast: parser.ParseResult<t.File>, definitionNamesSet: Se
         },
         TSInterfaceDeclaration(nodePath: NodePath<t.TSInterfaceDeclaration>) {
             const name = nodePath.node.id.name;
-            if (definitionNamesSet.has(name) &&
+            if (
+                definitionNamesSet.has(name) &&
                 nodePath.node.loc &&
-                (!nodePath.parent || t.isProgram(nodePath.parent))) {
+                (!nodePath.parent || t.isProgram(nodePath.parent))
+            ) {
                 const start = nodePath.node.loc.start.line;
                 const end = nodePath.node.loc.end.line;
                 definitions.push({
@@ -783,9 +814,11 @@ function findDefinitions(ast: parser.ParseResult<t.File>, definitionNamesSet: Se
         },
         TSEnumDeclaration(nodePath: NodePath<t.TSEnumDeclaration>) {
             const name = nodePath.node.id.name;
-            if (definitionNamesSet.has(name) &&
+            if (
+                definitionNamesSet.has(name) &&
                 nodePath.node.loc &&
-                (!nodePath.parent || t.isProgram(nodePath.parent))) {
+                (!nodePath.parent || t.isProgram(nodePath.parent))
+            ) {
                 const start = nodePath.node.loc.start.line;
                 const end = nodePath.node.loc.end.line;
                 definitions.push({
@@ -838,7 +871,14 @@ function mergeImports(
     // Parse new imports
     const newImportsMap = new Map<
         string,
-        {specifiers: Set<string>; isTypeImport: boolean; isDefault: boolean; isNamespace: boolean; defaultName?: string; namespaceName?: string}
+        {
+            specifiers: Set<string>;
+            isTypeImport: boolean;
+            isDefault: boolean;
+            isNamespace: boolean;
+            defaultName?: string;
+            namespaceName?: string;
+        }
     >();
 
     for (const importStatement of newImports) {
@@ -1150,7 +1190,7 @@ async function updateAllImports(oldFile: string, newFile: string, definitionName
                 }
             }
 
-            console.log(`Writimg 1139 ${file}`)
+            console.log(`Writimg 1139 ${file}`);
             fs.writeFileSync(file, updatedCode, 'utf-8');
             updatedCount++;
             console.log(`✓ Updated imports in ${path.relative(process.cwd(), file)}`);

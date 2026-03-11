@@ -26,20 +26,20 @@ import {a, AnimCtx, Ctx, isColor, isCoord, RenderItem, RenderShadow} from '../ev
 import {
     Color,
     colorToRgb,
-    ConcreteFill,
-    ConcreteLine,
-    Fill,
+    ConcreteFillOrLine,
+    FillOrLine,
     Hsl,
-    Line,
     Pattern,
     Shadow,
     ShapeKind,
 } from '../export-types';
+import {orderedItems} from '../state-editor/nextOrder';
 import {adjustShapes2, coordPairKey, coordPairs, sortCoordPair} from '../utils/adjustShapes';
 import {parseColor, Rgb} from '../utils/colors';
 import {notNull} from '../utils/notNull';
 import {
     barePathFromCoords,
+    concreteToRenderShadow,
     CropsAndMatrices,
     LogItems,
     modsToShapes,
@@ -97,118 +97,118 @@ export const renderPattern = (ctx: Ctx, _outer: CropsAndMatrices, pattern: Patte
         ctx.log?.push({type: 'group', title: 'Adjust Shapes', children: adjusted.debug});
     }
 
-    if (pattern.contents.type === 'lines') {
-        return renderPatternLines(baseShapes, pattern, simple, ctx, panim);
-    }
+    orderedItems(pattern.contents).forEach((contents) => {
+        if (contents.disabled === 'true') return;
+        if (contents.type === 'lines') {
+            renderPatternLines(baseShapes, pattern, contents, simple, ctx, panim);
+            return;
+        }
 
-    if (pattern.contents.type === 'weave') {
-        return renderPatternWeave(baseShapes, pattern, pattern.contents, ctx, panim);
-    }
+        if (contents.type === 'weave') {
+            renderPatternWeave(baseShapes, pattern, contents, ctx, panim);
+            return;
+        }
 
-    if (pattern.contents.type === 'layers') {
-        let frontier: Set<number> = new Set();
-        let closest: null | [number, number] = null;
-        baseShapes.forEach((shape, i) => {
-            const pos = centroid(shape);
-            const dst = pos.x * pos.x + pos.y * pos.y;
-            if (closest == null || closest[0] > dst) {
-                closest = [dst, i];
-            }
-        });
-
-        frontier.add(closest![1]);
-
-        const count = graduallyExpandShape(baseShapes, closest![1]).reverse();
-
-        const orderedStyles = Object.values(pattern.contents.styles).sort(
-            (a, b) => a.order - b.order,
-        );
-
-        let iter = 0;
-        count.forEach((shape, i) => {
-            const matchingStyles = orderedStyles.map((style) => {
-                // const match = Array.isArray(style.kind)
-                //     ? first(style.kind, (k) =>
-                //           matchKind(k, key, path.groupId ?? -1, center, simple.eigenCorners),
-                //       )
-                //     : matchKind(style.kind, key, path.groupId ?? -1, center, simple.eigenCorners);
-                // if (!match) {
-                //     return;
-                // }
-                return {style, match: true};
+        if (contents.type === 'layers') {
+            let frontier: Set<number> = new Set();
+            let closest: null | [number, number] = null;
+            baseShapes.forEach((shape, i) => {
+                const pos = centroid(shape);
+                const dst = pos.x * pos.x + pos.y * pos.y;
+                if (closest == null || closest[0] > dst) {
+                    closest = [dst, i];
+                }
             });
-            ctx.items.push(
-                ...renderPatternShape(
-                    shape,
+
+            frontier.add(closest![1]);
+
+            const count = graduallyExpandShape(baseShapes, closest![1]).reverse();
+
+            const orderedStyles = Object.values(contents.styles).sort((a, b) => a.order - b.order);
+
+            let iter = 0;
+            count.forEach((shape, i) => {
+                const matchingStyles = orderedStyles.map((style) => {
+                    // const match = Array.isArray(style.kind)
+                    //     ? first(style.kind, (k) =>
+                    //           matchKind(k, key, path.groupId ?? -1, center, simple.eigenCorners),
+                    //       )
+                    //     : matchKind(style.kind, key, path.groupId ?? -1, center, simple.eigenCorners);
+                    // if (!match) {
+                    //     return;
+                    // }
+                    return {style, match: true};
+                });
+                ctx.items.push(
+                    ...renderPatternShape(
+                        shape,
+                        ctx,
+                        i,
+                        panim,
+                        {i, maxI: count.length - 1},
+                        matchingStyles.filter(notNull),
+                        false,
+                    ),
+                );
+
+                // ctx.items.push({
+                //     type: 'path',
+                //     zIndex: -iter,
+                //     color: colorToRgb(hslToRgb((iter / 10) % 1, 1, 0.5)),
+                //     shapes: [barePathFromCoords(shape, false)],
+                //     key: iter++ + '',
+                // });
+            });
+
+            return;
+        }
+
+        // not doing yet
+        if (contents.type !== 'shapes') return;
+
+        const orderedStyles = Object.values(contents.styles).sort((a, b) => a.order - b.order);
+
+        const needColors = orderedStyles.some((s) => s.kind.some((k) => k.type === 'alternating'));
+        const {colors} = needColors
+            ? getShapeColors(baseShapes, simple.minSegLength, ctx.log)
+            : {colors: []};
+
+        const midShapes = !modsBeforeAdjusts
+            ? modsToShapes(
+                  ctx.cropCache,
+                  enabledPatternMods,
+                  baseShapes.map((shape, i) => ({shape: {points: shape, open: false}, i})),
+              )
+            : baseShapes.map((shape, i) => ({shape: {points: shape, open: false}, i}));
+
+        ctx.items.push(
+            ...midShapes.flatMap(({shape, i}) => {
+                const center = centroid(shape.points);
+                const key = coordKey(center);
+                const radius = Math.min(...shape.points.map((s) => dist(s, center)));
+                const matchingStyles = orderedStyles.map((style) => {
+                    const match =
+                        style.kind.length === 0
+                            ? {x: 0, y: 0}
+                            : first(style.kind, (k) =>
+                                  matchKind(k, key, colors[i], center, simple.eigenCorners),
+                              );
+                    if (!match) {
+                        return null;
+                    }
+                    return {style, match};
+                });
+                return renderPatternShape(
+                    shape.points,
                     ctx,
                     i,
                     panim,
-                    {i, maxI: count.length - 1},
+                    {center, radius, shape, i},
                     matchingStyles.filter(notNull),
-                    false,
-                ),
-            );
-
-            // ctx.items.push({
-            //     type: 'path',
-            //     zIndex: -iter,
-            //     color: colorToRgb(hslToRgb((iter / 10) % 1, 1, 0.5)),
-            //     shapes: [barePathFromCoords(shape, false)],
-            //     key: iter++ + '',
-            // });
-        });
-
-        return;
-    }
-
-    // not doing yet
-    if (pattern.contents.type !== 'shapes') return;
-
-    const orderedStyles = Object.values(pattern.contents.styles).sort((a, b) => a.order - b.order);
-
-    const needColors = orderedStyles.some((s) =>
-        Array.isArray(s.kind)
-            ? s.kind.some((k) => k.type === 'alternating')
-            : s.kind.type === 'alternating',
-    );
-    const {colors} = needColors
-        ? getShapeColors(baseShapes, simple.minSegLength, ctx.log)
-        : {colors: []};
-
-    const midShapes = !modsBeforeAdjusts
-        ? modsToShapes(
-              ctx.cropCache,
-              enabledPatternMods,
-              baseShapes.map((shape, i) => ({shape: {points: shape, open: false}, i})),
-          )
-        : baseShapes.map((shape, i) => ({shape: {points: shape, open: false}, i}));
-
-    ctx.items.push(
-        ...midShapes.flatMap(({shape, i}) => {
-            const center = centroid(shape.points);
-            const key = coordKey(center);
-            const radius = Math.min(...shape.points.map((s) => dist(s, center)));
-            const matchingStyles = orderedStyles.map((style) => {
-                const match = Array.isArray(style.kind)
-                    ? first(style.kind, (k) =>
-                          matchKind(k, key, colors[i], center, simple.eigenCorners),
-                      )
-                    : matchKind(style.kind, key, colors[i], center, simple.eigenCorners);
-                if (!match) {
-                    return;
-                }
-                return {style, match};
-            });
-            return renderPatternShape(
-                shape.points,
-                ctx,
-                i,
-                panim,
-                {center, radius, shape, i},
-                matchingStyles.filter(notNull),
-            );
-        }),
-    );
+                );
+            }),
+        );
+    });
 };
 
 export const first = <T, N>(v: T[], f: (v: T) => N) => {
@@ -248,20 +248,45 @@ export const tintColor = (base: Rgb, tint: Color) => {
 };
 
 export const renderFill = (
-    f: ConcreteFill,
+    f: ConcreteFillOrLine,
     anim: AnimCtx,
     ctx: Ctx,
     shape: Coord[],
     key: string,
+    open: boolean,
 ): undefined | RenderItem => {
     if (f.color == null) return;
+    if (f.line) {
+        if (!f.line.width) return;
+        let rgb = colorToRgb(f.color);
+        if (f.tint) {
+            rgb = tintColor(rgb, f.tint);
+        }
+        const width = f.line.width / 100;
+        const shadow = concreteToRenderShadow(f.shadow);
+
+        return {
+            type: 'path',
+            key,
+            color: rgb,
+            strokeWidth: width,
+            shapes: f.mods.length
+                ? modsToShapes(ctx.cropCache, f.mods, [{shape: {points: shape, open}, i: 0}]).map(
+                      (s) => barePathFromCoords(s.shape.points, s.shape.open),
+                  )
+                : [barePathFromCoords(shape, open)],
+            shadow,
+            sharp: f.line.sharp,
+            opacity: f.opacity,
+            zIndex: f.zIndex,
+        };
+    }
     let rgb = colorToRgb(f.color);
     if (f.tint) {
         rgb = tintColor(rgb, f.tint);
     }
     const zIndex = f.zIndex;
     const opacity = f.opacity;
-    const shadow = resolveShadow(anim, f.shadow);
 
     return {
         type: 'path',
@@ -273,48 +298,15 @@ export const renderFill = (
                   {shape: {points: shape, open: false}, i: 0},
               ]).map((s) => barePathFromCoords(s.shape.points, s.shape.open))
             : [barePathFromCoords(shape)],
-        shadow,
+        shadow: f.shadow,
         zIndex,
     };
 };
 
-export const renderLine = (
-    f: ConcreteLine,
-    anim: AnimCtx,
-    ctx: Ctx,
-    shape: Coord[],
-    key: string,
-    open: boolean,
-): undefined | RenderItem => {
-    if (f.color == null) return;
-    if (!f.width) return;
-    let rgb = colorToRgb(f.color);
-    if (f.tint) {
-        rgb = tintColor(rgb, f.tint);
-    }
-    const width = f.width / 100;
-    const shadow = resolveShadow(anim, f.shadow);
-
-    return {
-        type: 'path',
-        key,
-        color: rgb,
-        strokeWidth: width,
-        shapes: f.mods.length
-            ? modsToShapes(ctx.cropCache, f.mods, [{shape: {points: shape, open}, i: 0}]).map((s) =>
-                  barePathFromCoords(s.shape.points, s.shape.open),
-              )
-            : [barePathFromCoords(shape, open)],
-        shadow,
-        sharp: f.sharp,
-        opacity: f.opacity,
-        zIndex: f.zIndex,
-    };
-};
-
-export const resolveFill = (anim: Ctx['anim'], f: Fill): ConcreteFill => {
+export const resolveFill = (anim: Ctx['anim'], f: FillOrLine): ConcreteFillOrLine => {
     return {
         id: f.id,
+        order: f.order,
         mods: resolveEnabledPMods(anim, f.mods),
         color: f.color != null ? (a.color(anim, f.color) ?? undefined) : undefined,
         opacity: f.opacity != null ? a.number(anim, f.opacity) : undefined,
@@ -324,24 +316,28 @@ export const resolveFill = (anim: Ctx['anim'], f: Fill): ConcreteFill => {
         tint: f.tint != null ? (a.color(anim, f.tint) ?? undefined) : undefined,
         zIndex: f.zIndex != null ? a.number(anim, f.zIndex) : undefined,
         enabled: f.enabled != null ? a.boolean(anim, f.enabled) : undefined,
+        line: f.line
+            ? {
+                  width: f.line.width != null ? a.number(anim, f.line.width) : undefined,
+                  sharp: f.line.sharp != null ? a.boolean(anim, f.line.sharp) : undefined,
+              }
+            : undefined,
     };
 };
 
-export const resolveLine = (anim: Ctx['anim'], f: Line): ConcreteLine => {
-    return {
-        id: f.id,
-        mods: resolveEnabledPMods(anim, f.mods),
-        color: f.color != null ? (a.color(anim, f.color) ?? undefined) : undefined,
-        opacity: f.opacity != null ? a.number(anim, f.opacity) : undefined,
-        shadow: resolveShadow(anim, f.shadow),
-        thickness: f.thickness != null ? a.number(anim, f.thickness) : undefined,
-        tint: f.tint != null ? (a.color(anim, f.tint) ?? undefined) : undefined,
-        zIndex: f.zIndex != null ? a.number(anim, f.zIndex) : undefined,
-        width: f.width != null ? a.number(anim, f.width) : undefined,
-        sharp: f.sharp != null ? a.boolean(anim, f.sharp) : undefined,
-        enabled: f.enabled != null ? a.boolean(anim, f.enabled) : undefined,
-    };
-};
+// export const resolveLine = (anim: Ctx['anim'], f: Line): ConcreteLine => {
+//     return {
+//         id: f.id,
+//         mods: resolveEnabledPMods(anim, f.mods),
+//         color: f.color != null ? (a.color(anim, f.color) ?? undefined) : undefined,
+//         opacity: f.opacity != null ? a.number(anim, f.opacity) : undefined,
+//         shadow: resolveShadow(anim, f.shadow),
+//         thickness: f.thickness != null ? a.number(anim, f.thickness) : undefined,
+//         tint: f.tint != null ? (a.color(anim, f.tint) ?? undefined) : undefined,
+//         zIndex: f.zIndex != null ? a.number(anim, f.zIndex) : undefined,
+//         enabled: f.enabled != null ? a.boolean(anim, f.enabled) : undefined,
+//     };
+// };
 
 export const dropNully = <T extends {}>(v: T): T => {
     (Object.keys(v) as (keyof T)[]).forEach((k) => {
@@ -400,8 +396,6 @@ export const matchKind = (
     eigenCorners: Coord[][],
 ): boolean | Coord => {
     switch (k.type) {
-        case 'everything':
-            return {x: 0, y: 0};
         case 'alternating':
             return color === k.index ? {x: 0, y: 0} : false;
         case 'explicit':

@@ -1,16 +1,19 @@
 import {useCallback, useEffect, useMemo, useState} from 'react';
 import {useLocation} from 'react-router';
 import {blankHistory} from '../../../json-diff/history';
+import {useValue} from '../../../json-diff/react';
 import {Tiling} from '../../../types';
 import type {Route} from './+types/pattern-export';
 import {ExportHistory, ProvideExportState, useExportState} from './ExportHistory';
 import {usePromise} from './hooks/usePromise';
+import {ListExports} from './ListExports';
 import {Page} from './Page';
 import {useWorker} from './render/render-client';
 import {thinTiling} from './render/renderPattern';
 import {RenderDebug} from './RenderDebug';
 import {RenderExport} from './RenderExport';
-import {StateEditor} from './state-editor/StateEditor';
+import db from './state-editor/kv-idb';
+import {idbprefix, SnapshotUrl} from './state-editor/saveAnnotation';
 import {loadState} from './types/load-state';
 import {
     EditState,
@@ -21,9 +24,17 @@ import {
 } from './utils/editState';
 import {genid} from './utils/genid';
 import {makeForPattern} from './utils/makeForPattern';
-import {ListExports} from './ListExports';
-import {idbprefix, SnapshotUrl} from './state-editor/saveAnnotation';
-import db from './state-editor/kv-idb';
+import {Sidebar} from './window/Sidebar';
+import {
+    initialWindowState,
+    isWindowState,
+    ProvideWindowState,
+    useSafeLocalStorage,
+    WindowState,
+} from './window/state';
+import {GlobalDependenciesCtx} from './window/GlobalDependencies';
+import {JsonEditor} from './state-editor/JsonEditor';
+import {JsonViewer} from './JsonViewer';
 
 const CreateAndRedirectLocalStorage = ({id}: {id: string}) => {
     const [error, setError] = useState<null | Error>(null);
@@ -81,6 +92,7 @@ const LoadAndMigratePattern = ({id}: {id: string}) => {
                   .then((r) => (r.status === 200 ? r.json() : null))
                   .then(loadState),
     );
+    const [showJson, setShowJson] = useState(false);
 
     const bcr = [
         {title: 'Geometric Art', href: '/', dropdown: [{title: 'Gallery', href: '/gallery/'}]},
@@ -108,34 +120,86 @@ const LoadAndMigratePattern = ({id}: {id: string}) => {
         // Show a dialog asking if the user wants to
         // a) edit it using an older version
         // b) migrate to the current version
+        return (
+            <div>
+                <div id="my_modal_1" className="modal visible pointer-events-auto">
+                    <div className="modal-box opacity-100">
+                        <h3 className="font-bold text-lg">Document uses an old format</h3>
+                        <p className="py-4">
+                            You can use an older editor, or migrate it to the latest format.
+                        </p>
+                        <a
+                            className="btn"
+                            onClick={(evt) => {
+                                evt.currentTarget.href = URL.createObjectURL(
+                                    new Blob([JSON.stringify(state.value.value)], {
+                                        type: 'application/json',
+                                    }),
+                                );
+                            }}
+                            download={`document-${id}.json`}
+                        >
+                            Download JSON
+                        </a>
+                        {!id.startsWith(idbprefix) ? (
+                            <a
+                                className="btn"
+                                href={`http://localhost:5174/?src=http://localhost:5173/fs/exports/${id}.json`}
+                            >
+                                Use Older Version of the Editor
+                            </a>
+                        ) : null}
+                        <button
+                            className="btn"
+                            onClick={() => {
+                                if (state.value.version === 'unknown') {
+                                    const migrated = makeForPattern(
+                                        state.value.pattern,
+                                        state.value.id,
+                                    );
+                                    savePattern(id, blankHistory(migrated)).then(() => {
+                                        location.reload();
+                                    });
+                                }
+                                // here we are
+                            }}
+                        >
+                            Migrate from {state.value.version} to latest (will lose some history)
+                        </button>
+                        <button onClick={() => setShowJson(true)}>View JSON</button>
+                    </div>
+                    {showJson ? (
+                        <pre className="mockup-code max-h-9/12 overflow-auto">
+                            <JsonViewer value={state.value.value.current} />
+                            {/*{JSON.stringify(state.value.value.current, null, 2)}*/}
+                        </pre>
+                    ) : null}
+                </div>
+            </div>
+        );
     }
 
     return <LoadPattern state={state.value.value} id={id} />;
 };
 
-// const loadLSUrl = (key: string) => {
-//     return localStorage[key];
-// };
+const savePattern = async (id: string, state: ExportHistory) => {
+    if (id.startsWith(idbprefix)) {
+        const lid = id.slice(idbprefix.length);
+        await db.transaction('readwrite', (tx) => {
+            tx.set('exports', lid, state);
+            tx.update('exportMeta', lid, (meta) => ({...meta, updated: Date.now()}));
+        });
+        return;
+    }
+    return fetch(`/fs/exports/${id}.json`, {
+        method: 'POST',
+        body: JSON.stringify(state, null, 2),
+        headers: {'Content-type': 'application/json'},
+    });
+};
 
 const LoadPattern = ({id, state}: {id: string; state: ExportHistory}) => {
-    const onSave = useCallback(
-        async (state: ExportHistory) => {
-            if (id.startsWith(idbprefix)) {
-                const lid = id.slice(idbprefix.length);
-                await db.transaction('readwrite', (tx) => {
-                    tx.set('exports', lid, state);
-                    tx.update('exportMeta', lid, (meta) => ({...meta, updated: Date.now()}));
-                });
-                return;
-            }
-            return fetch(`/fs/exports/${id}.json`, {
-                method: 'POST',
-                body: JSON.stringify(state, null, 2),
-                headers: {'Content-type': 'application/json'},
-            });
-        },
-        [id],
-    );
+    const onSave = useCallback(async (state: ExportHistory) => savePattern(id, state), [id]);
 
     const snapshotUrl = useMemo(
         (): SnapshotUrl =>
@@ -144,6 +208,7 @@ const LoadPattern = ({id, state}: {id: string; state: ExportHistory}) => {
                 : {type: 'localhost', id},
         [id],
     );
+    console.log('toplevel');
 
     const bcr = [
         {title: 'Geometric Art', href: '/', dropdown: [{title: 'Gallery', href: '/gallery/'}]},
@@ -152,7 +217,7 @@ const LoadPattern = ({id, state}: {id: string; state: ExportHistory}) => {
     ];
 
     return (
-        <Page breadcrumbs={bcr}>
+        <Page breadcrumbs={bcr} fullWidth>
             <PatternExport
                 initial={state}
                 onSave={onSave}
@@ -208,20 +273,32 @@ export const PatternExport = ({
     namePrefix: string;
     snapshotUrl: SnapshotUrl;
 }) => {
+    const [window, setWindow] = useSafeLocalStorage<WindowState>(
+        'window-state',
+        initialWindowState,
+        isWindowState,
+    );
+    const worker = useWorker();
+    const gctx = useMemo(() => ({worker, snapshotUrl}), [worker, snapshotUrl]);
+
     return (
-        <ProvideExportState initial={initial} save={onSave}>
-            <ProvidePendingState initial={initialPendingStateHistory}>
-                <ProvideEditState initial={initialEditState}>
-                    <Inner snapshotUrl={snapshotUrl} namePrefix={namePrefix} />
-                </ProvideEditState>
-            </ProvidePendingState>
-        </ProvideExportState>
+        <GlobalDependenciesCtx.Provider value={gctx}>
+            <ProvideExportState initial={initial} save={onSave}>
+                <ProvidePendingState initial={initialPendingStateHistory}>
+                    <ProvideEditState initial={initialEditState}>
+                        <ProvideWindowState initial={window} save={setWindow}>
+                            <Inner snapshotUrl={snapshotUrl} namePrefix={namePrefix} />
+                        </ProvideWindowState>
+                    </ProvideEditState>
+                </ProvidePendingState>
+            </ProvideExportState>
+        </GlobalDependenciesCtx.Provider>
     );
 };
 
 const Inner = ({snapshotUrl, namePrefix}: {snapshotUrl: SnapshotUrl; namePrefix: string}) => {
     const sctx = useExportState();
-    const state = sctx.use((v) => v);
+    const state = useValue(sctx.$);
     const pctx = usePendingState();
     const {search} = useLocation();
     const debug = search.includes('debug=');
@@ -261,29 +338,23 @@ const Inner = ({snapshotUrl, namePrefix}: {snapshotUrl: SnapshotUrl; namePrefix:
         document.addEventListener('keydown', fn);
         return () => document.removeEventListener('keydown', fn);
     }, [sctx, pctx]);
-    const worker = useWorker();
 
     return (
-        <div className="flex">
+        <div className="flex flex-1 min-h-0">
             {debug ? (
-                <RenderDebug state={state} update={sctx.update} />
+                <RenderDebug state={state} update={sctx.$} />
             ) : (
-                <RenderExport
-                    worker={worker}
-                    namePrefix={namePrefix}
-                    snapshotUrl={snapshotUrl}
-                    state={state}
-                    onChange={sctx.update}
-                />
+                <RenderExport namePrefix={namePrefix} state={state} onChange={sctx.$} />
             )}
-            <div className="max-h-250 overflow-auto flex-1">
+            {/*<div className="max-h-250 overflow-auto">
                 <StateEditor
                     snapshotUrl={snapshotUrl}
                     value={state}
-                    update={sctx.update}
+                    update={sctx.$}
                     worker={worker}
                 />
-            </div>
+            </div>*/}
+            <Sidebar />
         </div>
     );
 };

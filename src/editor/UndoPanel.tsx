@@ -1,4 +1,3 @@
-
 import React, {useState} from 'react';
 import {State} from '../types';
 import {Action} from '../state/Action';

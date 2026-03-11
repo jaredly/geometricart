@@ -44,16 +44,16 @@ export function renderShape(
             onClick() {
                 if (!update || !pending) return;
                 if (pending?.type === 'select-shape') {
-                    update.pending.replace(null);
+                    update.pending(null);
                     pending.onDone(key);
                     return;
                 }
                 if (pending?.type !== 'select-shapes') return;
                 if (!selectedShapes.includes(key)) {
-                    update.pending.variant('select-shapes').shapes.push(key);
+                    update.pending.$variant('select-shapes').shapes.$push(key);
                 } else {
                     const idx = selectedShapes.indexOf(key);
-                    update.pending.variant('select-shapes').shapes[idx].remove();
+                    update.pending.$variant('select-shapes').shapes[idx].$remove();
                 }
             },
             shapes: [shape],

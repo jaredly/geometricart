@@ -5,6 +5,7 @@ import {JsonEditor} from './JsonEditor';
 import {Updater} from '../../../../json-diff/Updater';
 import {useExportState} from '../ExportHistory';
 import {notNull} from '../utils/notNull';
+import {useValue} from '../../../../json-diff/react';
 
 export const ShapeEditor = ({
     shape,
@@ -23,17 +24,17 @@ export const ShapeEditor = ({
 }) => {
     const es = usePendingState();
     const st = useExportState();
-    const tilingIds = st.use((state) => {
-        if (!state) throw new Error('cant happen');
-        const ids = Object.values(state.layers)
-            .flatMap((layer) =>
-                Object.values(layer.entities).map((entity) =>
-                    entity.type === 'Pattern' ? entity.id : null,
-                ),
-            )
-            .filter(notNull);
-        return ids;
-    }, false);
+    const tilingIds = useValue(
+        st.$,
+        (state) => {
+            if (!state) throw new Error('cant happen');
+            const ids = Object.values(state.entities)
+                .map((entity) => (entity.type === 'Pattern' ? entity.id : null))
+                .filter(notNull);
+            return ids;
+        },
+        false,
+    );
 
     return (
         <div
@@ -45,7 +46,7 @@ export const ShapeEditor = ({
             <button
                 className="btn btn-sm"
                 onClick={() =>
-                    es.update.pending.replace({
+                    es.$.pending({
                         type: 'dup-shape',
                         id,
                         onDone(point) {
@@ -67,9 +68,9 @@ export const ShapeEditor = ({
                         onChange={(evt) => {
                             const id = evt.target.value;
                             if (id !== '') {
-                                update.multiply.replace(id);
+                                update.multiply(id);
                             } else {
-                                update.multiply.remove();
+                                update.multiply.$remove();
                             }
                         }}
                         value={shape.multiply ?? ''}
@@ -82,7 +83,7 @@ export const ShapeEditor = ({
                         ))}
                     </select>
                 </label>
-                <button className="btn btn-sm" onClick={() => update.remove()}>
+                <button className="btn btn-sm" onClick={() => update.$remove()}>
                     &times;
                 </button>
             </div>

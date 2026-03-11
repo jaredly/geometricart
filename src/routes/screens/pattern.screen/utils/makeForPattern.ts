@@ -13,49 +13,83 @@ for (let i = 0; i < colorsRaw.length; i += 6) {
 
 export const makeForPattern = (tiling: ThinTiling, hash: string): State => {
     const pd = getNewPatternData(tiling);
-    const styles: Record<string, ShapeStyle<ShapeKind>> = {};
-    for (let i = 0; i <= pd.colorInfo.maxColor; i++) {
-        styles[`alt-${i}`] = {
-            id: `alt-${i}`,
-            fills: {
-                [`fill-${i}`]: {
-                    id: `fill-${i}`,
+    const styles: Record<string, ShapeStyle<ShapeKind>> = {
+        s1: {
+            kind: [{type: 'alternating', index: 0}],
+            disabled: '',
+            id: 's1',
+            mods: [],
+            order: 0,
+            items: {
+                i1: {
+                    id: 'i1',
                     mods: [],
-                    color: i,
+                    order: 0,
+                    color: 0,
                 },
             },
-            lines: {},
-            kind: {type: 'alternating', index: i},
+            t: null,
+        },
+        s2: {
+            kind: [{type: 'alternating', index: 1}],
+            disabled: '',
+            id: 's2',
             mods: [],
-            order: i,
-        };
-    }
-    return {
-        shapes: {},
-        layers: {
-            root: {
-                id: 'root',
-                rootGroup: 'root-group',
-                entities: {
-                    'root-group': {
-                        type: 'Group',
-                        id: 'root-group',
-                        entities: {'one-pattern': 0},
-                    },
-                    'one-pattern': {
-                        type: 'Pattern',
-                        adjustments: {},
-                        id: 'one-pattern',
-                        mods: [],
-                        psize: 3,
-                        contents: {type: 'shapes', styles},
-                        tiling: {id: hash, tiling},
-                    },
+            order: 0,
+            items: {
+                i1: {
+                    id: 'i1',
+                    mods: [],
+                    order: 0,
+                    color: 1,
                 },
-                guides: [],
-                opacity: 1,
-                order: 0,
+                i2: {
+                    id: 'i2',
+                    mods: [],
+                    order: 0,
+                    color: 2,
+                    line: {width: 10},
+                },
+            },
+            t: null,
+        },
+    };
+
+    return {
+        version: 1,
+        shapes: {},
+        rootGroup: 'root-group',
+        entities: {
+            'root-group': {
+                type: 'Group',
+                id: 'root-group',
+                disabled: '',
                 shared: {},
+                opacity: 1,
+                entities: {'one-pattern': 0},
+            },
+            'one-pattern': {
+                type: 'Pattern',
+                adjustments: {},
+                id: 'one-pattern',
+                disabled: false,
+                shared: {},
+                mods: [],
+                psize: {type: 'uniform', size: 3},
+                contents: {
+                    cid: {type: 'shapes', styles, id: 'cid', order: 0, disabled: ''},
+                },
+                tiling: {id: hash, tiling},
+            },
+        },
+        exports: {
+            one: {
+                id: 'one',
+                config: {
+                    type: '2d',
+                    box: {x: -1, y: -1, width: 2, height: 2},
+                    scale: 200,
+                },
             },
         },
         crops: {},
@@ -64,6 +98,6 @@ export const makeForPattern = (tiling: ThinTiling, hash: string): State => {
             palette: colors.map((color) => parseColor(color)!),
             timeline: {ts: [], lanes: []},
         },
-        view: {box: sizeBox(3), ppi: 1},
+        view: {center: {x: 0, y: 0}, ppu: 100},
     };
 };

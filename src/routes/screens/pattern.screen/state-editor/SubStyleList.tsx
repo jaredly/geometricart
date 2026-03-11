@@ -33,7 +33,7 @@ export const SubStyleList = <T extends {id: string}>({
                         for (let num = 0; num < 10; num++) {
                             const id = `${label.toLowerCase()}-${num}`;
                             if (!(id in items)) {
-                                update[id].add(createItem(id));
+                                update[id].$add(createItem(id));
                                 break;
                             }
                         }
@@ -47,7 +47,10 @@ export const SubStyleList = <T extends {id: string}>({
                 {entries.map(([key, value]) => (
                     <div key={key} className="rounded border border-base-300 p-2 bg-base-200">
                         {render(key, value, update[key], (newKey) => {
-                            update((_, up) => [(up[key] as any).id(newKey), up.move(key, newKey)]);
+                            update.$update((_, up) => [
+                                (up[key] as any).id(newKey),
+                                up.$move(key, newKey),
+                            ]);
                         })}
                     </div>
                 ))}

@@ -3,7 +3,6 @@ import {BarePath, Coord, Tiling} from '../../../../types';
 import {PKPath} from '../../../pk';
 import {parseColor, Rgb} from '../utils/colors';
 import {
-    Layer,
     AnimatableNumber,
     AnimatableBoolean,
     AnimatableCoord,
@@ -58,7 +57,7 @@ export type Ctx = {
     state: State;
     anim: AnimCtx;
     cropCache: Map<string, {path: PKPath; crop: Crop}>;
-    layer: Layer;
+    entities: State['entities'];
     items: RenderItem[];
     keyPoints: ([Coord, Coord] | Coord)[];
     byKey: Record<string, string[]>;
@@ -214,7 +213,7 @@ export const a = {
                     (v: any): v is number | Coord => typeof v === 'number' || isCoord(v),
                     {x: 0, y: 0},
                 ),
-    color: (ctx: AnimCtx, v: AnimatableColor): Color | null => {
+    color: (ctx: AnimCtx, v: AnimatableColor | Color): Color | null => {
         if (typeof v === 'string') {
             const parsed = parseColor(v);
             if (parsed) return parsed;

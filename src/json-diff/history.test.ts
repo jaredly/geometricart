@@ -23,7 +23,7 @@ const initialArticle: Article = {
 };
 
 const makeHistory = (current: Article): History<Article, string> => ({
-    version: 1,
+    version: 2,
     nodes: {root: {id: 'root', pid: 'root', changes: [], children: []}},
     annotations: {},
     root: 'root',
@@ -71,9 +71,9 @@ describe('dispatch', () => {
         const updates: Array<
             PendingJsonPatchOp<Article, 'type', null> | PendingJsonPatchOp<Article, 'type', null>[]
         > = [
-            builder.title.replace('Revised Title'),
-            builder.meta.tags.push('published'),
-            builder.title((title, up) => up.replace(title + 'v2')),
+            builder.title('Revised Title'),
+            builder.meta.tags.$push('published'),
+            builder.title((title, up) => up(title + 'v2')),
         ];
 
         history = dispatch(history, updates, null, 'type', genId);
@@ -82,9 +82,9 @@ describe('dispatch', () => {
         expect(history.undoTrail).toEqual([]);
         expect(history.nodes.root.children).toEqual(['node-1']);
         expect(history.nodes['node-1'].changes).toEqual([
-            fill(builder.title.replace('Revised Title'), 'First Draft'),
-            fill(builder.meta.tags.push('published'), 1),
-            fill(builder.title.replace('Revised Titlev2'), 'Revised Title'),
+            fill(builder.title('Revised Title'), 'First Draft'),
+            fill(builder.meta.tags.$push('published'), 1),
+            fill(builder.title('Revised Titlev2'), 'Revised Title'),
         ]);
         expect(history.current).toEqual({
             title: 'Revised Titlev2',
@@ -99,18 +99,12 @@ describe('undo/redo', () => {
         const genId = idGenerator();
         let history = makeHistory(initialArticle);
 
-        history = dispatch(
-            history,
-            [builder.meta.flags.featured.replace(true)],
-            null,
-            'type',
-            genId,
-        );
+        history = dispatch(history, [builder.meta.flags.featured(true)], null, 'type', genId);
         const afterFirst = history;
 
         history = dispatch(
             history,
-            [builder.sections.push({heading: 'Deep Dive', paragraphs: ['details']})],
+            [builder.sections.$push({heading: 'Deep Dive', paragraphs: ['details']})],
             null,
             'type',
             genId,
@@ -145,18 +139,12 @@ describe('jump', () => {
         const genId = idGenerator();
         let history = makeHistory(initialArticle);
 
-        history = dispatch(
-            history,
-            [builder.meta.flags.featured.replace(true)],
-            null,
-            'type',
-            genId,
-        );
+        history = dispatch(history, [builder.meta.flags.featured(true)], null, 'type', genId);
         const firstBranchTip = history.tip;
 
         history = dispatch(
             history,
-            [builder.sections.push({heading: 'Follow Up', paragraphs: ['later']})],
+            [builder.sections.$push({heading: 'Follow Up', paragraphs: ['later']})],
             null,
             'type',
             genId,
@@ -169,13 +157,7 @@ describe('jump', () => {
         expect(history.undoTrail).toEqual([]);
         expect(history.current.sections.length).toBe(1);
 
-        history = dispatch(
-            history,
-            [builder.meta.tags[0].replace('finalized')],
-            null,
-            'type',
-            genId,
-        );
+        history = dispatch(history, [builder.meta.tags[0]('finalized')], null, 'type', genId);
         const branchTip = history.tip;
 
         expect(history.nodes[firstBranchTip].children).toEqual([mainlineTip, branchTip]);

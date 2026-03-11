@@ -28,7 +28,7 @@ describe('helper2 extr', () => {
 
 describe('helper2 single()', () => {
     it('refines to the single branch and updates nested keys', () => {
-        const op = builder.single(true).name.replace('two');
+        const op = builder.$single(true).name('two');
 
         expect(op.path).toEqual([
             {type: 'single', isSingle: true},
@@ -41,7 +41,7 @@ describe('helper2 single()', () => {
     });
 
     it('refines to the array branch and pushes a new element', () => {
-        const op = builder.single(false).push({name: 'two'});
+        const op = builder.$single(false).$push({name: 'two'});
 
         const result = resolveAndApply<OneOrMany, null>([{name: 'one'}], op, null, 'type');
         expect(result.current).toEqual([{name: 'one'}, {name: 'two'}]);
@@ -52,7 +52,7 @@ describe('helper2 single()', () => {
     });
 
     it('wraps a single value when accessing the array branch', () => {
-        const op = builder.single(false).push({name: 'two'});
+        const op = builder.$single(false).$push({name: 'two'});
 
         const result = resolveAndApply<OneOrMany, null>({name: 'one'}, op, null, 'type');
         expect(result.current).toEqual([{name: 'one'}, {name: 'two'}]);
@@ -63,7 +63,7 @@ describe('helper2 single()', () => {
     });
 
     it('treats array access via single(true) as the first element', () => {
-        const op = builder.single(true).name.replace('two');
+        const op = builder.$single(true).name('two');
 
         const result = resolveAndApply<OneOrMany, null>(
             [{name: 'one'}, {name: 'three'}],
@@ -79,7 +79,7 @@ describe('helper2 single()', () => {
     });
 
     it('updates an existing element inside the array branch', () => {
-        const op = builder.single(false)[0].name.replace('two');
+        const op = builder.$single(false)[0].name('two');
 
         const result = resolveAndApply<OneOrMany, null>([{name: 'one'}], op, null, 'type');
         expect(result.current).toEqual([{name: 'two'}]);
@@ -93,7 +93,7 @@ describe('helper2 single()', () => {
 
 describe('helper2 move()', () => {
     it('reorders array items', () => {
-        const op = moveBuilder.items.move(0, 2);
+        const op = moveBuilder.items.$move(0, 2);
 
         expect(op).toMatchObject({
             from: [
@@ -116,7 +116,7 @@ describe('helper2 move()', () => {
     });
 
     it('moves object keys', () => {
-        const op = moveBuilder.map.move('a', 'c');
+        const op = moveBuilder.map.$move('a', 'c');
 
         const result = resolveAndApply<{items: string[]; map: Record<string, number>}, string>(
             {items: [], map: {a: 1, b: 2}},

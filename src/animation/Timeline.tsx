@@ -1,4 +1,3 @@
-
 import React from 'react';
 import {Action} from '../state/Action';
 import {BlurInt, Toggle} from '../editor/Forms';

@@ -11,7 +11,6 @@ import {genid} from '../utils/genid';
 import {WorkerSend} from '../render/render-client';
 import {AnimColor} from './AnimColor';
 import {BoxField} from './BoxField';
-import {createLayerTemplate, parseAnimatable} from './createLayerTemplate';
 import {ModsEditor} from './FillEditor';
 import {LayerEditor} from './LayerEditor';
 import {NumberField} from './NumberField';
@@ -24,24 +23,19 @@ import {barePathFromCoords} from '../utils/resolveMods';
 import {HistoryView} from './HistoryView';
 import {SnapshotAnnotations} from './SnapshotAnnotations';
 import {SnapshotUrl} from './saveAnnotation';
+import {useValue} from '../../../../json-diff/react';
 
 type StateEditorProps = {
     value: State;
     update: Updater<State>;
-    worker: WorkerSend;
-    snapshotUrl: SnapshotUrl;
 };
 
-export const StateEditor = ({value, worker, update, snapshotUrl}: StateEditorProps) => {
-    const layers = useMemo(
-        () => Object.entries(value.layers).sort(([, a], [, b]) => a.order - b.order),
-        [value.layers],
-    );
+export const StateEditor = ({value, update}: StateEditorProps) => {
     const crops = useMemo(() => Object.entries(value.crops), [value.crops]);
     const pendingState = usePendingState();
     const editState = useEditState();
-    const onHover = editState.update.hover.replace;
-    const showShapes = editState.use((s) => s.showShapes);
+    const onHover = editState.$.hover.$replace;
+    const showShapes = useValue(editState.$.showShapes); // editState.use((s) => s.showShapes);
 
     const latest = useRef(value);
     latest.current = value;
@@ -52,39 +46,20 @@ export const StateEditor = ({value, worker, update, snapshotUrl}: StateEditorPro
 
     return (
         <div className="flex flex-col gap-6 items-stretch p-4">
-            <Section
-                title="Layers"
-                actions={
-                    <button
-                        className="btn btn-outline btn-sm"
-                        onClick={() => {
-                            const nextId = `layer-${layers.length + 1}`;
-                            update.layers[nextId].add(createLayerTemplate(nextId));
-                        }}
-                    >
-                        Add Layer
-                    </button>
-                }
-            >
+            <Section title="Entities">
                 <div className="space-y-4">
-                    {layers.length === 0 ? (
-                        <div className="text-sm opacity-70">No layers defined.</div>
-                    ) : null}
-                    {layers.map(([key, layer]) => (
-                        <LayerEditor
-                            palette={value.styleConfig.palette}
-                            key={key}
-                            layer={layer}
-                            update={update.layers[key]}
-                        />
-                    ))}
+                    <LayerEditor
+                        palette={value.styleConfig.palette}
+                        value={value}
+                        update={update}
+                    />
                 </div>
             </Section>
 
             <Section
                 title="Shapes"
                 open={showShapes}
-                onOpen={(open) => editState.update.showShapes.replace(open)}
+                onOpen={(open) => editState.$.showShapes(open)}
                 actions={
                     <>
                         <button
@@ -107,11 +82,11 @@ export const StateEditor = ({value, worker, update, snapshotUrl}: StateEditorPro
                             <li>
                                 <button
                                     onClick={(evt) => {
-                                        pendingState.update.pending.replace({
+                                        pendingState.$.pending({
                                             type: 'shape',
                                             onDone(points, open) {
                                                 const nextId = genid();
-                                                update.shapes[nextId].add({
+                                                update.shapes[nextId].$add({
                                                     origin: points[0],
                                                     segments: points
                                                         .slice(1)
@@ -157,11 +132,11 @@ export const StateEditor = ({value, worker, update, snapshotUrl}: StateEditorPro
                                                 ],
                                             };
                                         };
-                                        pendingState.update.pending.replace({
+                                        pendingState.$.pending({
                                             type: 'shape',
                                             onDone(points) {
                                                 const nextId = genid();
-                                                update.shapes[nextId].add(asCircle(points));
+                                                update.shapes[nextId].$add(asCircle(points));
                                             },
                                             points: [],
                                             asShape: asCircle,
@@ -190,10 +165,10 @@ export const StateEditor = ({value, worker, update, snapshotUrl}: StateEditorPro
                                                 {x: c.x - dx, y: c.y - dy},
                                             ]);
                                         };
-                                        pendingState.update.pending.replace({
+                                        pendingState.$.pending({
                                             type: 'shape',
                                             onDone(points) {
-                                                update.shapes[genid()].add(asRect(points));
+                                                update.shapes[genid()].$add(asRect(points));
                                             },
                                             points: [],
                                             asShape: asRect,
@@ -218,12 +193,12 @@ export const StateEditor = ({value, worker, update, snapshotUrl}: StateEditorPro
                             shape={shape}
                             update={update.shapes[id]}
                             onCrop={() => {
-                                const cid = genid();
-                                update.crops[cid].add({id: cid, shape: id});
+                                // const cid = genid();
+                                // update.crops[cid].add({id: cid, shape: id, mods: []});
                             }}
                             onDup={(pt) => {
                                 const id = genid();
-                                update.shapes[id].add(
+                                update.shapes[id].$add(
                                     transformBarePath(shape, [
                                         translationMatrix({
                                             x: pt.x - shape.origin.x,
@@ -235,47 +210,6 @@ export const StateEditor = ({value, worker, update, snapshotUrl}: StateEditorPro
                             onHover={onHover}
                         />
                     ))}
-                </div>
-            </Section>
-
-            <Section title="View">
-                <div className="flex flex-col gap-4">
-                    <div className="flex gap-4">
-                        <NumberField
-                            label="PPI"
-                            value={value.view.ppi}
-                            onChange={update.view.ppi}
-                        />
-                        <AnimColor
-                            label="Background"
-                            value={value.view.background}
-                            palette={value.styleConfig.palette}
-                            onChange={update.view.background}
-                        />
-                    </div>
-                    <BoxField label="View Box" value={value.view.box} update={update.view.box} />
-                </div>
-            </Section>
-
-            <Section title="Style Config" alignStart>
-                <div className="flex flex-col">
-                    <div className="space-y-3">
-                        <TextField
-                            label="Seed"
-                            value={String(value.styleConfig.seed)}
-                            onChange={(seed) => update.styleConfig.seed(parseAnimatable(seed))}
-                        />
-                        <PaletteEditor
-                            palette={value.styleConfig.palette}
-                            update={update.styleConfig.palette}
-                        />
-                    </div>
-                    {/* <ClocksEditor
-                        clocks={value.styleConfig.clocks}
-                        onChange={(clocks) =>
-                            onChange({...value, styleConfig: {...value.styleConfig, clocks}})
-                        }
-                    /> */}
                 </div>
             </Section>
 
@@ -316,7 +250,7 @@ export const StateEditor = ({value, worker, update, snapshotUrl}: StateEditorPro
                                     <button
                                         className="btn btn-ghost btn-sm text-error"
                                         onClick={() => {
-                                            update.crops[key].remove();
+                                            update.crops[key].$remove();
                                         }}
                                     >
                                         Remove
@@ -336,16 +270,6 @@ export const StateEditor = ({value, worker, update, snapshotUrl}: StateEditorPro
                         </div>
                     ))}
                 </div>
-            </Section>
-            <Section title="Timelines">
-                <TimelineEditor
-                    timeline={value.styleConfig.timeline}
-                    onChange={update.styleConfig.timeline}
-                />
-            </Section>
-            <Section title="History & Snapshots">
-                <SnapshotAnnotations snapshotUrl={snapshotUrl} worker={worker} />
-                <HistoryView snapshotUrl={snapshotUrl} />
             </Section>
         </div>
     );

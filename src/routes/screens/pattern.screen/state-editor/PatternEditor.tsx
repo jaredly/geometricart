@@ -1,5 +1,5 @@
-import {Adjustment, Color, Pattern} from '../export-types';
-import {CoordField} from './CoordField';
+import {Adjustment, Color, Orderable, OrderItem, Pattern} from '../export-types';
+import {CoordField, CoordOrNumberField} from './CoordField';
 import {NumberField} from './NumberField';
 import {PatternContentsEditor} from './PatternContentsEditor';
 import {ModsEditor} from './FillEditor';
@@ -11,6 +11,10 @@ import {AnimInput} from './AnimInput';
 import {Updater} from '../../../../json-diff/Updater';
 import {SharedEditor} from './SharedEditor';
 import {EyeIcon, EyeInvisibleIcon} from '../../../../icons/Eyes';
+import {DragToReorderList, HandleProps} from './DragToReorderList';
+import {useMemo} from 'react';
+import {nextOrder, orderedItems} from './nextOrder';
+import {useValue} from '../../../../json-diff/react';
 
 export const PatternEditor = ({
     value,
@@ -24,11 +28,11 @@ export const PatternEditor = ({
     return (
         <div className="space-y-3">
             <div className="flex flex-row">
-                {typeof value.psize === 'number' ? (
-                    <NumberField label="Size" value={value.psize} onChange={update.psize} />
-                ) : (
-                    <CoordField label="Pattern size" value={value.psize} onChange={update.psize} />
-                )}
+                <CoordOrNumberField
+                    label="Pattern size"
+                    value={value.psize}
+                    onChange={update.psize.$replace}
+                />
                 <button
                     onClick={() =>
                         value.disabled ? update.disabled(false) : update.disabled(true)
@@ -45,12 +49,12 @@ export const PatternEditor = ({
                 update={update.adjustments}
                 palette={palette}
             />
-            <PatternContentsEditor
-                palette={palette}
+            <OrderableEditor
                 value={value.contents}
                 update={update.contents}
+                Inner={PatternContentsEditor}
             />
-            <SharedEditor shared={value.shared} onChange={update.shared} />
+            <SharedEditor shared={value.shared} onChange={update.shared.$replace} />
         </div>
     );
 };
@@ -77,8 +81,7 @@ const AdjustmentEditor = ({
 }) => {
     const edit = usePendingState();
     const es = useEditState();
-    // const hover = es.use(es => es.hover?.type === 'shape' && adj.shapes.includes(es.hover.id))
-    const pending = edit.use((v) => v.pending);
+    const pending = useValue(edit.$.pending);
     const isAdding = pending?.type === 'select-shapes' && pending.key === `adj-${adj.id}`;
     return (
         <div className="border border-base-300 bg-base-200 rounded-md p-4 space-y-4">
@@ -87,8 +90,8 @@ const AdjustmentEditor = ({
                 <details className="dropdown">
                     <summary
                         className="btn m-1 whitespace-nowrap"
-                        onMouseEnter={() => es.update.hover({type: 'shapes', ids: adj.shapes})}
-                        onMouseLeave={() => es.update.hover(null)}
+                        onMouseEnter={() => es.$.hover({type: 'shapes', ids: adj.shapes})}
+                        onMouseLeave={() => es.$.hover(null)}
                     >
                         {!adj.shapes.length
                             ? `No shapes selected`
@@ -100,13 +103,13 @@ const AdjustmentEditor = ({
                         {adj.shapes.map((id, i) => (
                             <li
                                 key={id}
-                                onMouseEnter={() => es.update.hover({type: 'shape', id})}
-                                onMouseLeave={() => es.update.hover(null)}
+                                onMouseEnter={() => es.$.hover({type: 'shape', id})}
+                                onMouseLeave={() => es.$.hover(null)}
                                 className="flex flex-row"
                             >
                                 <div className="flex-1">{id}</div>
                                 <button
-                                    onClick={() => update.shapes[i].remove()}
+                                    onClick={() => update.shapes[i].$remove()}
                                     className="btn btn-square"
                                 >
                                     &times;
@@ -115,7 +118,7 @@ const AdjustmentEditor = ({
                         ))}
                         <li className="flex flex-row">
                             <button
-                                onClick={() => update.shapes.replace([])}
+                                onClick={() => update.shapes([])}
                                 className="btn btn-square flex-1"
                             >
                                 Clear all
@@ -127,10 +130,10 @@ const AdjustmentEditor = ({
                     className="btn btn-sm mx-4"
                     onClick={() => {
                         if (isAdding) {
-                            edit.update.pending.replace(null);
+                            edit.$.pending(null);
                             update.shapes(pending.shapes);
                         } else {
-                            edit.update.pending.replace({
+                            edit.$.pending({
                                 type: 'select-shapes',
                                 key: `adj-${adj.id}`,
                                 shapes: adj.shapes,
@@ -144,11 +147,11 @@ const AdjustmentEditor = ({
                     {isAdding ? 'Finish' : 'Select shapes'}
                 </button>
                 <ChunkEditor chunk={adj.t} update={update.t} />
-                <button onClick={update.remove} className="btn btn-sm btn-square">
+                <button onClick={update.$remove} className="btn btn-sm btn-square">
                     &times;
                 </button>
             </div>
-            <SharedEditor shared={adj.shared} onChange={update.shared} />
+            <SharedEditor shared={adj.shared} onChange={update.shared.$replace} />
             <ModsEditor mods={adj.mods} update={update.mods} palette={palette} />
         </div>
     );
@@ -172,7 +175,14 @@ const AdjustmentsEditor = ({
                     value=""
                     onClick={() => {
                         const id = genid();
-                        update[id].add({id, mods: [], shapes: []});
+                        update[id].$add({
+                            id,
+                            mods: [],
+                            shapes: [],
+                            t: null,
+                            shared: {},
+                            disabled: false,
+                        });
                     }}
                 >
                     Add
@@ -187,5 +197,39 @@ const AdjustmentsEditor = ({
                 />
             ))}
         </details>
+    );
+};
+
+export const OrderableEditor = <T extends OrderItem>({
+    value,
+    update,
+    Inner,
+}: {
+    value: Orderable<T>;
+    update: Updater<Orderable<T>>;
+    Inner: React.ComponentType<{value: T; update: Updater<T>; handleProps: HandleProps}>;
+}) => {
+    const entries = useMemo(() => orderedItems(value), [value]);
+    return (
+        <DragToReorderList
+            items={entries.map((item, i) => ({
+                key: item.id,
+                render: (handleProps) => (
+                    <Inner
+                        key={item.id + ':' + i}
+                        value={item}
+                        update={update[item.id]}
+                        handleProps={handleProps}
+                    />
+                ),
+            }))}
+            onReorder={(prev, next) => {
+                const id = entries[prev].id;
+                const m = update[id];
+                (update[id] as Updater<unknown> as Updater<OrderItem>).order.$replace(
+                    nextOrder(prev, next, entries),
+                );
+            }}
+        />
     );
 };

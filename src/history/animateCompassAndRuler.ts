@@ -447,12 +447,7 @@ const drawCompassCircle = (p0: Coord, pd: Coord, ctx: CanvasRenderingContext2D) 
     ctx.setLineDash([]);
 };
 
-const drawCompass = (
-    p0: Coord,
-    pd: Coord,
-    ctx: CanvasRenderingContext2D,
-    destCircle = false,
-) => {
+const drawCompass = (p0: Coord, pd: Coord, ctx: CanvasRenderingContext2D, destCircle = false) => {
     circle(ctx, p0, 20);
 
     const angle = angleTo(p0, pd);

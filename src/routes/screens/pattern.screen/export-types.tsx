@@ -1,3 +1,4 @@
+import {rgbToHex, rgbToString} from '../../../editor/rgbToHex';
 import {scalePos} from '../../../editor/scalePos';
 import {hslToRgb} from '../../../rendering/colorConvert';
 import {coordKey} from '../../../rendering/coordKey';
@@ -9,14 +10,15 @@ import {
 } from '../../../rendering/getMirrorTransforms';
 import {GuideGeom, Coord, Segment, BarePath, Tiling, ThinTiling} from '../../../types';
 import {pk, PKPath} from '../../pk';
+import {RenderShadow} from './eval/evaluate';
 import {colorToString, Rgb} from './utils/colors';
 import {CropsAndMatrices} from './utils/resolveMods';
 
 export type AnimatableNumber = number | string;
 export type AnimatableBoolean = boolean | string | number;
 export type AnimatableValue = string;
-export type AnimatableColor = number | string | Color | null;
-export type AnimatableCoord = Coord | string;
+export type AnimatableColor = number | string | null;
+export type AnimatableCoord = string;
 
 export type Shape =
     // v center + corner
@@ -59,18 +61,24 @@ export const colorToRgb = (c: Color): {r: number; g: number; b: number} =>
 
 const rgbFromArr = (c: [number, number, number]) => ({r: c[0], g: c[1], b: c[2]});
 
-export type Crop = {id: string; shape: string; mods?: PMods[]};
-
-export type Layer = {
+export type Crop = {
     id: string;
-    order: number;
+    shape: ShapeNode;
+    // shape: string;
+    mods: PMods[];
+};
 
-    opacity: AnimatableNumber;
+export type ShapeNode =
+    | {type: 'shape'; path: BarePath; mods: PMods[]}
+    | {type: 'multiply'; shape: ShapeNode; multiply: string; mods: PMods[]}
+    | {type: 'op'; shapes: ShapeNode[]; mods: PMods[]; op: 'union' | 'intersection' | 'difference'};
+
+export type OrderItem = {id: string; order: number};
+export type Orderable<T extends OrderItem> = Record<string, T>;
+
+export type EntityRoot = {
     rootGroup: string;
     entities: Record<string, Entity>;
-    shared: Record<string, AnimatableValue>;
-
-    guides: GuideGeom[];
 };
 
 export type Group = {
@@ -78,7 +86,9 @@ export type Group = {
     id: string;
     name?: string;
     entities: Record<string, number>; // id -> order
-    disabled?: boolean;
+    disabled: string;
+    shared: Orderable<OValue<AnimatableValue>>;
+    opacity: AnimatableNumber;
 };
 
 export type CropMode = 'rough' | 'half';
@@ -162,74 +172,101 @@ export const modMatrix = (mod: ConcretePMod, origin?: Coord) => {
     return tx;
 };
 
+export type PatternSize = {type: 'uniform'; size: number} | {type: 'coord'; coord: Coord};
+
 export type Pattern = {
     type: 'Pattern';
     id: string;
     tiling: {id: string; tiling: ThinTiling};
 
-    psize: Coord | number;
-    contents: PatternContents;
+    psize: PatternSize;
+    contents: Orderable<PatternContents>;
     // shape and the mods
     adjustments: Record<string, Adjustment>;
     mods: PMods[];
-    shared?: Record<string, AnimatableValue>;
-    disabled?: boolean;
+    shared: Orderable<OValue<AnimatableValue>>;
+    disabled: boolean;
 };
 
 export type Adjustment = {
     id: string;
     shapes: string[];
-    t?: TChunk;
+    t: TChunk | null;
     mods: PMods[];
-    disabled?: boolean;
-    shared?: Record<string, AnimatableValue>;
+    disabled: boolean;
+    shared: Orderable<OValue<AnimatableValue>>;
 };
+
+export type OValue<T> = {id: string; order: number; value: T; disabled: boolean};
 
 export type PatternContents =
     | {
           type: 'shapes';
-          styles: Record<string, ShapeStyle<ShapeKind>>;
+          id: string;
+          order: number;
+          disabled: string;
+          styles: Orderable<ShapeStyle<ShapeKind>>;
       }
     | {
           type: 'weave';
+          id: string;
+          order: number;
+          disabled: string;
           flip?: number;
           orderings: Record<string, number[]>;
-          styles: Record<string, ShapeStyle<BaseKind & {under?: boolean}>>;
-          shared?: Record<string, AnimatableValue>;
+          styles: Orderable<ShapeStyle<BaseKind>>;
+          shared: Orderable<OValue<AnimatableValue>>;
       }
     | {
           type: 'lines';
-          styles: Record<string, ShapeStyle<BaseKind>>;
+          id: string;
+          order: number;
+          disabled: string;
+          styles: Orderable<ShapeStyle<BaseKind>>;
           includeBorders?: boolean;
-          sort?: AnimatableValue;
+          sort: AnimatableValue;
       }
     | {
           type: 'layers';
+          id: string;
+          order: number;
+          disabled: string;
           origin: AnimatableCoord;
           reverse: AnimatableBoolean;
-          styles: Record<string, ShapeStyle<BaseKind>>;
-          shared?: Record<string, AnimatableValue>;
+          styles: Orderable<ShapeStyle<BaseKind>>;
+          shared: Orderable<OValue<AnimatableValue>>;
       };
 
 export type BaseKind =
-    | {type: 'everything'}
     | {type: 'alternating'; index: number}
     | {type: 'explicit'; ids: Record<string, true>}
     | {type: 'distance'; corner: number; repeat: boolean; distances: number[]};
 
 export type ShapeKind = BaseKind | {type: 'shape'; key: string; rotInvariant: boolean};
 
+export const describeKind = (kind: ShapeKind) => {
+    switch (kind.type) {
+        case 'alternating':
+            return `alternative ${kind.index}`;
+        case 'explicit':
+            return `${Object.keys(kind.ids).length} ids`;
+        case 'distance':
+            return `rings around corner ${kind.corner}`;
+        case 'shape':
+            return `matching shape ${kind.key}`;
+    }
+};
+
 export type ShapeStyle<Kind> = {
     id: string;
-    disabled?: boolean;
+    disabled: string;
     order: number;
     // TODO: maybe have a kind that's like "anything intersecting with this shape"?
     // Could also be interesting to have an `animatedKind` where we select
     // the items effected by some script
-    kind: Kind | Kind[];
-    fills: Record<string, Fill>;
-    lines: Record<string, Line>;
-    t?: TChunk;
+    kind: Kind[];
+    items: Orderable<FillOrLine>;
+    t: TChunk | null;
     mods: PMods[];
 };
 
@@ -253,10 +290,11 @@ export type Shadow =
 export const shadowKey = (sh: ConcreteShadow) =>
     `${coordKey(sh.blur ?? {x: 0, y: 0})}-${coordKey(sh.offset ?? {x: 0, y: 0})}-${colorToString(sh.color ?? [0, 0, 0]).replace('#', '')}`;
 
-export type ConcreteFill = {
+export type ConcreteFillOrLine = {
     id: string;
+    order: number;
     enabled?: boolean;
-    shadow?: Shadow;
+    shadow?: RenderShadow;
     zIndex?: number;
     color?: Color;
     rounded?: number;
@@ -265,57 +303,42 @@ export type ConcreteFill = {
     thickness?: number;
 
     mods: CropsAndMatrices;
+
+    line?: {
+        width?: number;
+        sharp?: boolean;
+        dashes?: {intervals: number[]; count: number; phase: number};
+    };
 };
 
-export type Fill = {
+export type FillOrLine = {
     id: string;
+    order: number;
     enabled?: AnimatableBoolean;
     shadow?: Shadow;
     zIndex?: AnimatableNumber;
     color?: AnimatableColor;
+    // skcornerpatheffect
     rounded?: AnimatableNumber;
     opacity?: AnimatableNumber;
     tint?: AnimatableColor;
     thickness?: AnimatableNumber;
+    line?: LineItems;
 
     mods: PMods[];
 };
 
-export type ConcreteLine = {
-    id: string;
-    enabled?: boolean;
-    shadow?: ConcreteShadow;
-    zIndex?: number;
-    color?: Color;
-    width?: number;
-    sharp?: boolean;
-    opacity?: number;
-    tint?: Color;
-    thickness?: number;
-
-    mods: CropsAndMatrices;
-};
-
-export type Line = {
-    id: string;
-    enabled?: AnimatableBoolean;
-    shadow?: Shadow;
-    zIndex?: AnimatableNumber;
-    color?: AnimatableColor;
+export type LineItems = {
     width?: AnimatableNumber;
     sharp?: AnimatableBoolean;
-    opacity?: AnimatableNumber;
-    tint?: AnimatableColor;
-    thickness?: AnimatableNumber;
-
-    mods: PMods[];
+    dashes?: AnimatableValue; // intervals[], count, phase
 };
 
 export type LineStyle<Kind> = {
     id: string;
     order: number;
     kind: Kind;
-    style: Line;
+    style: FillOrLine;
     mods: PMods[];
 };
 
@@ -326,8 +349,7 @@ export type EObject = {
     multiply?: boolean;
     style: {
         disabled?: boolean;
-        fills: Record<string, Fill>;
-        lines: Record<string, Line>;
+        items: Record<string, FillOrLine>;
         t?: TChunk;
         mods: PMods[];
     };

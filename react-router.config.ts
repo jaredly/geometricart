@@ -19,9 +19,10 @@ const config = {
     appDirectory: 'src/routes',
 } satisfies Config;
 
-const isolatedCofnig = {
+const isolatedConfig = {
     ssr: false,
     appDirectory: 'src/routes/screens/pattern.screen/isolated',
+    buildDirectory: 'isolated-0',
 } satisfies Config;
 
-export default process.env.ISOLATED ? isolatedCofnig : config;
+export default process.env.ISOLATED ? isolatedConfig : config;

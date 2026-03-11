@@ -11,27 +11,23 @@ import {calcPolygonArea, coordsFromBarePath, pkPathFromCoords} from '../../../ge
 import {pk} from '../../../pk';
 import {segmentsCmds} from '../../animator.screen/cropPath';
 import {easeFn} from '../eval/evalEase';
-import {a, AnimCtx, Ctx, RenderItem} from '../eval/evaluate';
+import {a, AnimCtx, Ctx, RenderItem, RenderShadow} from '../eval/evaluate';
 import {
     AnimatableValue,
     Color,
     colorToRgb,
+    ConcreteShadow,
     CropMode,
     EObject,
     Group,
     insetPkPath,
     modMatrix,
+    OValue,
     PMods,
 } from '../export-types';
-import {
-    dropNully,
-    renderLine,
-    renderPattern,
-    resolveFill,
-    resolveLine,
-    resolveShadow,
-} from '../render/renderPattern';
+import {dropNully, renderPattern, resolveFill, resolveShadow} from '../render/renderPattern';
 import {multiplyShape} from './expandShapes';
+import {orderedItems} from '../state-editor/nextOrder';
 
 type CCrop = {type: 'crop'; id: string; mode?: CropMode; hole?: boolean};
 type CInset = {type: 'inset'; v: number};
@@ -92,6 +88,37 @@ const insetShape = (shape: Coord[], inset: number) => {
     return items
         .map(coordsFromBarePath)
         .map((shape) => shape.map((s) => ({x: s.x / by, y: s.y / by})));
+};
+
+export const clipPkPath = (shape: PKPath, mod: CCrop, crop: PKPath) => {
+    if (mod.mode === 'rough') {
+        const [left, top, right, bottom] = shape.getBounds();
+        if (crop.contains((left + right) / 2, (top + bottom) / 2) === !!mod.hole) {
+            shape.reset();
+            return;
+        }
+        return;
+    } else if (mod.mode === 'half') {
+        const other = shape.copy();
+        other.op(crop, mod.hole ? pk.PathOp.Difference : pk.PathOp.Intersect);
+        other.simplify();
+        const size = pkPathToSegments(other)
+            .map(coordsFromBarePath)
+            .map(calcPolygonArea)
+            .reduce((a, b) => a + b, 0);
+        other.delete();
+        const area = pkPathToSegments(shape)
+            .map(coordsFromBarePath)
+            .reduce((a, b) => a + calcPolygonArea(b), 0);
+        if (size < area / 2 + epsilon) {
+            shape.reset();
+            return;
+        }
+        return;
+    } else {
+        shape.op(crop, mod.hole ? pk.PathOp.Difference : pk.PathOp.Intersect);
+        return;
+    }
 };
 
 const clipShape = (shape: {points: Coord[]; open: boolean}, mod: CCrop, crop: PKPath) => {
@@ -251,6 +278,46 @@ const intoCmds = (path: PKPath) => {
 //     );
 // };
 
+export const applyModsToPkPath = (
+    cropCache: Ctx['cropCache'],
+    mods: CropsAndMatrices,
+    path: PKPath,
+) => {
+    mods.forEach((mod) => {
+        if (Array.isArray(mod)) {
+            mod.forEach(([[a, b, c], [d, e, f]]) => {
+                path.transform(a, b, c, d, e, f);
+            });
+            return;
+        }
+        switch (mod.type) {
+            case 'inset':
+                if (Math.abs(mod.v) <= 0.01) return;
+                insetPkPath(path, mod.v / 100);
+                return;
+            case 'stroke':
+                path.stroke({
+                    width: mod.width,
+                    cap: mod.round ? pk.StrokeCap.Round : pk.StrokeCap.Square,
+                    join: mod.round ? pk.StrokeJoin.Round : pk.StrokeJoin.Miter,
+                });
+                return;
+            case 'inner':
+                return;
+            case 'crop': {
+                const cached = cropCache.get(mod.id);
+                if (!cached) {
+                    console.log(`No crop cache for ${mod.id}`);
+                    return;
+                    // throw new Error(`No crop? ${mod.id} : ${[...cropCache.keys()]}`);
+                }
+                clipPkPath(path, mod, cached.path);
+                return;
+            }
+        }
+    });
+};
+
 export const modsToShapes = (
     cropCache: Ctx['cropCache'],
     mods: CropsAndMatrices,
@@ -330,14 +397,14 @@ export const withLocals = (anim: Ctx['anim'], locals: Record<string, any>) => ({
 
 export const withShared = (
     anim: Ctx['anim'],
-    shared?: Record<string, AnimatableValue>,
+    shared?: Record<string, OValue<AnimatableValue>>,
     debug = false,
 ) => {
     if (!shared) return anim;
     // biome-ignore lint: this one is fine
     const values: Record<string, any> = {};
-    Object.entries(shared).forEach(([name, value]) => {
-        values[name] = a.value(anim, value);
+    orderedItems(shared).forEach(({id, value}) => {
+        values[id] = a.value(anim, value);
     });
     if (debug) {
         // console.log('shared', anim.values.t, values);
@@ -398,7 +465,7 @@ const renderObject = (ctx: Ctx, crops: CropsAndMatrices, object: EObject) => {
 
     const localAnim = {...anim, values: {...anim.values, ...local}};
 
-    Object.values(object.style.fills).map((fr) => {
+    Object.values(object.style.items).map((fr, fi) => {
         const f = dropNully(resolveFill(localAnim, fr));
         if (f.color == null) return;
 
@@ -409,53 +476,78 @@ const renderObject = (ctx: Ctx, crops: CropsAndMatrices, object: EObject) => {
         });
         if (remove) return;
 
-        ctx.items.push({
-            type: 'path',
-            // pk: thisPath,
-            key: '',
-            color: colorToRgb(f.color),
-            opacity: f.opacity,
-            shadow: resolveShadow(anim, f.shadow),
-            shapes: thisPaths.flatMap((path) => cmdsToSegments([...path.toCmds()])),
-            zIndex: f.zIndex,
-        });
+        if (f.line) {
+            ctx.items.push({
+                type: 'path',
+                // pk: thisPath,
+                key: fi + '',
+                color: colorToRgb(f.color),
+                strokeWidth: a.number(anim, f.line.width ?? 0) / 100,
+                opacity: f.opacity,
+                shadow: concreteToRenderShadow(f.shadow),
+                // shapes: cmdsToSegments([...thisPath.toCmds()]),
+                shapes: thisPaths.flatMap((path) => cmdsToSegments([...path.toCmds()])),
+                sharp: f.line.sharp,
+                zIndex: f.zIndex,
+            });
+        } else {
+            ctx.items.push({
+                type: 'path',
+                // pk: thisPath,
+                key: fi + '',
+                color: colorToRgb(f.color),
+                opacity: f.opacity,
+                shadow: f.shadow,
+                shapes: thisPaths.flatMap((path) => cmdsToSegments([...path.toCmds()])),
+                zIndex: f.zIndex,
+            });
+        }
         thisPaths.forEach((p) => p.delete());
     });
 
-    Object.values(object.style.lines).map((fr, fi) => {
-        const f = dropNully(resolveLine(localAnim, fr));
-        if (f.color == null) return;
+    // Object.values(object.style.lines).map((fr, fi) => {
+    //     const f = dropNully(resolveLine(localAnim, fr));
+    //     if (f.color == null) return;
 
-        // const thisPath = path.copy();
-        const thisPaths = paths.map((path) => path.copy());
-        let remove = false;
-        f.mods.forEach((mod) => {
-            // remove = remove || pathMod(ctx.cropCache, mod, thisPath);
-            remove = remove || thisPaths.every((path) => pathMod(ctx.cropCache, mod, path));
-        });
-        if (remove) return;
+    //     // const thisPath = path.copy();
+    //     const thisPaths = paths.map((path) => path.copy());
+    //     let remove = false;
+    //     f.mods.forEach((mod) => {
+    //         // remove = remove || pathMod(ctx.cropCache, mod, thisPath);
+    //         remove = remove || thisPaths.every((path) => pathMod(ctx.cropCache, mod, path));
+    //     });
+    //     if (remove) return;
 
-        ctx.items.push({
-            type: 'path',
-            // pk: thisPath,
-            key: fi + '',
-            color: colorToRgb(f.color),
-            strokeWidth: a.number(anim, f.width ?? 0) / 100,
-            opacity: f.opacity,
-            shadow: resolveShadow(anim, f.shadow),
-            // shapes: cmdsToSegments([...thisPath.toCmds()]),
-            shapes: thisPaths.flatMap((path) => cmdsToSegments([...path.toCmds()])),
-            sharp: f.sharp,
-            zIndex: f.zIndex,
-        });
-        // thisPath.delete();
-        thisPaths.forEach((p) => p.delete());
-    });
+    //     ctx.items.push({
+    //         type: 'path',
+    //         // pk: thisPath,
+    //         key: fi + '',
+    //         color: colorToRgb(f.color),
+    //         strokeWidth: a.number(anim, f.width ?? 0) / 100,
+    //         opacity: f.opacity,
+    //         shadow: concreteToRenderShadow(f.shadow),
+    //         // shapes: cmdsToSegments([...thisPath.toCmds()]),
+    //         shapes: thisPaths.flatMap((path) => cmdsToSegments([...path.toCmds()])),
+    //         sharp: f.sharp,
+    //         zIndex: f.zIndex,
+    //     });
+    //     // thisPath.delete();
+    //     thisPaths.forEach((p) => p.delete());
+    // });
 
     paths.forEach((p) => p.delete());
     // path.delete();
     // object.style.mods
 };
+
+export const concreteToRenderShadow = (shadow?: ConcreteShadow): RenderShadow | undefined =>
+    shadow?.color
+        ? {
+              color: colorToRgb(shadow.color),
+              blur: shadow.blur ?? {x: 0, y: 0},
+              offset: shadow.offset ?? {x: 0, y: 0},
+          }
+        : undefined;
 
 export const pathMod = (cropCache: Ctx['cropCache'], mod: CropsAndMatrices[0], path: PKPath) => {
     if (Array.isArray(mod)) {
@@ -501,7 +593,7 @@ export const pathMod = (cropCache: Ctx['cropCache'], mod: CropsAndMatrices[0], p
 export const renderGroup = (ctx: Ctx, crops: CropsAndMatrices, group: Group) => {
     if (group.type !== 'Group') throw new Error('not a group');
     for (let [id] of Object.entries(group.entities).sort((a, b) => a[1] - b[1])) {
-        const entity = ctx.layer.entities[id];
+        const entity = ctx.entities[id];
         if (!entity) continue;
         switch (entity.type) {
             case 'Group':
